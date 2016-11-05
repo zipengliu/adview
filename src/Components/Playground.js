@@ -5,6 +5,8 @@
 
 import React, { Component } from 'react';
 import tsnejs from '../tsne';
+import Measure from 'react-measure';
+import {Grid, Row, Col} from 'react-bootstrap';
 
 class TestTSNE extends Component {
     generateDistMatrix(n) {
@@ -67,8 +69,16 @@ class Playground extends Component {
         return (
             <div>
                 <h1>This is the playground page</h1>
-                <button onClick={this.updateTSNE}>Rerender</button>
-                <TestTSNE count={this.state.count}></TestTSNE>
+                {/*<button onClick={this.updateTSNE}>Rerender</button>*/}
+                {/*<TestTSNE count={this.state.count}></TestTSNE>*/}
+
+                <Grid>
+                    <Row>
+                        <Measure onMeasure={(d) => {console.log(d);}}>
+                            <Col md={6}/>
+                        </Measure>
+                    </Row>
+                </Grid>
             </div>
         )
     }

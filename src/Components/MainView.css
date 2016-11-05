@@ -1,0 +1,26 @@
+.view-area {
+    margin-bottom: 10px;
+}
+
+.show-bg {
+    background: grey;
+}
+.overview {
+    height: 200px;
+}
+
+.filter {
+    height: 200px;
+}
+
+.tree-list {
+    height: 200px;
+}
+
+.agg-dendro {
+    height: 600px;
+}
+
+.full-dendro {
+    height: 900px;
+}
