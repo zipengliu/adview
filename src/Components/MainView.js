@@ -65,7 +65,8 @@ class MainView extends Component {
                                     <div className="full-dendro">
                                         {this.state.data &&
                                         <FullDendrogram topo={this.state.data.trees[this.state.data.defaultReferenceTree]}
-                                        width={dimensions.width} height={dimensions.height} />
+                                                        entities={this.state.data.entities}
+                                                        width={dimensions.width} height={dimensions.height} />
                                         }
                                     </div>
                                 }

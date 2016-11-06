@@ -2,3 +2,17 @@
     stroke-width: 1px;
     stroke: black;
 }
+
+.entity-name {
+    font-size: 8px;
+}
+
+.box {
+    fill: grey;
+    fill-opacity: .3;
+}
+
+.hover-box {
+    fill: steelblue;
+    fill-opacity: .3;
+}
