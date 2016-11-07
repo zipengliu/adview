@@ -3,120 +3,155 @@
  */
 
 import React, { Component } from 'react';
+import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
+import {highlightMonophyly, unhighlightMonophyly} from '../actions';
+
 import './FullDendrogram.css';
 
 class FullDendrogram extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            margin: {left: 5, right: 5, top: 10, bottom: 10},
-            marginOnEntity: 8,
-            topoWidth: props.width - 100 - 10,
-            textWidth: 100 - 10,
-            boxWidth: 7,
-            highlightBranch: [],
-            hoverBranch: null,
-        };
-
-        this.hoverBranch = this.hoverBranch.bind(this);
-    }
-    getMaxLength(topo) {
-        let r = topo.rootBranch;
-        let branches = topo.branches;
-        let maxLength = 0;
-
-        let traverse = function(bid, cur) {
-            cur += branches[bid].length;
-            maxLength = Math.max(cur, maxLength);
-            if ('left' in branches[bid]) {
-                traverse(branches[bid].left, cur);
-                traverse(branches[bid].right, cur);
-            }
-        };
-
-        traverse(r, 0);
-        console.log('max length in ref tree: ' + maxLength);
-        return maxLength;
-    }
-    renderTopo(topo, ent) {
-        let branches = topo.branches;
-        let maxLength = this.getMaxLength(this.props.topo);
-        let xScale = scaleLinear().domain([0, maxLength]).range([0, this.state.topoWidth]);
-        let b = {};
-        let connectLines = [];
-        let curY = this.state.margin.top;
-        let text = [];
-        // THe bounding box for a subtree, keyed by the leading branch
-        this.boundingBox = {};
-        let boxHalfWidth = (this.state.boxWidth - 1) / 2;
-
-        let traverse = (bid, curX) => {
-            let bLength = branches[bid].length;
-            let t = xScale(bLength);
-            b[bid] = {x1: curX, x2: curX + t};
-            curX += t;
-            if ('left' in branches[bid]) {
-                let {left, right} = branches[bid];
-                traverse(left, curX);
-                traverse(right, curX);
-                b[bid].y1 = (b[left].y1 + b[right].y1) / 2;
-                b[bid].y2 = b[bid].y1;
-                connectLines.push({x1: curX, x2: curX, y1: b[left].y1, y2: b[right].y1});
-                // Merge the two children bounding box to for his bounding box
-                this.boundingBox[bid] = {x: b[bid].x1, y: this.boundingBox[left].y,
-                    width: this.props.width - b[bid].x1,
-                    height: this.boundingBox[right].y + this.boundingBox[right].height - this.boundingBox[left].y};
-            } else {
-                // Leaf branch
-                b[bid].y1 = curY;
-                b[bid].y2 = curY;
-                this.boundingBox[bid] = {x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
-                    width: this.props.width - b[bid].x1, height: this.state.boxWidth};
-                let ent_id = branches[bid].entities[0];
-                text.push({entity_id: ent_id,  x: curX, y: curY});
-                curY += this.state.marginOnEntity;
-            }
-        };
-
-        traverse(topo.rootBranch, this.state.margin.left);
-
-        let result = [];
-        let boxes = [];
-        for (let bid in b) {
-            result.push(<line className="branch-line" {...b[bid]} key={bid}></line>);
-            boxes.push(<rect className="box" x={b[bid].x1} y={b[bid].y1 - boxHalfWidth}
-                        width={b[bid].x2 - b[bid].x1} height={this.state.boxWidth}
-                             onMouseOver={this.hoverBranch}
-                        key={bid} data-branchId={bid}></rect>);
-        }
-        return {
-            topo: result.concat(connectLines.map((d, i) => (<line className="branch-line" {...d} key={i}></line>))),
-            box: boxes,
-            text: text.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
-                                       textAnchor="start" key={d.entity_id}>{ent[d.entity_id].name}</text>))
-        }
-    }
     hoverBranch(event) {
-        event.preventDefault();
-        event.stopPropagation();
         let bid = event.target.getAttribute('data-branchId');
-        console.log('Clicking on branch ' + bid);
-        this.setState({hoverBranch: bid});
     }
     render() {
         console.log('Rendering full dendrogram');
-        let {topo, box, text} = this.renderTopo(this.props.topo, this.props.entities);
+        let {sizes, branchSpecs, verticalLines, responsiveBoxes,
+            highlightMonophyly, hoverBoxes, textSpecs, entities} = this.props;
+        let allLines = branchSpecs.concat(verticalLines).map((d, i) =>
+            (<line className="branch-line" x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} key={d.bid || i}></line>));
+        let names = textSpecs.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
+                                              textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>))
         return (
-            <svg width={this.props.width} height={this.props.height}>
-                <g>{this.state.hoverBranch &&
-                <rect className="hover-box" {...this.boundingBox[this.state.hoverBranch]}></rect>}</g>
-                <g className="topology">{topo}</g>
-                <g className="names">{text}</g>
-                <g className="responding-boxes">{box}</g>
+            <svg width={sizes.width} height={sizes.height}>
+                <g>{highlightMonophyly &&
+                <rect className="hover-box" {...hoverBoxes[highlightMonophyly]}></rect>}
+                </g>
+                <g className="topology">{allLines}</g>
+                <g className="names">{names}</g>
+                <g className="responding-boxes">
+                    {responsiveBoxes.map(d =>
+                    <rect className="box" x={d.x} y={d.y} width={d.width} height={d.height}
+                          onMouseOver={() => {this.props.onMouseOver(d.bid)}}
+                          onMouseOut={this.props.onMouseOut}
+                          key={d.bid}></rect>)}
+                </g>
             </svg>
         )
     }
 }
 
-export default FullDendrogram;
+function getMaxLength(topo) {
+    let r = topo.rootBranch;
+    let branches = topo.branches;
+    let maxLength = 0;
+
+    let traverse = function(bid, cur) {
+        cur += branches[bid].length;
+        maxLength = Math.max(cur, maxLength);
+        if ('left' in branches[bid]) {
+            traverse(branches[bid].left, cur);
+            traverse(branches[bid].right, cur);
+        }
+    };
+
+    traverse(r, 0);
+    // console.log('max length in ref tree: ' + maxLength);
+    return maxLength;
+}
+
+function renderTopo(topo, entities, sizes) {
+    let branches = topo.branches;
+    let maxLength = getMaxLength(topo);
+    let xScale = scaleLinear().domain([0, maxLength]).range([0, sizes.topoWidth]);
+    let b = {};
+    let connectLines = [];
+    let curY = sizes.margin.top;
+    let text = [];
+    // THe bounding box for a subtree, keyed by the leading branch
+    let boundingBox = {};
+    let boxHalfWidth = (sizes.boxWidth - 1) / 2;
+
+    let traverse = (bid, curX) => {
+        let bLength = branches[bid].length;
+        let t = xScale(bLength);
+        b[bid] = {x1: curX, x2: curX + t};
+        curX += t;
+        if ('left' in branches[bid]) {
+            let {left, right} = branches[bid];
+            traverse(left, curX);
+            traverse(right, curX);
+            b[bid].y1 = (b[left].y1 + b[right].y1) / 2;
+            b[bid].y2 = b[bid].y1;
+            connectLines.push({x1: curX, x2: curX, y1: b[left].y1, y2: b[right].y1});
+            // Merge the two children bounding box to for his bounding box
+            boundingBox[bid] = {x: b[bid].x1, y: boundingBox[left].y,
+                width: sizes.width - b[bid].x1,
+                height: boundingBox[right].y + boundingBox[right].height - boundingBox[left].y};
+        } else {
+            // Leaf branch
+            b[bid].y1 = curY;
+            b[bid].y2 = curY;
+            boundingBox[bid] = {x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
+                width: sizes.width - b[bid].x1, height: sizes.boxWidth};
+            let ent_id = branches[bid].entities[0];
+            text.push({entity_id: ent_id,  x: curX, y: curY});
+            curY += sizes.marginOnEntity;
+        }
+    };
+
+    traverse(topo.rootBranch, sizes.margin.left);
+
+    let branchSpecs = [];
+    let responsiveBoxes = [];
+    for (let bid in b) {
+        branchSpecs.push({...b[bid], bid});
+        responsiveBoxes.push({x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
+            width: b[bid].x2 - b[bid].x1, height: sizes.boxWidth, bid});
+    }
+    return {
+        branchSpecs,
+        verticalLines: connectLines,
+        responsiveBoxes,
+        textSpecs: text,
+        hoverBoxes: boundingBox,
+    }
+}
+
+function mapStateToProps(state, ownProps) {
+    console.log('mapping state to props in FullDendrogram');
+    let data = state.inputGroupData;
+    let {entities} = data;
+    let tree = data.trees[state.referenceTree || data.defaultReferenceTree];
+
+    let sizes = {
+        width: ownProps.width,
+        height: ownProps.height,
+        margin: {left: 5, right: 5, top: 10, bottom: 10},
+        marginOnEntity: 8,
+        topoWidth: ownProps.width - 100 - 10,
+        textWidth: 100 - 10,
+        boxWidth: 7,
+    };
+
+    let specs = renderTopo(tree, entities, sizes);
+    return {
+        sizes,
+        ...specs,
+        entities,
+        highlightMonophyly: state.highlightMonophyly
+
+    }
+}
+
+function mapDispatchToProps(dispatch) {
+    return {
+        onMouseOver: (bid) => {
+            dispatch(highlightMonophyly(bid));
+        },
+        onMouseOut: () => {
+            dispatch(unhighlightMonophyly());
+        }
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(FullDendrogram);
