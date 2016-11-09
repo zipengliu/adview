@@ -10,9 +10,6 @@ import {highlightMonophyly, unhighlightMonophyly} from '../actions';
 import './FullDendrogram.css';
 
 class FullDendrogram extends Component {
-    hoverBranch(event) {
-        let bid = event.target.getAttribute('data-branchId');
-    }
     render() {
         console.log('Rendering full dendrogram');
         let {sizes, branchSpecs, verticalLines, responsiveBoxes,
@@ -59,7 +56,7 @@ function getMaxLength(topo) {
     return maxLength;
 }
 
-function renderTopo(topo, entities, sizes) {
+function renderTopo(topo, sizes) {
     let branches = topo.branches;
     let maxLength = getMaxLength(topo);
     let xScale = scaleLinear().domain([0, maxLength]).range([0, sizes.topoWidth]);
@@ -118,7 +115,7 @@ function renderTopo(topo, entities, sizes) {
 }
 
 function mapStateToProps(state, ownProps) {
-    console.log('mapping state to props in FullDendrogram');
+    console.log('mapping state to props in FullDendrogram: ' + state.inputGroupData._id);
     let data = state.inputGroupData;
     let {entities} = data;
     let tree = data.trees[state.referenceTree || data.defaultReferenceTree];
@@ -133,7 +130,7 @@ function mapStateToProps(state, ownProps) {
         boxWidth: 7,
     };
 
-    let specs = renderTopo(tree, entities, sizes);
+    let specs = renderTopo(tree, sizes);
     return {
         sizes,
         ...specs,

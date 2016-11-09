@@ -6,8 +6,9 @@ import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {Grid, Row, Col} from 'react-bootstrap';
 import {fetchInputGroup} from '../actions';
-import FullDendrogram from './FullDendrogram';
-import Measure from 'react-measure';
+// import FullDendrogram from './FullDendrogram';
+import ReferenceTreeContainer from './ReferenceTreeContainer';
+import Overview from './Overview';
 import 'whatwg-fetch';
 import './MainView.css';
 
@@ -18,15 +19,17 @@ class MainView extends Component {
     render() {
         return (
             <div>
+                {this.props.isFetching && <h1>Fetching data...</h1>}
+                {!this.props.isFetching && this.props.isFetchFailed &&
+                    <h1>{this.props.fetchError.toString() || 'Failed to fetch data.'}</h1>}
+                {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
                 <Grid>
                     <Row>
                         <Col md={2}>
                             <Row className="view-area">
-                                <Col md={12}>
-                                    <div className="overview show-bg">
-
+                                    <div className="overview">
+                                        <Overview></Overview>
                                     </div>
-                                </Col>
                             </Row>
                             <Row className="view-area">
                                 <div className="filter show-bg">
@@ -45,18 +48,12 @@ class MainView extends Component {
                         </Col>
                         <Col md={5}>
                             <h3>Reference Tree</h3>
-                            <Measure>
-                                {dimensions =>
-                                    <div className="full-dendro">
-                                        {this.props.inputGroupData &&
-                                        <FullDendrogram width={dimensions.width} height={dimensions.height} />
-                                        }
-                                    </div>
-                                }
-                            </Measure>
+                            <div className="full-dendro">
+                                <ReferenceTreeContainer></ReferenceTreeContainer>
+                            </div>
                         </Col>
                     </Row>
-                </Grid>
+                </Grid>}
             </div>
         )
     }

@@ -9,7 +9,8 @@ import {HIGHLIGHT_MONOPHYLY, UNHIGHLIGHT_MONOPHYLY, SELECT_BRANCH,
 let initialState = {
     highlightMonophyly: null,
     isFetching: false,
-    isFetchFailed: false
+    isFetchFailed: false,
+    fetchError: null
 };
 
 function visphyReducer(state = initialState, action) {
@@ -34,7 +35,8 @@ function visphyReducer(state = initialState, action) {
         case FETCH_INPUT_GROUP_FAILURE:
             return Object.assign({}, state, {
                 isFetchFailed: true,
-                isFetching: false
+                isFetching: false,
+                fetchError: action.error
             });
         default:
             return state;

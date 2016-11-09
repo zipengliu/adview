@@ -5,7 +5,6 @@
 
 import React, { Component } from 'react';
 import tsnejs from '../tsne';
-import Measure from 'react-measure';
 import {Grid, Row, Col} from 'react-bootstrap';
 
 class TestTSNE extends Component {
@@ -72,13 +71,6 @@ class Playground extends Component {
                 {/*<button onClick={this.updateTSNE}>Rerender</button>*/}
                 {/*<TestTSNE count={this.state.count}></TestTSNE>*/}
 
-                <Grid>
-                    <Row>
-                        <Measure onMeasure={(d) => {console.log(d);}}>
-                            <Col md={6}/>
-                        </Measure>
-                    </Row>
-                </Grid>
             </div>
         )
     }

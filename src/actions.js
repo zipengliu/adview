@@ -32,6 +32,8 @@ export function fetchInputGroup(id) {
         }).then(function (data) {
             console.log('Get data succeeded!');
             dispatch(fetchInputGroupSuccess(data));
+        }).catch(function(error) {
+            dispatch(fetchInputGroupFailure(error));
         });
 
     }
