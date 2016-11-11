@@ -8,6 +8,7 @@ import {connect} from 'react-redux';
 import Dimensions from 'react-dimensions';
 import {scaleLinear} from 'd3-scale';
 import {extent, deviation} from 'd3-array';
+import {createSelector} from 'reselect';
 import tSNE from '../tsne';
 
 class Overview extends Component {
@@ -75,38 +76,40 @@ function runTSNE(dist) {
     return coords;
 }
 
-function mapStateToProps(state) {
-    console.log('Mapping state to props in Overview...');
-    let data = state.inputGroupData;
-    let trees = data.trees;
+let getCoordinates = createSelector(
+    [state => state.inputGroupData.trees],
+    (trees) => {
+        console.log('Calculating coordinates in Overview...');
+        // Concat all rf_dist in trees to a distance matrix
+        // First, decide an order of trees for the matrix
 
-    // Concat all rf_dist in trees to a distance matrix
-    // First, decide an order of trees for the matrix
+        // let order = Object.keys(trees[orderBasisTree].rf_dist).concat([orderBasisTree]);
+        let order = Object.keys(trees);
 
-    let order = Object.keys(trees[data.defaultReferenceTree].rf_dist).concat([data.defaultReferenceTree]);
-    let dist = [];
-    for (var i = 0; i < order.length; i++) {
-        let cur = [];
-        let t = trees[order[i]];
-        for (var j = 0; j < order.length; j++) {
-            if (j != i) {
-                cur.push(t.rf_dist[order[j]]);
-            } else {
-                cur.push(0);
+        let dist = [];
+        for (var i = 0; i < order.length; i++) {
+            let cur = [];
+            let t = trees[order[i]];
+            for (var j = 0; j < order.length; j++) {
+                if (j !== i) {
+                    cur.push(t.rf_dist[order[j]]);
+                } else {
+                    cur.push(0);
+                }
             }
+            dist.push(cur);
         }
-        dist.push(cur);
+
+        // Second run t-SNE
+        let coords = runTSNE(dist);
+
+        return {
+            coordinates: coords.map((d, i) => ({...d, treeId: order[i]}))
+        };
     }
+);
 
-    // Second run t-SNE
-    let coords = runTSNE(dist);
-
-    return {
-        coordinates: coords.map((d, i) => ({...d, treeId: order[i]}))
-    };
-}
-
-let ConnectedDotplot = connect(mapStateToProps)(Dotplot);
+let ConnectedDotplot = connect(getCoordinates)(Dotplot);
 let DotplotContainer = Dimensions()(ConnectedDotplot);
 
 export default Overview;

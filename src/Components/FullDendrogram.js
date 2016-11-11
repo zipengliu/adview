@@ -5,7 +5,9 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
+import {createSelector} from 'reselect';
 import {highlightMonophyly, unhighlightMonophyly} from '../actions';
+
 
 import './FullDendrogram.css';
 
@@ -115,30 +117,38 @@ function renderTopo(topo, sizes) {
 }
 
 function mapStateToProps(state, ownProps) {
-    console.log('mapping state to props in FullDendrogram: ' + state.inputGroupData._id);
-    let data = state.inputGroupData;
-    let {entities} = data;
-    let tree = data.trees[state.referenceTree || data.defaultReferenceTree];
-
-    let sizes = {
-        width: ownProps.width,
-        height: ownProps.height,
-        margin: {left: 5, right: 5, top: 10, bottom: 10},
-        marginOnEntity: 8,
-        topoWidth: ownProps.width - 100 - 10,
-        textWidth: 100 - 10,
-        boxWidth: 7,
-    };
-
-    let specs = renderTopo(tree, sizes);
     return {
-        sizes,
-        ...specs,
-        entities,
+        ...getDendrogramSpecs(state, ownProps),
         highlightMonophyly: state.highlightMonophyly
-
     }
 }
+
+let getDendrogramSpecs = createSelector(
+    [state => state.inputGroupData, state => state.inputGroupData.defaultReferenceTree || state.referenceTree,
+        (state, props) => props.width, (state, props) => props.height],
+    (data, referenceTreeId, width, height) => {
+        console.log('Calculating FullDendrogram: ' + referenceTreeId);
+        let {entities} = data;
+        let tree = data.trees[referenceTreeId];
+
+        let sizes = {
+            width: width,
+            height: height,
+            margin: {left: 5, right: 5, top: 10, bottom: 10},
+            marginOnEntity: 8,
+            topoWidth: width - 100 - 10,
+            textWidth: 100 - 10,
+            boxWidth: 7,
+        };
+
+        let specs = renderTopo(tree, sizes);
+        return {
+            sizes,
+            ...specs,
+            entities,
+        }
+    }
+);
 
 function mapDispatchToProps(dispatch) {
     return {
