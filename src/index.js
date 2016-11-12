@@ -36,3 +36,9 @@ let root = (
 );
 
 ReactDOM.render(root, document.getElementById('root'));
+
+
+// import {changeReferenceTree} from './actions';
+// setTimeout(function() {
+//     store.dispatch(changeReferenceTree('581be6867443ee23c7436421'))
+// }, 8000);

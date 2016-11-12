@@ -1,0 +1,13 @@
+.dot {
+    fill: grey
+}
+
+.dot.selected {
+    stroke: red;
+    stroke-width: 1px;
+}
+
+.selecting-box {
+    fill: steelblue;
+    fill-opacity: .3;
+}

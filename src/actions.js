@@ -4,12 +4,27 @@
 
 import 'whatwg-fetch';
 
-export const HIGHLIGHT_MONOPHYLY = 'HIGHLIGHT_MONOPHYLY';
-export const UNHIGHLIGHT_MONOPHYLY = 'UNHIGHLIGHT_MONOPHYLY';
-export const SELECT_BRANCH = 'SELECT_BRANCH';
+// Fetch data actions
 export const FETCH_INPUT_GROUP_REQUEST = 'FETCH_INPUT_GROUP_REQUEST';
 export const FETCH_INPUT_GROUP_SUCCESS = 'FETCH_INPUT_GROUP_SUCCESS';
 export const FETCH_INPUT_GROUP_FAILURE = 'FETCH_INPUT_GROUP_FAILURE';
+
+// Reference Tree actions
+export const HIGHLIGHT_MONOPHYLY = 'HIGHLIGHT_MONOPHYLY';
+export const UNHIGHLIGHT_MONOPHYLY = 'UNHIGHLIGHT_MONOPHYLY';
+export const SELECT_BRANCH = 'SELECT_BRANCH';
+export const CHANGE_REFERENCE_TREE = 'CHANGE_REFERENCE_TREE';
+
+// Overview actions
+export const POP_CREATE_NEW_SET_WINDOW = 'POP_CREATE_NEW_SET_WINDOW';
+export const CLOSE_CREATE_NEW_SET_WINDOW = 'CLOSE_CREATE_NEW_SET_WINDOW';
+export const CREATE_NEW_SET = 'CREATE_NEW_SET';
+export const TYPING_TITLE = 'TYPING_TITLE';
+export const REMOVE_SET = 'REMOVE_SET';
+export const ADD_TO_SET = 'ADD_TO_SET';
+export const START_SELECTION = 'START_SELECTION';
+export const END_SELECTION = 'END_SELECTION';
+export const CHANGE_SELECTION = 'CHANGE_SELECTION';
 
 // Trigger the UI change
 function requestInputGroup(id) {
@@ -70,5 +85,71 @@ export function selectBranchOnFullDendrogram(bid) {
     return {
         type: SELECT_BRANCH,
         bid
+    }
+}
+
+export function changeReferenceTree(tid) {
+    return {
+        type: CHANGE_REFERENCE_TREE,
+        tid
+    }
+}
+
+export function createNewSet() {
+    return {
+        type: CREATE_NEW_SET,
+    }
+}
+
+export function addToSet(sid) {
+    return {
+        type: ADD_TO_SET,
+        sid
+    }
+}
+
+export function typingTitle(value) {
+    return {
+        type: TYPING_TITLE,
+        value
+    }
+}
+
+export function removeSet(sid) {
+    return {
+        type: REMOVE_SET,
+        sid
+    }
+}
+
+export function popCreateNewSetWindow() {
+    return {
+        type: POP_CREATE_NEW_SET_WINDOW,
+    }
+}
+
+export function closeCreateNewSetWindow() {
+    return {
+        type: CLOSE_CREATE_NEW_SET_WINDOW
+    }
+}
+
+export function startSelection(x, y, size) {
+    return {
+        type: START_SELECTION,
+        x, y, size
+    }
+}
+
+export function endSelection() {
+    return {
+        type: END_SELECTION
+    }
+}
+
+export function changeSelection(x, y) {
+    return {
+        type: CHANGE_SELECTION,
+        x, y
     }
 }

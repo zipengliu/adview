@@ -119,12 +119,12 @@ function renderTopo(topo, sizes) {
 function mapStateToProps(state, ownProps) {
     return {
         ...getDendrogramSpecs(state, ownProps),
-        highlightMonophyly: state.highlightMonophyly
+        highlightMonophyly: state.referenceTree.highlightMonophyly
     }
 }
 
 let getDendrogramSpecs = createSelector(
-    [state => state.inputGroupData, state => state.inputGroupData.defaultReferenceTree || state.referenceTree,
+    [state => state.inputGroupData, state => state.referenceTree.id,
         (state, props) => props.width, (state, props) => props.height],
     (data, referenceTreeId, width, height) => {
         console.log('Calculating FullDendrogram: ' + referenceTreeId);
