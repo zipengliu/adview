@@ -1,0 +1,25 @@
+.list {
+    height: 100%;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+.list-item {
+    padding: 0 3px;
+}
+
+.tree-name {
+    font-size: 10px;
+    text-align: left;
+    float: left;
+}
+
+.color-block {
+    float: left;
+    width: 8px;
+    height: 8px;
+    margin: 3px 3px 0 0;
+}
+
+.clear {
+    clear:both;
+}

@@ -11,6 +11,7 @@ import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
 import 'whatwg-fetch';
 import './MainView.css';
+import TreeList from './TreeList';
 
 class MainView extends Component {
     componentDidMount() {
@@ -37,8 +38,8 @@ class MainView extends Component {
                                 </div>
                             </Row>
                             <Row className="view-area">
-                                <div className="tree-list show-bg">
-
+                                <div className="tree-list">
+                                    <TreeList />
                                 </div>
                             </Row>
                         </Col>
