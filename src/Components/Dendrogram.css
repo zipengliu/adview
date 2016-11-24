@@ -1,0 +1,15 @@
+.dendrogram-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: center;
+}
+
+.agg-dendro-box {
+    flex: 0 0 150px;
+    height: 150px;
+    margin: 5px;
+    border: 1px solid grey;
+}

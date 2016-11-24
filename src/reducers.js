@@ -14,9 +14,11 @@ let initialState = {
     isFetching: false,
     isFetchFailed: false,
     fetchError: null,
+    inputGroupData: null,
     referenceTree: {
         id: null,
-        highlightMonophyly: null
+        highlightMonophyly: null,
+        selected: []
     },
     sets: [],
     overview: {

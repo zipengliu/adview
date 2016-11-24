@@ -8,13 +8,16 @@ import {createSelector} from 'reselect';
 import './TreeList.css';
 
 let TreeList = (props) => (
-    <div className="list">
-        {Object.keys(props.trees).map(k =>
-            <div className="list-item" key={k}>
-                {/*<div className="color-block" style={{background: 'grey'}}></div>*/}
-                <div className="tree-name">{props.trees[k].name}</div>
-                {/*<div className="clear"></div>*/}
-            </div>)}
+    <div className="tree-list">
+        <p>Tree List</p>
+        <div className="list">
+            {Object.keys(props.trees).map(k =>
+                <div className="list-item" key={k}>
+                    {/*<div className="color-block" style={{background: 'grey'}}></div>*/}
+                    <div className="tree-name">{props.trees[k].name}</div>
+                    {/*<div className="clear"></div>*/}
+                </div>)}
+        </div>
     </div>
 );
 

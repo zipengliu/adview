@@ -4,14 +4,13 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import {Grid, Row, Col} from 'react-bootstrap';
 import {fetchInputGroup} from '../actions';
-// import FullDendrogram from './FullDendrogram';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
-import 'whatwg-fetch';
-import './MainView.css';
+import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
+
+import './MainView.css';
 
 class MainView extends Component {
     componentDidMount() {
@@ -24,37 +23,28 @@ class MainView extends Component {
                 {!this.props.isFetching && this.props.isFetchFailed &&
                     <h1>{this.props.fetchError.toString() || 'Failed to fetch data.'}</h1>}
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
-                <Grid>
-                    <Row>
-                        <Col md={2}>
-                            <Row className="view-area">
-                                    <div className="overview">
-                                        <Overview></Overview>
-                                    </div>
-                            </Row>
-                            <Row className="view-area">
-                                <div className="filter show-bg">
+                    <div className="mainview-container">
+                        <div className="left-column">
+                            <div className="overview">
+                                <Overview></Overview>
+                            </div>
+                            <div className="filter show-bg">
 
-                                </div>
-                            </Row>
-                            <Row className="view-area">
-                                <div className="tree-list">
-                                    <TreeList />
-                                </div>
-                            </Row>
-                        </Col>
-
-                        <Col md={5}>
-                            <div className="agg-dendro show-bg"></div>
-                        </Col>
-                        <Col md={5}>
+                            </div>
+                            <div className="tree-list">
+                                <TreeList />
+                            </div>
+                        </div>
+                        <div className="middle-column">
+                            <DendrogramContainer />
+                        </div>
+                        <div className="right-column">
                             <h3>Reference Tree</h3>
                             <div className="full-dendro">
-                                <ReferenceTreeContainer></ReferenceTreeContainer>
+                            <ReferenceTreeContainer></ReferenceTreeContainer>
                             </div>
-                        </Col>
-                    </Row>
-                </Grid>}
+                        </div>
+                    </div>}
             </div>
         )
     }
