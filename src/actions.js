@@ -26,6 +26,9 @@ export const START_SELECTION = 'START_SELECTION';
 export const END_SELECTION = 'END_SELECTION';
 export const CHANGE_SELECTION = 'CHANGE_SELECTION';
 
+// Aggregated dendrogram actions
+export const TOGGLE_HIGHLIGHT_TREE = 'TOGGLE_HIGHLIGHT_TREE';
+
 // Trigger the UI change
 function requestInputGroup(id) {
     return {
@@ -151,5 +154,13 @@ export function changeSelection(x, y) {
     return {
         type: CHANGE_SELECTION,
         x, y
+    }
+}
+
+
+export function toggleHighlightTree(tid) {
+    return {
+        type: TOGGLE_HIGHLIGHT_TREE,
+        tid
     }
 }

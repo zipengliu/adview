@@ -4,6 +4,7 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
+import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import './Dendrogram.css';
 
 class AggregatedDendrogram extends Component {
@@ -91,10 +92,11 @@ class AggregatedDendrogram extends Component {
         // console.log(this.props.data);
         let size = 150;
         let {blks, branches} = this.calcLayout(this.props.data, size - 5, size);
-
+        const tooltip = <Tooltip id={"tooltip-"+this.props.data._id}>{this.props.data.name}</Tooltip>;
         return (
             <div className="agg-dendro-box">
-                <div>
+                <OverlayTrigger placement="top" overlay={tooltip}
+                                onEnter={() => {this.props.onEnter(this.props.data._id)}} onExit={this.props.onExit}>
                     <svg width={size} height={size}>
                         <g className="blocks">
                             {blks.map(b =>
@@ -109,7 +111,7 @@ class AggregatedDendrogram extends Component {
                                                      x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                         </g>
                     </svg>
-                </div>
+                </OverlayTrigger>
             </div>
         )
     }

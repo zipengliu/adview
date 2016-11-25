@@ -5,6 +5,7 @@
 import {HIGHLIGHT_MONOPHYLY, UNHIGHLIGHT_MONOPHYLY, SELECT_BRANCH, CHANGE_REFERENCE_TREE,
     POP_CREATE_NEW_SET_WINDOW, CLOSE_CREATE_NEW_SET_WINDOW, CREATE_NEW_SET, REMOVE_SET, ADD_TO_SET, TYPING_TITLE,
     START_SELECTION, END_SELECTION, CHANGE_SELECTION,
+    TOGGLE_HIGHLIGHT_TREE,
     FETCH_INPUT_GROUP_REQUEST, FETCH_INPUT_GROUP_SUCCESS, FETCH_INPUT_GROUP_FAILURE}
     from './actions';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
@@ -26,6 +27,7 @@ let initialState = {
         createWindow: false,
         currentTitle: '',
         selectedDots: [],
+        highlightDot: null,
         dotplotSize: 0,
         isSelecting: false,
         selectingArea: null
@@ -192,6 +194,14 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     selectionArea: {...state.overview.selectionArea, x2: action.x, y2: action.y }
+                }
+            });
+
+        case TOGGLE_HIGHLIGHT_TREE:
+            return Object.assign({}, state, {
+                overview: {
+                    ...state.overview,
+                    highlightDot: action.tid
                 }
             });
 

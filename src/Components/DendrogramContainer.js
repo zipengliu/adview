@@ -6,6 +6,7 @@ import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import AggregatedDendrogram from './AggregatedDendrogram';
+import {toggleHighlightTree} from '../actions';
 import './Dendrogram.css';
 
 
@@ -14,7 +15,8 @@ class DendrogramContainer extends Component {
         return (
             <div style={{overflow: "scroll", height: '100%'}}>
                 <div className="dendrogram-container">
-                    {this.props.trees.map(t => <AggregatedDendrogram data={t} key={t._id} />)}
+                    {this.props.trees.map(t => <AggregatedDendrogram data={t} onEnter={this.props.onEnter} onExit={this.props.onExit}
+                                                                     key={t._id} />)}
                 </div>
             </div>
         )
@@ -51,4 +53,9 @@ let mapStateToProps = (state) => ({
     trees: getTrees(state)
 });
 
-export default connect(mapStateToProps)(DendrogramContainer);
+let mapDispatchToProps = (dispatch) => ({
+    onEnter: (tid) => {dispatch(toggleHighlightTree(tid))},
+    onExit: () => {dispatch(toggleHighlightTree(null))},
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

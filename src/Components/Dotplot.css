@@ -6,6 +6,10 @@
     stroke: red;
     stroke-width: 1px;
 }
+.dot.highlight {
+    stroke: red;
+    stroke-width: 2px;
+}
 
 .selecting-box {
     fill: steelblue;

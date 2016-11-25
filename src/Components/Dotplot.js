@@ -26,9 +26,10 @@ class Dotplot extends Component {
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={this.props.onDragEnd}>
-            {this.props.coordinates.map(d => <circle className={classNames('dot', {selected: this.props.selectedDots.indexOf(d.treeId) != -1})}
+            {this.props.coordinates.map(d => <circle className={classNames('dot', {selected: this.props.selectedDots.indexOf(d.treeId) != -1, highlight: this.props.highlightDot == d.treeId})}
                                                      style={{fill: this.props.colors[d.treeId] || 'grey'}}
-                                                     cx={scale(d.x)} cy={scale(d.y)} r={3} key={d.treeId}></circle>)}
+                                                     r={this.props.highlightDot == d.treeId? 6: 3}
+                                                     cx={scale(d.x)} cy={scale(d.y)} key={d.treeId}></circle>)}
             {this.props.isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
         </svg>
     }
