@@ -13,3 +13,12 @@
     margin: 5px;
     border: 1px solid grey;
 }
+
+.block {
+    fill: steelblue;
+}
+
+.branch {
+    stroke-width: 1px;
+    stroke: black;
+}

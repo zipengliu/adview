@@ -6,7 +6,8 @@ import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
-import {highlightMonophyly, unhighlightMonophyly} from '../actions';
+import cn from 'classnames';
+import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram} from '../actions';
 
 
 import './FullDendrogram.css';
@@ -17,7 +18,8 @@ class FullDendrogram extends Component {
         let {sizes, branchSpecs, verticalLines, responsiveBoxes,
             highlightMonophyly, hoverBoxes, textSpecs, entities} = this.props;
         let allLines = branchSpecs.concat(verticalLines).map((d, i) =>
-            (<line className="branch-line" x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} key={d.bid || i}></line>));
+            (<line className={cn('branch-line', {selected: this.props.selected[d.bid]})}
+                   x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} key={d.bid || i}></line>));
         let names = textSpecs.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>))
         return (
@@ -32,6 +34,7 @@ class FullDendrogram extends Component {
                     <rect className="box" x={d.x} y={d.y} width={d.width} height={d.height}
                           onMouseOver={() => {this.props.onMouseOver(d.bid)}}
                           onMouseOut={this.props.onMouseOut}
+                          onClick={() => {this.props.onClick(d.bid)}}
                           key={d.bid}></rect>)}
                 </g>
             </svg>
@@ -119,7 +122,8 @@ function renderTopo(topo, sizes) {
 function mapStateToProps(state, ownProps) {
     return {
         ...getDendrogramSpecs(state, ownProps),
-        highlightMonophyly: state.referenceTree.highlightMonophyly
+        highlightMonophyly: state.referenceTree.highlightMonophyly,
+        selected: state.referenceTree.selected
     }
 }
 
@@ -157,6 +161,9 @@ function mapDispatchToProps(dispatch) {
         },
         onMouseOut: () => {
             dispatch(unhighlightMonophyly());
+        },
+        onClick: (bid) => {
+            dispatch(selectBranchOnFullDendrogram(bid));
         }
     }
 }

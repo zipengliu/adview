@@ -27,10 +27,21 @@ let getTrees = createSelector(
         let res = [];
         let ref = trees[rid];
         for (let tid in trees) {
-            res.push({
-                ...trees[tid],
-                expand: selected.map(b => ref.branches[b]['corresponding_branches'][tid]['corr_branch_id'])
-            })
+            if (tid != rid) {
+                let expansion = {};
+                for (let e in selected) {
+                    if (selected[e]) {
+                        let corr = ref.branches[e]['corresponding_branches'][tid]['corr_branch_id'];
+                        if (corr != trees[tid].rootBranch) {
+                            expansion[corr] = true;
+                        }
+                    }
+                }
+                res.push({
+                    ...trees[tid],
+                    expand: expansion
+                })
+            }
         }
         return res;
     }

@@ -18,7 +18,7 @@ let initialState = {
     referenceTree: {
         id: null,
         highlightMonophyly: null,
-        selected: []
+        selected: {}
     },
     sets: [],
     overview: {
@@ -101,6 +101,16 @@ function visphyReducer(state = initialState, action) {
                     ...state.referenceTree,
                     id: action.tid,
                     highlightMonophyly: null
+                }
+            });
+        case SELECT_BRANCH:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    selected: {
+                        ...state.referenceTree.selected,
+                        [action.bid]: !state.referenceTree.selected[action.bid]
+                    }
                 }
             });
 
