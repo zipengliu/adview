@@ -42,12 +42,12 @@ let getCoordinates = (trees) => {
     let order = Object.keys(trees);
 
     let dist = [];
-    for (var i = 0; i < order.length; i++) {
+    for (let i = 0; i < order.length; i++) {
         let cur = [];
         let t = trees[order[i]];
-        for (var j = 0; j < order.length; j++) {
+        for (let j = 0; j < order.length; j++) {
             if (j !== i) {
-                cur.push(t.rf_dist[order[j]]);
+                cur.push(t.rfDistance[order[j]]);
             } else {
                 cur.push(0);
             }

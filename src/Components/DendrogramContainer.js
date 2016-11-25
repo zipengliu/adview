@@ -31,7 +31,7 @@ let getTrees = createSelector(
                 let expansion = {};
                 for (let e in selected) {
                     if (selected[e]) {
-                        let corr = ref.branches[e]['corresponding_branches'][tid]['corr_branch_id'];
+                        let corr = ref.branches[e]['correspondingBranches'][tid]['branchId'];
                         if (corr != trees[tid].rootBranch) {
                             expansion[corr] = true;
                         }

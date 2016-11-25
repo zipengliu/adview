@@ -22,3 +22,8 @@
     stroke-width: 1px;
     stroke: black;
 }
+
+.label {
+    font-size: 10px;
+    text-anchor: start;
+}

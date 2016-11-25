@@ -28,7 +28,7 @@ let getDotColors = createSelector(
         for (let i = 0; i < sets.length; i++) {
             let s = sets[i];
             for (let j = 0; j < s.tids.length; j++) {
-                if (!s.tids[j] in colors) {
+                if (!(s.tids[j] in colors)) {
                     colors[s.tids[j]] = [];
                 }
                 colors[s.tids[j]].push(sets[i].color);

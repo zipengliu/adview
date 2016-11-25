@@ -5,7 +5,6 @@
 
 import React, { Component } from 'react';
 import tsnejs from '../tsne';
-import {Grid, Row, Col} from 'react-bootstrap';
 
 class TestTSNE extends Component {
     generateDistMatrix(n) {
