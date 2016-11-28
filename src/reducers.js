@@ -2,10 +2,11 @@
  * Created by Zipeng Liu on 2016-11-06.
  */
 
-import {HIGHLIGHT_MONOPHYLY, UNHIGHLIGHT_MONOPHYLY, SELECT_BRANCH, CHANGE_REFERENCE_TREE,
+import {HIGHLIGHT_MONOPHYLY, UNHIGHLIGHT_MONOPHYLY, SELECT_BRANCH, FETCH_TREE_REQUEST, FETCH_TREE_SUCCESS, FETCH_TREE_FAILURE,
+    CLEAR_BRANCH_SELECTION,
     POP_CREATE_NEW_SET_WINDOW, CLOSE_CREATE_NEW_SET_WINDOW, CREATE_NEW_SET, REMOVE_SET, ADD_TO_SET, TYPING_TITLE,
     START_SELECTION, END_SELECTION, CHANGE_SELECTION,
-    TOGGLE_HIGHLIGHT_TREE,
+    TOGGLE_HIGHLIGHT_TREE, TOGGLE_SELECT_AGG_DENDRO, SELECT_SET, REMOVE_FROM_SET,
     FETCH_INPUT_GROUP_REQUEST, FETCH_INPUT_GROUP_SUCCESS, FETCH_INPUT_GROUP_FAILURE}
     from './actions';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
@@ -19,7 +20,9 @@ let initialState = {
     referenceTree: {
         id: null,
         highlightMonophyly: null,
-        selected: {}
+        selected: {},
+        isFetching: false,
+        fetchError: null,
     },
     sets: [],
     overview: {
@@ -31,6 +34,10 @@ let initialState = {
         dotplotSize: 0,
         isSelecting: false,
         selectingArea: null
+    },
+    aggregatedDendrogram: {
+        activeTreeId: null,
+        activeSetIndex: 0
     }
 };
 
@@ -97,14 +104,43 @@ function visphyReducer(state = initialState, action) {
                     highlightMonophyly: null
                 }
             });
-        case CHANGE_REFERENCE_TREE:
+        case FETCH_TREE_REQUEST:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    id: action.tid,
+                    highlightMonophyly: null,
+                    selected: {},
+                    isFetching: true,
+                    fetchError: null,
+                }
+            });
+        case FETCH_TREE_SUCCESS:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    id: action.tid,
-                    highlightMonophyly: null
+                    isFetching: false,
+                },
+                inputGroupData: {
+                    ...state.inputGroupData,
+                    trees: {
+                        ...state.inputGroupData.trees,
+                        [action.tid]: {
+                            ...state.inputGroupData.trees[action.tid],
+                            branches: action.data
+                        }
+                    }
                 }
             });
+
+        case FETCH_TREE_FAILURE:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    isFetching: false,
+                    fetchError: action.error.toString(),
+                }
+            });
+
         case SELECT_BRANCH:
             return Object.assign({}, state, {
                 referenceTree: {
@@ -115,8 +151,13 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             });
-
-
+        case CLEAR_BRANCH_SELECTION:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    selected: {}
+                }
+            });
 
 
         case POP_CREATE_NEW_SET_WINDOW:
@@ -204,6 +245,25 @@ function visphyReducer(state = initialState, action) {
                     highlightDot: action.tid
                 }
             });
+        case TOGGLE_SELECT_AGG_DENDRO:
+            return Object.assign({}, state, {
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    activeTreeId: action.tid
+                }
+            });
+        case SELECT_SET:
+            return Object.assign({}, state, {
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    activeSetIndex: action.setIndex
+                }
+            });
+        case REMOVE_FROM_SET:
+            return Object.assign({}, state, {
+                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid != action.tid)}),
+            });
+
 
         case FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
@@ -217,6 +277,11 @@ function visphyReducer(state = initialState, action) {
                     ...state.referenceTree,
                     id: action.data.defaultReferenceTree
                 },
+                sets: [{
+                    title: 'Default',
+                    tids: Object.keys(action.data.trees),
+                    color: 'grey'
+                }],
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.trees)
@@ -226,7 +291,7 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 isFetchFailed: true,
                 isFetching: false,
-                fetchError: action.error
+                fetchError: action.error.toString()
             });
         default:
             return state;

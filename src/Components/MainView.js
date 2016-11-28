@@ -39,10 +39,7 @@ class MainView extends Component {
                             <DendrogramContainer />
                         </div>
                         <div className="right-column">
-                            <h3>Reference Tree</h3>
-                            <div className="full-dendro">
                             <ReferenceTreeContainer></ReferenceTreeContainer>
-                            </div>
                         </div>
                     </div>}
             </div>

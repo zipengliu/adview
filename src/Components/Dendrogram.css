@@ -12,6 +12,10 @@
     height: 150px;
     margin: 5px;
     border: 1px solid grey;
+    position: relative;
+}
+.agg-dendro-box.selected {
+    border: 2px dashed red;
 }
 
 .block {
@@ -29,4 +33,29 @@
 }
 .tooltip .tooltip-inner{
     max-width: 400px;
+}
+
+.tools {
+    position: absolute;
+    right: 10px;
+    top: 0;
+}
+
+.toast {
+    visibility: hidden;
+    width: 400px;
+    margin-left: -200px;
+    position: fixed;
+    left: 50%;
+    top: 60px;
+    z-index: 10;
+
+    text-align: center;
+    border-radius: 2px;
+    color: #fff;
+    background-color: #333;
+    padding: 10px;
+}
+.toast.show {
+    visibility: visible;
 }

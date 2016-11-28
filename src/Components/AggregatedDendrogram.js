@@ -3,8 +3,6 @@
  */
 
 import React, { Component } from 'react';
-import {connect} from 'react-redux';
-import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 import './Dendrogram.css';
 
 class AggregatedDendrogram extends Component {
@@ -90,29 +88,23 @@ class AggregatedDendrogram extends Component {
     }
     render() {
         // console.log(this.props.data);
-        let size = 150;
+        let size = this.props.size;
         let {blks, branches} = this.calcLayout(this.props.data, size - 5, size);
-        const tooltip = <Tooltip id={"tooltip-"+this.props.data._id}>{this.props.data.name}</Tooltip>;
         return (
-            <div className="agg-dendro-box">
-                <OverlayTrigger placement="top" overlay={tooltip}
-                                onEnter={() => {this.props.onEnter(this.props.data._id)}} onExit={this.props.onExit}>
-                    <svg width={size} height={size}>
-                        <g className="blocks">
-                            {blks.map(b =>
-                                <g key={b.id}>
-                                    <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />
-                                    <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>
-                                </g>
-                            )}
+            <svg width={size} height={size}>
+                <g className="blocks">
+                    {blks.map(b =>
+                        <g key={b.id}>
+                            <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />
+                            <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>
                         </g>
-                        <g className="branches">
-                            {branches.map(b => <line className="branch" key={b.id}
-                                                     x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
-                        </g>
-                    </svg>
-                </OverlayTrigger>
-            </div>
+                    )}
+                </g>
+                <g className="branches">
+                    {branches.map(b => <line className="branch" key={b.id}
+                                             x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
+                </g>
+            </svg>
         )
     }
 }
