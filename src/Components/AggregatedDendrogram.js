@@ -4,26 +4,29 @@
 
 import React, { Component } from 'react';
 import './Dendrogram.css';
+import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
 
 class AggregatedDendrogram extends Component {
-    calcLayout(data, width, height) {
+    calcLayout(data, width, height, exploreEntities) {
         const gap = 5;
         const branchLen = 8;
         const blockWidth = 30;
 
+        // Generate all blocks needed to display
         let blocks = {
             [data.rootBranch]: {children: [], height, width: blockWidth, x: 0, y: 0, level: 1, id: data.rootBranch,
-                n: data.branches[data.rootBranch].entities.length}
+                n: data.branches[data.rootBranch].entities.length,
+                entities: createMappingFromArray(data.branches[data.rootBranch].entities)}
         };
-        // Generate all blocks needed to display
         let splitBlock = function (blockId, curBid) {
             let b = data.branches[curBid];
             let newBlockId = blockId;
             if (data.expand[curBid] && curBid != data.rootBranch) {
                 // split block
                 blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: blockWidth,
-                    isLeaf: !!b.isLeaf, n: b.entities.length};
+                    isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
                 blocks[blockId].n -= b.entities.length;
+                blocks[blockId].entities = subtractMapping(blocks[blockId].entities, blocks[curBid].entities);
                 blocks[blockId].children.push(curBid);
                 newBlockId = curBid;
             }
@@ -76,7 +79,9 @@ class AggregatedDendrogram extends Component {
         calcWidth(data.rootBranch, 0);
 
         let blockArr = [];
+        let e = createMappingFromArray(exploreEntities);
         for (let bid in blocks) {
+            blocks[bid].fillPercentage = getIntersection(blocks[bid].entities, e) / parseFloat(Object.keys(blocks[bid].entities).length);
             blockArr.push(blocks[bid]);
         }
         let branchArr = [];
@@ -89,13 +94,16 @@ class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
         let size = this.props.size;
-        let {blks, branches} = this.calcLayout(this.props.data, size - 5, size);
+        let {blks, branches} = this.calcLayout(this.props.data, size, size, this.props.exploreEntities);
         return (
             <svg width={size} height={size}>
                 <g className="blocks">
                     {blks.map(b =>
                         <g key={b.id}>
                             <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />
+                            {b.fillPercentage > 0.001 &&
+                            <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}
+                                  width={b.fillPercentage * b.width} height={b.height} />}
                             <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>
                         </g>
                     )}

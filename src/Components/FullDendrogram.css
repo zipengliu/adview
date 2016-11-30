@@ -14,6 +14,11 @@
 .box {
     fill: grey;
     fill-opacity: 0;
+    cursor: pointer;
+}
+.box.selected {
+    fill: steelblue;
+    fill-opacity: .5;
 }
 
 .hover-box {

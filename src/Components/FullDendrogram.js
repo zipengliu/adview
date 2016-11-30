@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram} from '../actions';
+import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram, toggleSelectExploreBranch} from '../actions';
 
 
 import './FullDendrogram.css';
@@ -31,11 +31,14 @@ class FullDendrogram extends Component {
                 <g className="names">{names}</g>
                 <g className="responding-boxes">
                     {responsiveBoxes.map(d =>
-                    <rect className="box" x={d.x} y={d.y} width={d.width} height={d.height}
-                          onMouseOver={() => {this.props.onMouseOver(d.bid)}}
+                    <rect className={cn("box", {selected: this.props.exploreBranch == d.bid})}
+                          x={d.x} y={d.y} width={d.width} height={d.height}
+                          onMouseOver={this.props.onMouseOver.bind(null, d.bid)}
                           onMouseOut={this.props.onMouseOut}
-                          onClick={() => {this.props.onClick(d.bid)}}
-                          key={d.bid}></rect>)}
+                          onClick={this.props.exploreMode? this.props.onSelectExploreBranch.bind(null, d.bid):
+                              this.props.onClick.bind(null, d.bid)}
+                          key={d.bid}>
+                    </rect>)}
                 </g>
             </svg>
         )
@@ -122,8 +125,7 @@ function renderTopo(topo, sizes) {
 function mapStateToProps(state, ownProps) {
     return {
         ...getDendrogramSpecs(state, ownProps),
-        highlightMonophyly: state.referenceTree.highlightMonophyly,
-        selected: state.referenceTree.selected
+        ...state.referenceTree
     }
 }
 
@@ -164,7 +166,8 @@ function mapDispatchToProps(dispatch) {
         },
         onClick: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));
-        }
+        },
+        onSelectExploreBranch: (bid) => {dispatch(toggleSelectExploreBranch(bid))}
     }
 }
 

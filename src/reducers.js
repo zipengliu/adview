@@ -2,13 +2,7 @@
  * Created by Zipeng Liu on 2016-11-06.
  */
 
-import {HIGHLIGHT_MONOPHYLY, UNHIGHLIGHT_MONOPHYLY, SELECT_BRANCH, FETCH_TREE_REQUEST, FETCH_TREE_SUCCESS, FETCH_TREE_FAILURE,
-    CLEAR_BRANCH_SELECTION,
-    POP_CREATE_NEW_SET_WINDOW, CLOSE_CREATE_NEW_SET_WINDOW, CREATE_NEW_SET, REMOVE_SET, ADD_TO_SET, TYPING_TITLE,
-    START_SELECTION, END_SELECTION, CHANGE_SELECTION,
-    TOGGLE_HIGHLIGHT_TREE, TOGGLE_SELECT_AGG_DENDRO, SELECT_SET, REMOVE_FROM_SET,
-    FETCH_INPUT_GROUP_REQUEST, FETCH_INPUT_GROUP_SUCCESS, FETCH_INPUT_GROUP_FAILURE}
-    from './actions';
+import * as TYPE from './actionTypes';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
 import {runTSNE} from './utils';
 
@@ -19,6 +13,8 @@ let initialState = {
     inputGroupData: null,
     referenceTree: {
         id: null,
+        exploreMode: false,
+        exploreBranch: null,
         highlightMonophyly: null,
         selected: {},
         isFetching: false,
@@ -42,7 +38,7 @@ let initialState = {
 };
 
 
-let getCoordinates = (trees) => {
+let getCoordinates = (trees, branchSelection) => {
     console.log('Calculating coordinates in Overview...');
     // Concat all rf_dist in trees to a distance matrix
     // First, decide an order of trees for the matrix
@@ -90,21 +86,21 @@ let mergeSets = (a, b) => {
 
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
-        case HIGHLIGHT_MONOPHYLY:
+        case TYPE.HIGHLIGHT_MONOPHYLY:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightMonophyly: action.bid
                 }
             });
-        case UNHIGHLIGHT_MONOPHYLY:
+        case TYPE.UNHIGHLIGHT_MONOPHYLY:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightMonophyly: null
                 }
             });
-        case FETCH_TREE_REQUEST:
+        case TYPE.FETCH_TREE_REQUEST:
             return Object.assign({}, state, {
                 referenceTree: {
                     id: action.tid,
@@ -112,9 +108,11 @@ function visphyReducer(state = initialState, action) {
                     selected: {},
                     isFetching: true,
                     fetchError: null,
+                    exploreMode: false,
+                    exploreBranch: null,
                 }
             });
-        case FETCH_TREE_SUCCESS:
+        case TYPE.FETCH_TREE_SUCCESS:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
@@ -132,7 +130,7 @@ function visphyReducer(state = initialState, action) {
                 }
             });
 
-        case FETCH_TREE_FAILURE:
+        case TYPE.FETCH_TREE_FAILURE:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
@@ -141,7 +139,7 @@ function visphyReducer(state = initialState, action) {
                 }
             });
 
-        case SELECT_BRANCH:
+        case TYPE.SELECT_BRANCH:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
@@ -151,30 +149,61 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             });
-        case CLEAR_BRANCH_SELECTION:
+        case TYPE.CLEAR_BRANCH_SELECTION:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     selected: {}
                 }
             });
+        case TYPE.REARRANGE_OVERVIEW:
+            let s = [];
+            for (let bid in state.referenceTree.selected) {
+                if (state.referenceTree.selected[bid]) s.push(bid);
+            }
+            if (s.length) {
+                return Object.assign({}, state, {
+                    overview: {
+                        ...state.overview,
+                        coordinates: getCoordinates(action.data.trees, s)
+                    }
+                });
+            } else {
+                return state;
+            }
+        case TYPE.TOGGLE_EXPLORE_MODE:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    exploreMode: !state.referenceTree.exploreMode,
+                    exploreBranch: null,
+                }
+            });
+        case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    exploreBranch: action.bid == state.referenceTree.exploreBranch? null: action.bid,
+                }
+            });
 
 
-        case POP_CREATE_NEW_SET_WINDOW:
+
+        case TYPE.POP_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
                     createWindow: true
                 }
             });
-        case CLOSE_CREATE_NEW_SET_WINDOW:
+        case TYPE.CLOSE_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
                     createWindow: false
                 }
             });
-        case CREATE_NEW_SET:
+        case TYPE.CREATE_NEW_SET:
             return Object.assign({}, state, {
                 sets: [...state.sets, {
                     title: state.overview.currentTitle,
@@ -188,7 +217,7 @@ function visphyReducer(state = initialState, action) {
                     createWindow: false
                 }
             });
-        case TYPING_TITLE:
+        case TYPE.TYPING_TITLE:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
@@ -196,7 +225,7 @@ function visphyReducer(state = initialState, action) {
                 }
 
             });
-        case ADD_TO_SET:
+        case TYPE.ADD_TO_SET:
             return Object.assign({}, state, {
                 sets: state.sets.map((s, i) => i !== action.sid? s: {...s, tids: mergeSets(s.tids, state.overview.selectedDots)}),
                 overview: {
@@ -204,12 +233,17 @@ function visphyReducer(state = initialState, action) {
                     selectedDots: []
                 }
             });
-        case REMOVE_SET:
+        case TYPE.REMOVE_SET:
             return Object.assign({}, state, {
-
+                sets: state.sets.filter((s, i) => i !== action.setIndex),
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    activeSetIndex: 0,
+                    activeTreeId: null
+                }
             });
 
-        case START_SELECTION:
+        case TYPE.START_SELECTION:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
@@ -218,7 +252,7 @@ function visphyReducer(state = initialState, action) {
                     selectionArea: {x1: action.x, y1: action.y, x2: action.x, y2: action.y}
                 }
             });
-        case END_SELECTION:
+        case TYPE.END_SELECTION:
             let {coordinates, selectionArea, dotplotSize} = state.overview;
             let scale = scaleLinear().range([0, dotplotSize]);
             return Object.assign({}, state, {
@@ -230,7 +264,7 @@ function visphyReducer(state = initialState, action) {
                         .map(d => d.treeId),
                 }
             });
-        case CHANGE_SELECTION:
+        case TYPE.CHANGE_SELECTION:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
@@ -238,38 +272,38 @@ function visphyReducer(state = initialState, action) {
                 }
             });
 
-        case TOGGLE_HIGHLIGHT_TREE:
+        case TYPE.TOGGLE_HIGHLIGHT_TREE:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
                     highlightDot: action.tid
                 }
             });
-        case TOGGLE_SELECT_AGG_DENDRO:
+        case TYPE.TOGGLE_SELECT_AGG_DENDRO:
             return Object.assign({}, state, {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     activeTreeId: action.tid
                 }
             });
-        case SELECT_SET:
+        case TYPE.SELECT_SET:
             return Object.assign({}, state, {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     activeSetIndex: action.setIndex
                 }
             });
-        case REMOVE_FROM_SET:
+        case TYPE.REMOVE_FROM_SET:
             return Object.assign({}, state, {
                 sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid != action.tid)}),
             });
 
 
-        case FETCH_INPUT_GROUP_REQUEST:
+        case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
                 isFetching: true
             });
-        case FETCH_INPUT_GROUP_SUCCESS:
+        case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
@@ -287,7 +321,7 @@ function visphyReducer(state = initialState, action) {
                     coordinates: getCoordinates(action.data.trees)
                 }
             });
-        case FETCH_INPUT_GROUP_FAILURE:
+        case TYPE.FETCH_INPUT_GROUP_FAILURE:
             return Object.assign({}, state, {
                 isFetchFailed: true,
                 isFetching: false,

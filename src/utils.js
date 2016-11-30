@@ -45,3 +45,24 @@ export function runTSNE(dist) {
     return coords;
 }
 
+export function createMappingFromArray(a) {
+    return a.reduce((acc, k) => {acc[k] = true; return acc}, {});
+}
+export function subtractMapping(a, b) {
+    let r = {};
+    for (let k in a) {
+        if (!b[k]) {
+            r[k] = a[k]
+        }
+    }
+    return r;
+}
+export function getIntersection(a, b) {
+    let r = 0;
+    for (let k in a) {
+        if (b[k]) {
+            r += 1;
+        }
+    }
+    return r;
+}

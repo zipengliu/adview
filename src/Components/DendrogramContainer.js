@@ -9,7 +9,7 @@ import {createSelector} from 'reselect';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet} from '../actions';
+import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet} from '../actions';
 import './Dendrogram.css';
 
 
@@ -22,7 +22,7 @@ class DendrogramContainer extends Component {
                  onMouseOut={this.props.onExit}
                  onClick={this.props.onClick.bind(null, this.props.activeTreeId == t._id? null: t._id)}>
                 <div style={{height: '150px', width: '150px'}}>
-                    <AggregatedDendrogram key={t._id} data={t} size={150} />
+                    <AggregatedDendrogram key={t._id} data={t} exploreEntities={this.props.exploreEntities} size={150} />
                 </div>
             </div>
         )};
@@ -31,6 +31,12 @@ class DendrogramContainer extends Component {
             <div style={{overflow: "scroll", height: '100%', position: 'relative'}}>
                 <div className="tools">
                     <ButtonGroup bsSize="small">
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
+                            <Button disabled={this.props.activeSetIndex == 0}
+                                onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
+                                <Glyphicon glyph="remove" />
+                            </Button>
+                        </OverlayTrigger>
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-pin">Blabla</Tooltip>}>
                             <Button disabled={disabledTools}>
                                 <Glyphicon glyph="pushpin" />
@@ -54,7 +60,7 @@ class DendrogramContainer extends Component {
                     </ButtonGroup>
                 </div>
                 <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
-                    {this.props.sets.map((s, i) => <Tab eventKey={i} key={i} title={s.title} ></Tab>)}
+                    {this.props.sets.map((s, i) => <Tab eventKey={i} key={i} title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}</div>} ></Tab>)}
                 </Tabs>
                 <div className="dendrogram-container">
                     {this.props.trees.map(getDendroBox)}
@@ -101,6 +107,8 @@ let mapStateToProps = (state) => ({
     ...state.aggregatedDendrogram,
     isFetching: state.referenceTree.isFetching,
     fetchError: state.referenceTree.fetchError,
+    exploreEntities: state.referenceTree.exploreBranch != null?
+        state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.exploreBranch].entities: [],
     sets: state.sets,
     trees: getTrees(state)
 });
@@ -111,7 +119,8 @@ let mapDispatchToProps = (dispatch) => ({
     onClick: tid => {dispatch(toggleSelectAggDendro(tid))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onRemove: (tid, setIndex) => {dispatch(removeFromSet(tid, setIndex))},
-    onChangeReferenceTree: tid => {dispatch(changeReferenceTree(tid))}
+    onChangeReferenceTree: tid => {dispatch(changeReferenceTree(tid))},
+    onRemoveSet: setIndex => {dispatch(removeSet(setIndex))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

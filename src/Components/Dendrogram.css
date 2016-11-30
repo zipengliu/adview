@@ -4,22 +4,29 @@
     flex-wrap: wrap;
     align-items: flex-start;
     align-content: flex-start;
-    justify-content: center;
+    justify-content: space-between;
 }
 
 .agg-dendro-box {
-    flex: 0 0 150px;
-    height: 150px;
-    margin: 5px;
-    border: 1px solid grey;
+    flex: 0 0 154px;
+    height: 154px;
+    margin: 3px;
+    /*border: 1px solid grey;*/
+    padding: 1px;
     position: relative;
 }
 .agg-dendro-box.selected {
-    border: 2px dashed red;
+    border: 2px solid red;
 }
 
 .block {
+    fill: none;
+    stroke-width: 1px;
+    stroke: black;
+}
+.highlight-block {
     fill: steelblue;
+    fill-opacity: .6;
 }
 
 .branch {
@@ -58,4 +65,13 @@
 }
 .toast.show {
     visibility: visible;
+}
+
+#set-tab .nav>li>a {
+    padding: 5px 15px;
+}
+#set-tab .color-block {
+    display: inline-block;
+    height: 14px;
+    width: 14px;
 }

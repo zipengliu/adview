@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import Dimensions from 'react-dimensions';
 import {ButtonGroup, Button, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
 import FullDendrogram from './FullDendrogram';
-import {clearBranchSelection} from '../actions';
+import {clearBranchSelection, toggleExploreMode} from '../actions';
 
 class DimensionContainer extends Component {
     render() {
@@ -24,7 +24,19 @@ let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'r
         <RefTree />
     </div>
     <div style={{position: 'absolute', right: '10px', top: 0}}>
-        <ButtonGroup bsSize="small">
+        <ButtonGroup bsSize="xsmall">
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-explore">
+                Enter explore mode (select a branch below to explore distribution in the aggregated dendrograms)
+            </Tooltip>}>
+                <Button active={props.exploreMode} onClick={props.onToggleExploreMode}>
+                    <Glyphicon glyph="screenshot" />
+                </Button>
+            </OverlayTrigger>
+            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-rearrange">Rearrange the overview based on branch selections</Tooltip>}>
+                <Button>
+                    <Glyphicon glyph="knight" />
+                </Button>
+            </OverlayTrigger>
             <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch selections</Tooltip>}>
                 <Button onClick={props.clearSelection}>
                     <Glyphicon glyph="refresh" />
@@ -34,9 +46,13 @@ let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'r
     </div>
 </div>);
 
-let mapStateToProps = state => ({title: state.inputGroupData.trees[state.referenceTree.id].name});
+let mapStateToProps = state => ({
+    title: state.inputGroupData.trees[state.referenceTree.id].name,
+    exploreMode: state.referenceTree.exploreMode
+});
 let mapDispatchToProps = dispatch => ({
-    clearSelection: () => {dispatch(clearBranchSelection())}
-})
+    clearSelection: () => {dispatch(clearBranchSelection())},
+    onToggleExploreMode: () => {dispatch(toggleExploreMode())}
+});
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);
