@@ -45,3 +45,25 @@
 .show-bg {
     background: grey;
 }
+
+
+
+.toast {
+    visibility: hidden;
+    width: 400px;
+    margin-left: -200px;
+    position: fixed;
+    left: 50%;
+    top: 60px;
+    z-index: 10;
+
+    text-align: center;
+    border-radius: 2px;
+    color: #fff;
+    background-color: #333;
+    padding: 10px;
+}
+.toast.show {
+    visibility: visible;
+}
+

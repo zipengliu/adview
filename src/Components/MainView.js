@@ -5,6 +5,7 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {fetchInputGroup} from '../actions';
+import cn from 'classnames';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
 import DendrogramContainer from './DendrogramContainer';
@@ -17,11 +18,10 @@ class MainView extends Component {
         this.props.dispatch(fetchInputGroup(this.props.params.inputGroupId));
     }
     render() {
+        console.log('toast: ', this.props.toast.msg);
         return (
             <div>
-                {this.props.isFetching && <h1>Fetching data...</h1>}
-                {!this.props.isFetching && this.props.isFetchFailed &&
-                    <h1>{this.props.fetchError.toString() || 'Failed to fetch data.'}</h1>}
+                <div className={cn('toast', {show: this.props.toast.msg != null})}>{this.props.toast.msg}</div>
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
                     <div className="mainview-container">
                         <div className="left-column">

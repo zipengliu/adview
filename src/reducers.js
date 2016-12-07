@@ -9,8 +9,10 @@ import {runTSNE} from './utils';
 let initialState = {
     isFetching: false,
     isFetchFailed: false,
-    fetchError: null,
     inputGroupData: null,
+    toast: {
+        msg: null,
+    },
     referenceTree: {
         id: null,
         exploreMode: false,
@@ -18,7 +20,6 @@ let initialState = {
         highlightMonophyly: null,
         selected: {},
         isFetching: false,
-        fetchError: null,
     },
     sets: [],
     overview: {
@@ -102,18 +103,25 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.FETCH_TREE_REQUEST:
             return Object.assign({}, state, {
+                toast: {
+                    ...state.toast,
+                    msg: 'Fetching tree from server...',
+                },
                 referenceTree: {
                     id: action.tid,
                     highlightMonophyly: null,
                     selected: {},
                     isFetching: true,
-                    fetchError: null,
                     exploreMode: false,
                     exploreBranch: null,
                 }
             });
         case TYPE.FETCH_TREE_SUCCESS:
             return Object.assign({}, state, {
+                toast: {
+                    ...state.toast,
+                    msg: null
+                },
                 referenceTree: {
                     ...state.referenceTree,
                     isFetching: false,
@@ -132,10 +140,13 @@ function visphyReducer(state = initialState, action) {
 
         case TYPE.FETCH_TREE_FAILURE:
             return Object.assign({}, state, {
+                toast: {
+                    ...state.toast,
+                    msg: action.error.toString(),
+                },
                 referenceTree: {
                     ...state.referenceTree,
                     isFetching: false,
-                    fetchError: action.error.toString(),
                 }
             });
 
@@ -301,12 +312,20 @@ function visphyReducer(state = initialState, action) {
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
-                isFetching: true
+                isFetching: true,
+                toast: {
+                    ...state.toast,
+                    msg: 'Fetching data from server...'
+                }
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
+                toast: {
+                    ...state.toast,
+                    msg: null
+                },
                 referenceTree: {
                     ...state.referenceTree,
                     id: action.data.defaultReferenceTree
@@ -325,7 +344,10 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 isFetchFailed: true,
                 isFetching: false,
-                fetchError: action.error.toString()
+                toast: {
+                    ...state.toast,
+                    msg: 'Error fetching data from server: ' + action.error.toString()
+                }
             });
         default:
             return state;

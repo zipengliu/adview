@@ -94,23 +94,25 @@ class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
         let size = this.props.size;
-        let {blks, branches} = this.calcLayout(this.props.data, size, size, this.props.exploreEntities);
+        let {blks, branches} = this.calcLayout(this.props.data, size-4, size-4, this.props.exploreEntities);
         return (
             <svg width={size} height={size}>
-                <g className="blocks">
-                    {blks.map(b =>
-                        <g key={b.id}>
-                            <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />
-                            {b.fillPercentage > 0.001 &&
-                            <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}
-                                  width={b.fillPercentage * b.width} height={b.height} />}
-                            <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>
-                        </g>
-                    )}
-                </g>
-                <g className="branches">
-                    {branches.map(b => <line className="branch" key={b.id}
-                                             x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
+                <g transform="translate(2,2)">
+                    <g className="blocks">
+                        {blks.map(b =>
+                            <g key={b.id}>
+                                <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />
+                                {b.fillPercentage > 0.001 &&
+                                <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}
+                                      width={b.fillPercentage * b.width} height={b.height} />}
+                                <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>
+                            </g>
+                        )}
+                    </g>
+                    <g className="branches">
+                        {branches.map(b => <line className="branch" key={b.id}
+                                                 x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
+                    </g>
                 </g>
             </svg>
         )

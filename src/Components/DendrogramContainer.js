@@ -65,13 +65,6 @@ class DendrogramContainer extends Component {
                 <div className="dendrogram-container">
                     {this.props.trees.map(getDendroBox)}
                 </div>
-
-                <div className={cn("toast", {show: this.props.isFetching})}>
-                    Fetching tree data from server...
-                </div>
-                <div className={cn("toast", {show: this.props.fetchError != null})}>
-                    {this.props.fetchError}
-                </div>
             </div>
         )
     }
