@@ -10,38 +10,40 @@ import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
 import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
+import Inspector from './Inspector';
 
 import './MainView.css';
 
 class MainView extends Component {
     componentDidMount() {
-        this.props.dispatch(fetchInputGroup(this.props.params.inputGroupId));
+        this.props.onRequestInputGroup(this.props.params.inputGroupId);
     }
     render() {
-        console.log('toast: ', this.props.toast.msg);
         return (
             <div>
                 <div className={cn('toast', {show: this.props.toast.msg != null})}>{this.props.toast.msg}</div>
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
-                    <div className="mainview-container">
-                        <div className="left-column">
-                            <div className="overview">
-                                <Overview></Overview>
-                            </div>
-                            <div className="filter show-bg">
+                <div className="mainview-container">
+                    <div className="left-column">
+                        <div className="overview">
+                            <Overview></Overview>
+                        </div>
+                        <div className="filter show-bg">
 
-                            </div>
-                            <div className="tree-list">
-                                <TreeList />
-                            </div>
                         </div>
-                        <div className="middle-column">
-                            <DendrogramContainer />
+                        <div className="tree-list">
+                            <TreeList />
                         </div>
-                        <div className="right-column">
-                            <ReferenceTreeContainer></ReferenceTreeContainer>
-                        </div>
-                    </div>}
+                    </div>
+                    <div className="middle-column">
+                        <DendrogramContainer />
+                    </div>
+                    <div className="right-column">
+                        <ReferenceTreeContainer></ReferenceTreeContainer>
+                    </div>
+                </div>}
+
+                <Inspector />
             </div>
         )
     }
@@ -51,4 +53,8 @@ function mapStateToProps(state) {
     return {...state}
 }
 
-export default connect(mapStateToProps)(MainView);
+let mapDispatchToProps = dispatch => ({
+    onRequestInputGroup: (id) => {dispatch(fetchInputGroup(id))},
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(MainView);

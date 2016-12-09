@@ -201,3 +201,17 @@ export function removeFromSet(tid, setIndex) {
         type: TYPE.REMOVE_FROM_SET, tid, setIndex
     }
 }
+
+
+export function toggleInspector() {
+    return {type: TYPE.TOGGLE_INSPECTOR}
+}
+
+export function addTreeToInspector(tid) {
+    return {type: TYPE.ADD_TREE_TO_INSPECTOR, tid}
+}
+
+export function removeTreeFromInspector(tid) {
+    return {type: TYPE.REMOVE_TREE_FROM_INSPECTOR, tid}
+
+}

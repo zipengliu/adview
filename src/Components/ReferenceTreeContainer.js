@@ -4,24 +4,14 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import Dimensions from 'react-dimensions';
 import {ButtonGroup, Button, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
 import FullDendrogram from './FullDendrogram';
 import {clearBranchSelection, toggleExploreMode} from '../actions';
 
-class DimensionContainer extends Component {
-    render() {
-        return <FullDendrogram width={this.props.containerWidth} height={this.props.containerHeight} />
-    }
-}
-
-let RefTree = Dimensions()(DimensionContainer);
-
-
 let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'relative'}}>
     <p>Reference Tree: {props.title}</p>
     <div style={{height: '100%'}}>
-        <RefTree />
+        <FullDendrogram />
     </div>
     <div style={{position: 'absolute', right: '10px', top: 0}}>
         <ButtonGroup bsSize="xsmall">

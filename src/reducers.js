@@ -13,6 +13,18 @@ let initialState = {
     toast: {
         msg: null,
     },
+    inspector: {
+        show: false,
+        trees: [],
+    },
+    dendrogramSpec: {
+        width: 500,
+        height: 960,
+        margin: {left: 5, right: 5, top: 10, bottom: 10},
+        marginOnEntity: 8,
+        labelWidth: 100,
+        responsiveAreaSize: 7
+    },
     referenceTree: {
         id: null,
         exploreMode: false,
@@ -308,6 +320,48 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid != action.tid)}),
             });
+
+
+        case TYPE.TOGGLE_INSPECTOR:
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    show: !state.inspector.show
+                }
+            };
+        case TYPE.ADD_TREE_TO_INSPECTOR:
+            // Find out whether the tree is already in the inspector
+            let found = -1;
+            let oldTrees = state.inspector.trees;
+            for (let i = 0; i < oldTrees.length; i++) {
+                if (oldTrees[i].id == action.tid) {
+                    found = i; break;
+                }
+            }
+            let newTrees;
+            if (found !== -1) {
+                // Bring that tree to the leftmost
+                newTrees = [oldTrees[found], ...oldTrees.slice(0, found), ...oldTrees.slice(found+1)];
+            } else {
+                newTrees = [{id: action.tid, staticMode: true}, ...oldTrees];
+            }
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    show: true,
+                    trees: newTrees
+                }
+            };
+        case TYPE.REMOVE_TREE_FROM_INSPECTOR:
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    trees: state.inspector.trees.filter(t => t.id != action.tid)
+                }
+            };
 
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:

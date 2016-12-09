@@ -3,13 +3,13 @@
  */
 
 import React, { Component} from 'react';
-import ReactDOM from 'react-dom';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet} from '../actions';
+import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
+    addTreeToInspector, toggleInspector} from '../actions';
 import './Dendrogram.css';
 
 
@@ -42,11 +42,6 @@ class DendrogramContainer extends Component {
                                 <Glyphicon glyph="pushpin" />
                             </Button>
                         </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
-                            <Button disabled={disabledTools} >
-                                <Glyphicon glyph="fullscreen" />
-                            </Button>
-                        </OverlayTrigger>
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
                             <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, this.props.activeTreeId, this.props.activeSetIndex)}>
                                 <Glyphicon glyph="trash" />
@@ -55,6 +50,14 @@ class DendrogramContainer extends Component {
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
                             <Button disabled={disabledTools} onClick={this.props.onChangeReferenceTree.bind(null, this.props.activeTreeId)}>
                                 <Glyphicon glyph="tree-conifer" />
+                            </Button>
+                        </OverlayTrigger>
+                    </ButtonGroup>
+
+                    <ButtonGroup bsSize="small" style={{marginLeft: '10px'}}>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
+                            <Button onClick={this.props.onAddTreeToInspector.bind(null, this.props.activeTreeId)}>
+                                <Glyphicon glyph="fullscreen" />
                             </Button>
                         </OverlayTrigger>
                     </ButtonGroup>
@@ -113,7 +116,14 @@ let mapDispatchToProps = (dispatch) => ({
     onSelectSet: i => {dispatch(selectSet(i))},
     onRemove: (tid, setIndex) => {dispatch(removeFromSet(tid, setIndex))},
     onChangeReferenceTree: tid => {dispatch(changeReferenceTree(tid))},
-    onRemoveSet: setIndex => {dispatch(removeSet(setIndex))}
+    onRemoveSet: setIndex => {dispatch(removeSet(setIndex))},
+    onAddTreeToInspector: (tid) => {
+        if (tid != null) {
+            dispatch(addTreeToInspector(tid))
+        } else {
+            dispatch(toggleInspector())
+        }
+    }
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);
