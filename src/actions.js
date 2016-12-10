@@ -6,7 +6,7 @@ import 'whatwg-fetch';
 import * as TYPE from './actionTypes';
 
 // Fetch data actions
-const baseUrl = 'http://localhost:33333';
+const baseUrl = process.env.NODE_ENV == 'production'? 'http://visphy.cs.ubc.ca/api': 'http://localhost:33333';
 
 // Trigger the UI change
 function requestInputGroup(id) {
