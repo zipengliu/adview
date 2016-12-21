@@ -1,0 +1,9 @@
+.histogram .bar {
+    fill: steelblue;
+}
+
+#attribute-explorer .dropdown {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}

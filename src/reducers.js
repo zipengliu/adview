@@ -47,6 +47,13 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0
+    },
+    attributeExplorer: {
+        modes: ['global', 'set-wise', 'tree-wise', 'branch-wise'],
+        currentModeId: 0,
+        histogramWidth: 180,
+        histogramHeight: 100,
+        attributeNames: ['support']
     }
 };
 
@@ -360,6 +367,16 @@ function visphyReducer(state = initialState, action) {
                 inspector: {
                     ...state.inspector,
                     trees: state.inspector.trees.filter(t => t.id != action.tid)
+                }
+            };
+
+
+        case TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE:
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    currentModeId: action .currentModeId
                 }
             };
 

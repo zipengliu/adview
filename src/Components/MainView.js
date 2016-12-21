@@ -11,6 +11,7 @@ import Overview from './Overview';
 import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
 import Inspector from './Inspector';
+import AttributeExplorer from './AttributeExplorer';
 
 import './MainView.css';
 
@@ -28,8 +29,8 @@ class MainView extends Component {
                         <div className="overview">
                             <Overview></Overview>
                         </div>
-                        <div className="filter show-bg">
-
+                        <div className="filter">
+                            <AttributeExplorer />
                         </div>
                         <div className="tree-list">
                             <TreeList />

@@ -215,3 +215,8 @@ export function removeTreeFromInspector(tid) {
     return {type: TYPE.REMOVE_TREE_FROM_INSPECTOR, tid}
 
 }
+
+
+export function changeAttributeExplorerMode(k) {
+    return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, currentModeId: k}
+}
