@@ -56,7 +56,7 @@ let mapStateToProps = state => ({
 let mapDispatchToProps = dispatch => ({
     onDragStart: (size, e) => {
         let svgPos = e.currentTarget.getBoundingClientRect();
-        dispatch(startSelection(e.pageX - svgPos.left, e.pageY - svgPos.top, size));
+        dispatch(startSelection(e.clientX - svgPos.left, e.clientY- svgPos.top, size));
     },
     onDragEnd: ()=> {
         dispatch(endSelection());
@@ -64,7 +64,7 @@ let mapDispatchToProps = dispatch => ({
     onDrag: (isSelecting, e) => {
         if (isSelecting) {
             let svgPos = e.currentTarget.getBoundingClientRect();
-            dispatch(changeSelection(e.pageX - svgPos.left, e.pageY - svgPos.top));
+            dispatch(changeSelection(e.clientX - svgPos.left, e.clientY- svgPos.top));
         }
     }
 });
