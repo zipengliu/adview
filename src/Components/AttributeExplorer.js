@@ -8,7 +8,8 @@ import {createSelector} from 'reselect';
 import {DropdownButton, MenuItem} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
 import {changeAttributeExplorerMode} from '../actions';
-import Histogram from './Histogram';
+import {toggleMoveHandle, moveControlHandle} from '../actions';
+import Histogram from './HistogramSlider';
 
 import './histogramSlider.css';
 
@@ -25,9 +26,12 @@ class AttributeExplorer extends Component {
                 </DropdownButton>
 
                 {bins != null &&
-                Object.keys(bins).map((attrName, i) => <Histogram key={i} bins={bins[attrName]}
-                                                                  width={this.props.histogramWidth}
-                                                                  height={this.props.histogramHeight} />)
+                Object.keys(bins).map((attrName, i) => <Histogram key={i} bins={bins[attrName]} attributeName={attrName}
+                                                                  selectedRange={this.props.selectedRange[attrName]}
+                                                                  isMovingHandle={this.props.controllingAttribute == attrName}
+                                                                  toggleMoveHandle={this.props.toggleMoveHandle}
+                                                                  moveControlHandle={this.props.moveControlHandle}
+                                                                  spec={this.props.spec} />)
                 }
 
             </div>
@@ -134,7 +138,9 @@ let mapStateToProps = state => {
 };
 
 let mapDispatchToProps = dispatch => ({
-    onChangeMode: (k) => {dispatch(changeAttributeExplorerMode(k))}
+    onChangeMode: (k) => {dispatch(changeAttributeExplorerMode(k))},
+    toggleMoveHandle: (a, h) => {dispatch(toggleMoveHandle(a, h))},
+    moveControlHandle: (v) => {dispatch(moveControlHandle(v))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(AttributeExplorer);

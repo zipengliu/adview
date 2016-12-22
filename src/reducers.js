@@ -51,9 +51,18 @@ let initialState = {
     attributeExplorer: {
         modes: ['global', 'set-wise', 'tree-wise', 'branch-wise'],
         currentModeId: 0,
-        histogramWidth: 180,
-        histogramHeight: 100,
-        attributeNames: ['support']
+        spec: {
+            width: 180,
+            histogramHeight: 80,
+            sliderHeight: 30,
+            margin: {left: 8, right: 8, top: 10, bottom: 2}
+        },
+        attributeNames: ['support'],
+        controllingAttribute: null,
+        movingHandle: null,
+        selectedRange: {
+            support: [0.2, 0.6]
+        }
     }
 };
 
@@ -377,6 +386,34 @@ function visphyReducer(state = initialState, action) {
                 attributeExplorer: {
                     ...state.attributeExplorer,
                     currentModeId: action .currentModeId
+                }
+            };
+        case TYPE.TOGGLE_MOVE_HANDLE:
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    controllingAttribute: action.attributeName,
+                    movingHandle: action.handle
+                }
+            };
+        case TYPE.MOVE_CONTROL_HANDLE:
+            let oldRange = state.attributeExplorer.selectedRange[state.attributeExplorer.controllingAttribute];
+            let newRange;
+            if (state.attributeExplorer.movingHandle == 'left') {
+                newRange = [Math.min(action.value, oldRange[1]), oldRange[1]];
+            } else {
+                newRange = [oldRange[0], Math.max(action.value, oldRange[0])];
+            }
+
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    selectedRange: {
+                        ...state.attributeExplorer.selectedRange,
+                        [state.attributeExplorer.controllingAttribute]: newRange
+                    }
                 }
             };
 

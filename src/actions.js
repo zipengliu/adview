@@ -220,3 +220,10 @@ export function removeTreeFromInspector(tid) {
 export function changeAttributeExplorerMode(k) {
     return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, currentModeId: k}
 }
+
+export function toggleMoveHandle(attributeName, handle) {
+    return {type: TYPE.TOGGLE_MOVE_HANDLE, attributeName, handle}
+}
+export function moveControlHandle(value) {
+    return {type: TYPE.MOVE_CONTROL_HANDLE, value}
+}

@@ -7,3 +7,24 @@
     top: 5px;
     right: 5px;
 }
+
+.histogram .slider .axis line {
+    stroke: black;
+    stroke-width: 1px;
+}
+
+.histogram text {
+    font-size: 10px;
+}
+
+
+.histogram .slider .control {
+    fill: black;
+    cursor: pointer;
+}
+
+.histogram .slider .selected-area {
+    fill: grey;
+    fill-opacity: .5;
+}
+
