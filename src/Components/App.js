@@ -12,7 +12,7 @@ function Navigation({title}) {
                 </Navbar.Brand>
             </Navbar.Header>
             <Nav>
-                <NavItem eventKey={1} href="/group_list">Input List</NavItem>
+                <NavItem eventKey={1} href="/dataset-list">Dataset List</NavItem>
                 <NavItem eventKey={2} href="/">About</NavItem>
             </Nav>
             <Nav pullRight>

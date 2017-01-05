@@ -10,6 +10,7 @@ let initialState = {
     isFetching: false,
     isFetchFailed: false,
     inputGroupData: null,
+    datasets: [],
     toast: {
         msg: null,
     },
@@ -457,6 +458,31 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Error fetching data from server: ' + action.error.toString()
                 }
             });
+        case TYPE.FETCH_DATASETS_REQUEST:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Fetching dataset list from server...'
+                }
+            };
+        case TYPE.FETCH_DATASETS_SUCCESS:
+            return {
+                ...state,
+                datasets: action.data,
+                toast: {
+                    ...state.toast,
+                    msg: null
+                }
+            };
+        case TYPE.FETCH_DATASETS_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Error fetching dataset list: ' + action.error.toString()
+                }
+            };
         default:
             return state;
     }

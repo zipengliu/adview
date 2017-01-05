@@ -227,3 +227,35 @@ export function toggleMoveHandle(attributeName, handle) {
 export function moveControlHandle(value) {
     return {type: TYPE.MOVE_CONTROL_HANDLE, value}
 }
+
+
+export function fetchDatasets() {
+    return function (dispatch) {
+        dispatch(requestDatasets());
+        return fetch(baseUrl + '/datasets').then(function(response) {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(fetchDatasetsFailure(response.statusText))
+            }
+            return response.json();
+        }).then(function (data) {
+            console.log('Get data succeeded!');
+            dispatch(fetchDatasetsSuccess(data));
+        }).catch(function(error) {
+            dispatch(fetchDatasetsFailure(error));
+        });
+
+    }
+}
+
+export function requestDatasets() {
+    return {type: TYPE.FETCH_DATASETS_REQUEST};
+}
+
+export function fetchDatasetsSuccess(data) {
+    return {type: TYPE.FETCH_DATASETS_SUCCESS, data};
+}
+
+export function fetchDatasetsFailure(error) {
+    return {type: TYPE.FETCH_DATASETS_FAILURE, error};
+}

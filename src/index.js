@@ -12,7 +12,7 @@ import './index.css';
 
 import App from './Components/App';
 import About from './Components/About';
-import GroupList from './Components/GroupList';
+import DatasetList from './Components/DatasetList';
 import MainView from './Components/MainView';
 import Playground from './Components/Playground';
 
@@ -27,8 +27,8 @@ let root = (
             <Route path="/" component={App}>
 
                 <IndexRoute component={About} />
-                <Route path="input_group/:inputGroupId" component={MainView} />
-                <Route path="group_list" component={GroupList}/>
+                <Route path="dataset/:inputGroupId" component={MainView} />
+                <Route path="dataset-list" component={DatasetList}/>
             </Route>
             <Route path="/playground" component={Playground} />
         </Router>
