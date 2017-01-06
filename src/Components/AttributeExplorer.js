@@ -10,8 +10,9 @@ import {histogram, scaleLinear} from 'd3';
 import {changeAttributeExplorerMode} from '../actions';
 import {toggleMoveHandle, moveControlHandle} from '../actions';
 import Histogram from './HistogramSlider';
+import LineChart from './LineChart';
 
-import './histogramSlider.css';
+import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
@@ -25,14 +26,21 @@ class AttributeExplorer extends Component {
                     {modes.map((m, i) => <MenuItem key={i} eventKey={i}>{m}</MenuItem>)}
                 </DropdownButton>
 
-                {bins != null &&
-                Object.keys(bins).map((attrName, i) => <Histogram key={i} bins={bins[attrName]} attributeName={attrName}
-                                                                  selectedRange={this.props.selectedRange[attrName]}
-                                                                  isMovingHandle={this.props.controllingAttribute == attrName}
-                                                                  toggleMoveHandle={this.props.toggleMoveHandle}
-                                                                  moveControlHandle={this.props.moveControlHandle}
-                                                                  spec={this.props.spec} />)
-                }
+                <div>
+                    {bins != null &&
+                    Object.keys(bins).map((attrName, i) => <Histogram key={i} bins={bins[attrName]} attributeName={attrName}
+                                                                      selectedRange={this.props.selectedRange[attrName]}
+                                                                      isMovingHandle={this.props.controllingAttribute == attrName}
+                                                                      toggleMoveHandle={this.props.toggleMoveHandle}
+                                                                      moveControlHandle={this.props.moveControlHandle}
+                                                                      spec={this.props.spec} />)
+                    }
+                </div>
+                <div>
+                    {modes[currentModeId] == 'global' && this.props.jaccardArray &&
+                    <LineChart spec={this.props.spec} data={this.props.jaccardArray}/>
+                    }
+                </div>
 
             </div>
         )
@@ -117,6 +125,14 @@ let getBranchWiseBins = createSelector(
     }
 );
 
+let getJaccardArray = createSelector(
+    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.exploreBranch],
+    (trees, rid, bid) => {
+        let corr = trees[rid].branches[bid].correspondingBranches;
+        return Object.keys(corr).map(b => corr[b].jaccard).sort();
+    }
+);
+
 let mapStateToProps = state => {
     let {attributeNames, modes, currentModeId} = state.attributeExplorer;
     let mode = modes[currentModeId];
@@ -133,7 +149,8 @@ let mapStateToProps = state => {
 
     return {
         ...state.attributeExplorer,
-        bins
+        bins,
+        jaccardArray: state.referenceTree.exploreBranch? getJaccardArray(state): null
     };
 };
 

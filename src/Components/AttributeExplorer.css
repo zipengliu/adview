@@ -1,4 +1,4 @@
-.histogram .bar {
+.attribute-chart .bar {
     fill: steelblue;
 }
 
@@ -8,23 +8,29 @@
     right: 5px;
 }
 
-.histogram .slider .axis line {
+.attribute-chart .slider .axis line {
     stroke: black;
     stroke-width: 1px;
+    fill: none;
 }
 
-.histogram text {
+.attribute-chart text {
     font-size: 10px;
 }
 
 
-.histogram .slider .control {
+.attribute-chart .slider .control {
     fill: black;
     cursor: pointer;
 }
 
-.histogram .slider .selected-area {
+.attribute-chart .slider .selected-area {
     fill: grey;
     fill-opacity: .5;
 }
 
+.attribute-chart .line {
+    stroke: black;
+    stroke-width: 1px;
+    fill: none;
+}

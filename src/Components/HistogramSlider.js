@@ -7,8 +7,6 @@ import {ReactDOM} from 'react-dom';
 import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
-import './histogramSlider.css';
-
 let HistogramSlider = props => {
     let {bins, spec, selectedRange, attributeName} = props;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
@@ -26,7 +24,7 @@ let HistogramSlider = props => {
     };
 
     return (
-        <svg width={spec.width} height={spec.histogramHeight + spec.sliderHeight} className="histogram"
+        <svg width={spec.width} height={spec.histogramHeight + spec.sliderHeight} className="attribute-chart"
              onMouseMove={props.isMovingHandle? onDragging: null}
              onMouseUp={props.toggleMoveHandle}
         >
