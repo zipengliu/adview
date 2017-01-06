@@ -22,11 +22,6 @@ let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'r
                     <Glyphicon glyph="screenshot" />
                 </Button>
             </OverlayTrigger>
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-rearrange">Rearrange the overview based on branch selections</Tooltip>}>
-                <Button>
-                    <Glyphicon glyph="knight" />
-                </Button>
-            </OverlayTrigger>
             <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch selections</Tooltip>}>
                 <Button onClick={props.clearSelection}>
                     <Glyphicon glyph="refresh" />

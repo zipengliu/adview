@@ -4,7 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
-import {runTSNE} from './utils';
+import {runTSNE, getJaccardIndex} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -68,21 +68,41 @@ let initialState = {
 };
 
 
-let getCoordinates = (trees, branchSelection) => {
-    console.log('Calculating coordinates in Overview...');
+let getCoordinates = (trees, refTree, selectedBranch) => {
     // Concat all rf_dist in trees to a distance matrix
     // First, decide an order of trees for the matrix
 
-    // let order = Object.keys(trees[orderBasisTree].rf_dist).concat([orderBasisTree]);
-    let order = Object.keys(trees);
-
+    let order;
     let dist = [];
+    let isLocal = refTree && selectedBranch;
+    if (isLocal) {
+        // Local distance matrix
+        console.log('Calculating local coordinates in Overview...');
+        order = [];
+        let corr = trees[refTree].branches[selectedBranch].correspondingBranches;
+        for (let tid in corr) {
+            order.push({treeId: tid, branchId: corr[tid].branchId});
+        }
+    } else {
+        console.log('Calculating global coordinates in Overview...');
+        // Global distance matrix
+        order = Object.keys(trees);
+    }
     for (let i = 0; i < order.length; i++) {
         let cur = [];
-        let t = trees[order[i]];
+        // let t = trees[order[i]];
         for (let j = 0; j < order.length; j++) {
-            if (j !== i) {
-                cur.push(t.rfDistance[order[j]]);
+            if (j > i) {
+                if (isLocal) {
+                    // TODO: can make it faster by caching the entities first
+                    cur.push(getJaccardIndex(trees[order[i].treeId].branches[order[i].branchId].entities,
+                        trees[order[j].treeId].branches[order[j].branchId].entities));
+                } else {
+                    cur.push(trees[order[i]].rfDistance[order[j]]);
+                }
+            } else if (j < i) {
+                // The distance matrix is symmetric
+                cur.push(dist[j][i]);
             } else {
                 cur.push(0);
             }
@@ -93,7 +113,7 @@ let getCoordinates = (trees, branchSelection) => {
     // Second run t-SNE
     let coords = runTSNE(dist);
 
-    return coords.map((d, i) => ({...d, treeId: order[i]}))
+    return coords.map((d, i) => ({...d, treeId: isLocal? order[i].treeId: order[i]}))
 };
 
 let isDotWithinBox = (dot, box) => {
@@ -196,38 +216,32 @@ function visphyReducer(state = initialState, action) {
                     selected: {}
                 }
             });
-        case TYPE.REARRANGE_OVERVIEW:
-            let s = [];
-            for (let bid in state.referenceTree.selected) {
-                if (state.referenceTree.selected[bid]) s.push(bid);
-            }
-            if (s.length) {
-                return Object.assign({}, state, {
-                    overview: {
-                        ...state.overview,
-                        coordinates: getCoordinates(action.data.trees, s)
-                    }
-                });
-            } else {
-                return state;
-            }
         case TYPE.TOGGLE_EXPLORE_MODE:
+            let shouldChangeOverview = state.referenceTree.exploreBranch != null;
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     exploreMode: !state.referenceTree.exploreMode,
                     exploreBranch: null,
+                },
+                overview: {
+                    ...state.overview,
+                    coordinates: shouldChangeOverview? getCoordinates(state.inputGroupData.trees): state.overview.coordinates
                 }
             });
         case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
-            return Object.assign({}, state, {
+            let newExploreBranch = action.bid == state.referenceTree.exploreBranch? null: action.bid;
+            return {
+                ...state,
                 referenceTree: {
                     ...state.referenceTree,
-                    exploreBranch: action.bid == state.referenceTree.exploreBranch? null: action.bid,
+                    exploreBranch: newExploreBranch,
+                },
+                overview: {
+                    ...state.overview,
+                    coordinates: getCoordinates(state.inputGroupData.trees, state.referenceTree.id, newExploreBranch)
                 }
-            });
-
-
+            };
 
         case TYPE.POP_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {

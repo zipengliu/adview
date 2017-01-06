@@ -66,3 +66,11 @@ export function getIntersection(a, b) {
     }
     return r;
 }
+
+export function getJaccardIndex(x, y) {
+    let a = createMappingFromArray(x);
+    let b = createMappingFromArray(y);
+    let c = getIntersection(a, b);
+    let intersect = Object.keys(c).length;
+    return  intersect / (x.length + y.length - intersect);
+}

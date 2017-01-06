@@ -74,10 +74,6 @@ export function clearBranchSelection() {
     return {type: TYPE.CLEAR_BRANCH_SELECTION}
 }
 
-export function rearrangeOverview() {
-    return {type: TYPE.REARRANGE_OVERVIEW}
-}
-
 export function toggleExploreMode() {
     return {type: TYPE.TOGGLE_EXPLORE_MODE};
 }
