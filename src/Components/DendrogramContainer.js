@@ -28,7 +28,7 @@ class DendrogramContainer extends Component {
         )};
         const disabledTools = this.props.activeTreeId == null;
         return (
-            <div style={{overflow: "scroll", height: '100%', position: 'relative'}}>
+            <div style={{height: '100%', position: 'relative'}}>
                 <div className="tools">
                     <ButtonGroup bsSize="small">
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
