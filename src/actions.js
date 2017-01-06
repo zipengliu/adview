@@ -198,6 +198,10 @@ export function removeFromSet(tid, setIndex) {
     }
 }
 
+export function toggleSorting() {
+    return {type: TYPE.TOGGLE_SORTING}
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}

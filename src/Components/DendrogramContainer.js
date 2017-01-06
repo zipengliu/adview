@@ -9,7 +9,7 @@ import {Tabs, Tab, Button, ButtonGroup, Glyphicon, OverlayTrigger, Tooltip} from
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
-    addTreeToInspector, toggleInspector} from '../actions';
+    addTreeToInspector, toggleInspector, toggleSorting} from '../actions';
 import './Dendrogram.css';
 
 
@@ -52,6 +52,12 @@ class DendrogramContainer extends Component {
                                 <Glyphicon glyph="tree-conifer" />
                             </Button>
                         </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-sort-tree">{
+                             `${this.props.treeOrder.static? 'Enable': 'Disable'} sorting by similarity to reference tree`}</Tooltip>}>
+                            <Button active={!this.props.treeOrder.static} onClick={this.props.onChangeSorting}>
+                                <Glyphicon glyph="sort-by-attributes" />
+                            </Button>
+                        </OverlayTrigger>
                     </ButtonGroup>
 
                     <ButtonGroup bsSize="small" style={{marginLeft: '10px'}}>
@@ -75,12 +81,25 @@ class DendrogramContainer extends Component {
 
 let getTrees = createSelector(
     [state => state.inputGroupData.trees, state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
+        state => state.aggregatedDendrogram.treeOrder,
         state => state.referenceTree.id, state => state.referenceTree.selected],
-    (trees, setTids, rid, selected) => {
+    (trees, setTids, order, rid, selected) => {
+        console.log('Getting new trees in the dendrogram container');
         let res = [];
         let ref = trees[rid];
-        for (let i = 0; i < setTids.length; i++) {
-            let tid = setTids[i];
+        let sortFunc;
+        if (order.static) {
+            sortFunc = (t1, t2) => t1 == t2? 0: (t1 > t2? 1: -1);
+        } else if (order.branchId) {
+            let corr = ref.branches[order.branchId].correspondingBranches;
+            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
+        } else {
+            sortFunc = (t1, t2) => (ref.rfDistance[t1] || 0) - (ref.rfDistance[t2] || 0);
+        }
+        let sortedTids = setTids.slice().sort(sortFunc);
+
+        for (let i = 0; i < sortedTids.length; i++) {
+            let tid = sortedTids[i];
             let expansion = {};
             for (let e in selected) {
                 if (selected[e]) {
@@ -123,7 +142,8 @@ let mapDispatchToProps = (dispatch) => ({
         } else {
             dispatch(toggleInspector())
         }
-    }
+    },
+    onChangeSorting: () => {dispatch(toggleSorting())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

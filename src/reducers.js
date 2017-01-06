@@ -47,7 +47,13 @@ let initialState = {
     },
     aggregatedDendrogram: {
         activeTreeId: null,
-        activeSetIndex: 0
+        activeSetIndex: 0,
+        treeOrder: {
+            static: false,      // if static is true, only order by tree id (preserving the order)
+            treeId: null,
+            branchId: null,     // when this is null, order by rf distance between trees;
+                                // otherwise by similarity (jaccard index currently) between the corresponding branches
+        }
     },
     attributeExplorer: {
         modes: ['global', 'set-wise', 'tree-wise', 'branch-wise'],
@@ -184,6 +190,14 @@ function visphyReducer(state = initialState, action) {
                             branches: action.data
                         }
                     }
+                },
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        treeId: state.referenceTree.id,
+                        branchId: null
+                    }
                 }
             });
 
@@ -227,6 +241,13 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: shouldChangeOverview? getCoordinates(state.inputGroupData.trees): state.overview.coordinates
+                },
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        branchId: null
+                    }
                 }
             });
         case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
@@ -240,6 +261,13 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(state.inputGroupData.trees, state.referenceTree.id, newExploreBranch)
+                },
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        branchId: newExploreBranch,
+                    }
                 }
             };
 
@@ -351,6 +379,17 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid != action.tid)}),
             });
+        case TYPE.TOGGLE_SORTING:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        static: !state.aggregatedDendrogram.treeOrder.static
+                    }
+                }
+            };
 
 
         case TYPE.TOGGLE_INSPECTOR:
@@ -461,6 +500,14 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.trees)
+                },
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        treeId: action.data.defaultReferenceTree,
+                        branchId: null
+                    }
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
