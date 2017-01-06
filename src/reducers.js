@@ -163,7 +163,7 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Fetching tree from server...',
                 },
                 referenceTree: {
-                    id: action.tid,
+                    ...state.referenceTree,
                     highlightMonophyly: null,
                     selected: {},
                     isFetching: true,
@@ -179,6 +179,7 @@ function visphyReducer(state = initialState, action) {
                 },
                 referenceTree: {
                     ...state.referenceTree,
+                    id: action.tid,
                     isFetching: false,
                 },
                 inputGroupData: {
