@@ -4,7 +4,7 @@
     flex-wrap: wrap;
     align-items: flex-start;
     align-content: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
 
     position: relative;
     height: 100%;
@@ -12,11 +12,8 @@
 }
 
 .agg-dendro-box {
-    flex: 0 0 154px;
-    height: 154px;
+    flex: 0 0 auto;
     margin: 3px;
-    /*border: 1px solid grey;*/
-    padding: 1px;
     position: relative;
 }
 .agg-dendro-box.selected {

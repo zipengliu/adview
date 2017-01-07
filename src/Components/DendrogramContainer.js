@@ -15,15 +15,16 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
+        let {spec} = this.props;
+        let boxSize = spec.size + 2 * spec.margin + 4;     // Padding + border
         let getDendroBox = t => {
             return (
             <div className={cn("agg-dendro-box", {selected: this.props.activeTreeId == t._id})} key={t._id}
+                 style={{width: boxSize + 'px', height: boxSize + 'px'}}
                  onMouseEnter={this.props.onEnter.bind(null, t._id)}
                  onMouseOut={this.props.onExit}
                  onClick={this.props.onClick.bind(null, this.props.activeTreeId == t._id? null: t._id)}>
-                <div style={{height: '150px', width: '150px'}}>
-                    <AggregatedDendrogram key={t._id} data={t} exploreEntities={this.props.exploreEntities} size={150} />
-                </div>
+                <AggregatedDendrogram key={t._id} data={t} exploreEntities={this.props.exploreEntities} spec={spec} />
             </div>
         )};
         const disabledTools = this.props.activeTreeId == null;

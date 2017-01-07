@@ -48,6 +48,10 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0,
+        spec: {
+            size: 100,
+            margin: 2
+        },
         treeOrder: {
             static: false,      // if static is true, only order by tree id (preserving the order)
             treeId: null,

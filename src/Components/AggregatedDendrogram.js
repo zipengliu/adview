@@ -93,11 +93,12 @@ class AggregatedDendrogram extends Component {
     }
     render() {
         // console.log(this.props.data);
-        let size = this.props.size;
-        let {blks, branches} = this.calcLayout(this.props.data, size-4, size-4, this.props.exploreEntities);
+        let {spec} = this.props;
+        let {size, margin} = spec;
+        let {blks, branches} = this.calcLayout(this.props.data, size, size, this.props.exploreEntities);
         return (
-            <svg width={size} height={size}>
-                <g transform="translate(2,2)">
+            <svg width={size + 2 * margin} height={size + 2 * margin}>
+                <g transform={`translate(${margin},${margin})`}>
                     <g className="blocks">
                         {blks.map(b =>
                             <g key={b.id}>
