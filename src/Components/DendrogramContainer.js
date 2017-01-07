@@ -5,7 +5,7 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Tabs, Tab, Button, ButtonGroup, Glyphicon, OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
@@ -70,7 +70,9 @@ class DendrogramContainer extends Component {
                     </ButtonGroup>
                 </div>
                 <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
-                    {this.props.sets.map((s, i) => <Tab eventKey={i} key={i} title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}</div>} ></Tab>)}
+                    {this.props.sets.map((s, i) => <Tab eventKey={i} key={i}
+                                                        title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}<Badge style={{marginLeft: '5px'}}>{s.tids.length}</Badge></div>} >
+                    </Tab>)}
                 </Tabs>
                 <div className="dendrogram-container">
                     {this.props.trees.map(getDendroBox)}
