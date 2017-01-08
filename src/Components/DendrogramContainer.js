@@ -125,8 +125,8 @@ let mapStateToProps = (state) => ({
     ...state.aggregatedDendrogram,
     isFetching: state.referenceTree.isFetching,
     fetchError: state.referenceTree.fetchError,
-    exploreEntities: state.referenceTree.exploreBranch != null?
-        state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.exploreBranch].entities: [],
+    exploreEntities: state.referenceTree.highlightMonophyly != null?
+        state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
     sets: state.sets,
     trees: getTrees(state)
 });

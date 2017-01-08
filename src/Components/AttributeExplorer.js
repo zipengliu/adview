@@ -37,9 +37,9 @@ class AttributeExplorer extends Component {
                     }
                 </div>
                 <div>
-                    {modes[currentModeId] == 'global' && this.props.jaccardArray &&
-                    <LineChart spec={this.props.spec} data={this.props.jaccardArray}/>
-                    }
+                    {/*{modes[currentModeId] == 'global' && this.props.jaccardArray &&*/}
+                    {/*<LineChart spec={this.props.spec} data={this.props.jaccardArray}/>*/}
+                    {/*}*/}
                 </div>
 
             </div>

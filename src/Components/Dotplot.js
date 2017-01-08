@@ -11,26 +11,37 @@ import {createSelector} from 'reselect';
 import {startSelection, endSelection, changeSelection} from '../actions';
 import './Dotplot.css';
 
+let isDotWithinBox = (dot, box) => {
+    let {x1, x2, y1, y2} = box;
+    return Math.min(x1, x2) <= dot.x && dot.x <= Math.max(x1, x2)
+        && Math.min(y1, y2) <= dot.y && dot.y <= Math.max(y1, y2);
+};
+
 class Dotplot extends Component {
     render() {
         let s = this.props.containerWidth;
+        let {coordinates, selectionArea, colors, selectedDots, isSelecting} = this.props;
         let rect = {};
-        if (this.props.isSelecting) {
-            let {x1, x2, y1, y2} = this.props.selectionArea;
+        if (isSelecting) {
+            let {x1, x2, y1, y2} = selectionArea;
             rect = {x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x1 - x2), height: Math.abs(y1 - y2)};
         }
 
-        // Transform the coordinates from [0, 1] to [s, s]
         let scale = scaleLinear().range([0, s]);
+        let getDotsWithinBox = (coordinates, box) => {
+            return coordinates.filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, box)).map(d => d.treeId);
+        };
+
+        // Transform the coordinates from [0, 1] to [s, s]
         return <svg width={s} height={s}
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
-                    onMouseUp={this.props.onDragEnd}>
-            {this.props.coordinates.map(d => <circle className={classNames('dot', {selected: this.props.selectedDots.indexOf(d.treeId) != -1, highlight: this.props.highlightDot == d.treeId})}
-                                                     style={{fill: this.props.colors[d.treeId] || 'grey'}}
+                    onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
+            {coordinates.map(d => <circle className={classNames('dot', {selected: selectedDots.indexOf(d.treeId) != -1, highlight: this.props.highlightDot == d.treeId})}
+                                                     style={{fill: colors[d.treeId] || 'grey'}}
                                                      r={this.props.highlightDot == d.treeId? 6: 3}
                                                      cx={scale(d.x)} cy={scale(d.y)} key={d.treeId}></circle>)}
-            {this.props.isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
+            {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
         </svg>
     }
 };
@@ -49,8 +60,8 @@ let getDotColors = createSelector(
 );
 
 let mapStateToProps = state => ({
-    ...state.overview,
-    colors: getDotColors(state)
+        ...state.overview,
+        colors: getDotColors(state)
 });
 
 let mapDispatchToProps = dispatch => ({
@@ -58,8 +69,8 @@ let mapDispatchToProps = dispatch => ({
         let svgPos = e.currentTarget.getBoundingClientRect();
         dispatch(startSelection(e.clientX - svgPos.left, e.clientY- svgPos.top, size));
     },
-    onDragEnd: ()=> {
-        dispatch(endSelection());
+    onDragEnd: (dots)=> {
+        dispatch(endSelection(dots));
     },
     onDrag: (isSelecting, e) => {
         if (isSelecting) {

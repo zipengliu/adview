@@ -4,7 +4,6 @@
 
 import * as TYPE from './actionTypes';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
-import {runTSNE, getJaccardIndex} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -28,15 +27,15 @@ let initialState = {
     },
     referenceTree: {
         id: null,
-        exploreMode: false,
-        exploreBranch: null,
         highlightMonophyly: null,
         selected: {},
         isFetching: false,
     },
     sets: [],
     overview: {
-        coordinates: [],
+        metricMode: 'global',
+        pickingBranch: false,
+        metricBranch: null,
         createWindow: false,
         currentTitle: '',
         selectedDots: [],
@@ -53,7 +52,7 @@ let initialState = {
             margin: 2
         },
         treeOrder: {
-            static: false,      // if static is true, only order by tree id (preserving the order)
+            static: true,      // if static is true, only order by tree id (preserving the order)
             treeId: null,
             branchId: null,     // when this is null, order by rf distance between trees;
                                 // otherwise by similarity (jaccard index currently) between the corresponding branches
@@ -78,59 +77,7 @@ let initialState = {
 };
 
 
-let getCoordinates = (trees, refTree, selectedBranch) => {
-    // Concat all rf_dist in trees to a distance matrix
-    // First, decide an order of trees for the matrix
 
-    let order;
-    let dist = [];
-    let isLocal = refTree && selectedBranch;
-    if (isLocal) {
-        // Local distance matrix
-        console.log('Calculating local coordinates in Overview...');
-        order = [];
-        let corr = trees[refTree].branches[selectedBranch].correspondingBranches;
-        for (let tid in corr) {
-            order.push({treeId: tid, branchId: corr[tid].branchId});
-        }
-    } else {
-        console.log('Calculating global coordinates in Overview...');
-        // Global distance matrix
-        order = Object.keys(trees);
-    }
-    for (let i = 0; i < order.length; i++) {
-        let cur = [];
-        // let t = trees[order[i]];
-        for (let j = 0; j < order.length; j++) {
-            if (j > i) {
-                if (isLocal) {
-                    // TODO: can make it faster by caching the entities first
-                    cur.push(getJaccardIndex(trees[order[i].treeId].branches[order[i].branchId].entities,
-                        trees[order[j].treeId].branches[order[j].branchId].entities));
-                } else {
-                    cur.push(trees[order[i]].rfDistance[order[j]]);
-                }
-            } else if (j < i) {
-                // The distance matrix is symmetric
-                cur.push(dist[j][i]);
-            } else {
-                cur.push(0);
-            }
-        }
-        dist.push(cur);
-    }
-
-    // Second run t-SNE
-    let coords = runTSNE(dist);
-
-    return coords.map((d, i) => ({...d, treeId: isLocal? order[i].treeId: order[i]}))
-};
-
-let isDotWithinBox = (dot, box) => {
-    let {x1, x2, y1, y2} = box;
-    return Math.min(x1, x2) <= dot.x && dot.x <= Math.max(x1, x2)
-        && Math.min(y1, y2) <= dot.y && dot.y <= Math.max(y1, y2);
-};
 
 let colorPallete = scaleOrdinal(schemeCategory10);
 let getColor = idx => idx < 10? colorPallete(idx): 'black';
@@ -151,7 +98,7 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightMonophyly: action.bid
-                }
+                },
             });
         case TYPE.UNHIGHLIGHT_MONOPHYLY:
             return Object.assign({}, state, {
@@ -219,15 +166,26 @@ function visphyReducer(state = initialState, action) {
             });
 
         case TYPE.SELECT_BRANCH:
-            return Object.assign({}, state, {
-                referenceTree: {
-                    ...state.referenceTree,
-                    selected: {
-                        ...state.referenceTree.selected,
-                        [action.bid]: !state.referenceTree.selected[action.bid]
-                    }
+            if (state.overview.pickingBranch) {
+                return {
+                    ...state,
+                    overview: {
+                        ...state.overview,
+                        metricBranch: action.bid
+                    },
+                    toast: {msg: null}
                 }
-            });
+            } else {
+                return Object.assign({}, state, {
+                    referenceTree: {
+                        ...state.referenceTree,
+                        selected: {
+                            ...state.referenceTree.selected,
+                            [action.bid]: !state.referenceTree.selected[action.bid]
+                        }
+                    }
+                });
+            }
         case TYPE.CLEAR_BRANCH_SELECTION:
             return Object.assign({}, state, {
                 referenceTree: {
@@ -235,52 +193,53 @@ function visphyReducer(state = initialState, action) {
                     selected: {}
                 }
             });
-        case TYPE.TOGGLE_EXPLORE_MODE:
-            let shouldChangeOverview = state.referenceTree.exploreBranch != null;
-            return Object.assign({}, state, {
-                referenceTree: {
-                    ...state.referenceTree,
-                    exploreMode: !state.referenceTree.exploreMode,
-                    exploreBranch: null,
-                },
-                overview: {
-                    ...state.overview,
-                    coordinates: shouldChangeOverview? getCoordinates(state.inputGroupData.trees): state.overview.coordinates
-                },
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        branchId: null
-                    }
-                }
-            });
-        case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
-            let newExploreBranch = action.bid == state.referenceTree.exploreBranch? null: action.bid;
-            return {
-                ...state,
-                referenceTree: {
-                    ...state.referenceTree,
-                    exploreBranch: newExploreBranch,
-                },
-                overview: {
-                    ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.trees, state.referenceTree.id, newExploreBranch)
-                },
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        branchId: newExploreBranch,
-                    }
-                }
-            };
+        // case TYPE.TOGGLE_EXPLORE_MODE:
+        //     let shouldChangeOverview = state.referenceTree.exploreBranch != null;
+        //     return Object.assign({}, state, {
+        //         referenceTree: {
+        //             ...state.referenceTree,
+        //             exploreMode: !state.referenceTree.exploreMode,
+        //             exploreBranch: null,
+        //         },
+        //         overview: {
+        //             ...state.overview,
+        //             coordinates: shouldChangeOverview? getCoordinates(state.inputGroupData.trees): state.overview.coordinates
+        //         },
+        //         aggregatedDendrogram: {
+        //             ...state.aggregatedDendrogram,
+        //             treeOrder: {
+        //                 ...state.aggregatedDendrogram.treeOrder,
+        //                 branchId: null
+        //             }
+        //         }
+        //     });
+        // case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
+        //     let newExploreBranch = action.bid == state.referenceTree.exploreBranch? null: action.bid;
+        //     return {
+        //         ...state,
+        //         referenceTree: {
+        //             ...state.referenceTree,
+        //             exploreBranch: newExploreBranch,
+        //         },
+        //         overview: {
+        //             ...state.overview,
+        //             coordinates: getCoordinates(state.inputGroupData.trees, state.referenceTree.id, newExploreBranch)
+        //         },
+        //         aggregatedDendrogram: {
+        //             ...state.aggregatedDendrogram,
+        //             treeOrder: {
+        //                 ...state.aggregatedDendrogram.treeOrder,
+        //                 branchId: newExploreBranch,
+        //             }
+        //         }
+        //     };
 
         case TYPE.POP_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
-                    createWindow: true
+                    createWindow: true,
+                    currentTitle: `Set ${state.sets.length}`
                 }
             });
         case TYPE.CLOSE_CREATE_NEW_SET_WINDOW:
@@ -340,15 +299,11 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.END_SELECTION:
-            let {coordinates, selectionArea, dotplotSize} = state.overview;
-            let scale = scaleLinear().range([0, dotplotSize]);
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
                     isSelecting: false,
-                    selectedDots: coordinates
-                        .filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, selectionArea))
-                        .map(d => d.treeId),
+                    selectedDots: action.tids
                 }
             });
         case TYPE.CHANGE_SELECTION:
@@ -358,6 +313,25 @@ function visphyReducer(state = initialState, action) {
                     selectionArea: {...state.overview.selectionArea, x2: action.x, y2: action.y }
                 }
             });
+        case TYPE.TOGGLE_PICKING_METRIC_BRANCH:
+            return {
+                ...state,
+                overview: {
+                    ...state.overview,
+                    pickingBranch: !state.overview.pickingBranch,
+                },
+            };
+        case TYPE.CHANGE_DISTANCE_METRIC:
+            return {
+                ...state,
+                overview: {
+                    ...state.overview,
+                    metricMode: action.mode,
+                    pickingBranch: false
+                },
+                toast: action.mode == 'local' && state.overview.metricBranch == null?
+                    {msg: 'Should pick a branch to get local distance metric'}: state.toast
+            };
 
         case TYPE.TOGGLE_HIGHLIGHT_TREE:
             return Object.assign({}, state, {
@@ -502,10 +476,6 @@ function visphyReducer(state = initialState, action) {
                     tids: Object.keys(action.data.trees),
                     color: 'grey'
                 }],
-                overview: {
-                    ...state.overview,
-                    coordinates: getCoordinates(action.data.trees)
-                },
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     treeOrder: {

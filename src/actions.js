@@ -74,14 +74,6 @@ export function clearBranchSelection() {
     return {type: TYPE.CLEAR_BRANCH_SELECTION}
 }
 
-export function toggleExploreMode() {
-    return {type: TYPE.TOGGLE_EXPLORE_MODE};
-}
-
-export function toggleSelectExploreBranch(bid) {
-    return {type: TYPE.TOGGLE_SELECT_EXPLORE_BRANCH, bid}
-}
-
 export function fetchTreeRequest(tid) {
     return {type: TYPE.FETCH_TREE_REQUEST, tid}
 }
@@ -157,9 +149,9 @@ export function startSelection(x, y, size) {
     }
 }
 
-export function endSelection() {
+export function endSelection(tids) {
     return {
-        type: TYPE.END_SELECTION
+        type: TYPE.END_SELECTION, tids
     }
 }
 
@@ -170,6 +162,13 @@ export function changeSelection(x, y) {
     }
 }
 
+export function changeDistanceMetric(mode, bid) {
+    return {type: TYPE.CHANGE_DISTANCE_METRIC, mode, bid}
+}
+
+export function togglePickingMetricBranch() {
+    return {type: TYPE.TOGGLE_PICKING_METRIC_BRANCH}
+}
 
 export function toggleHighlightTree(tid) {
     return {

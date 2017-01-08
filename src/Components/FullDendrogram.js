@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram, toggleSelectExploreBranch} from '../actions';
+import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram} from '../actions';
 
 import './FullDendrogram.css';
 
@@ -32,13 +32,11 @@ class FullDendrogram extends Component {
                     <g className="names">{names}</g>
                     <g className="responding-boxes">
                         {responsiveBoxes.map(d =>
-                            <rect className={cn("box", {selected: tree.exploreBranch == d.bid})}
+                            <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
                                   onMouseOver={this.props.onMouseOver.bind(null, d.bid)}
                                   onMouseOut={this.props.onMouseOut}
-                                  onClick={tree.staticMode? null:
-                                      (tree.exploreMode? this.props.onSelectExploreBranch.bind(null, d.bid):
-                                          this.props.onSelectBranch.bind(null, d.bid))}
+                                  onClick={this.props.onSelectBranch.bind(null, d.bid)}
                                   key={d.bid}>
                             </rect>)}
                     </g>
@@ -152,7 +150,7 @@ function mapDispatchToProps(dispatch) {
         onSelectBranch: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));
         },
-        onSelectExploreBranch: (bid) => {dispatch(toggleSelectExploreBranch(bid))}
+        // onSelectExploreBranch: (bid) => {dispatch(toggleSelectExploreBranch(bid))}
     }
 }
 
