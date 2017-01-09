@@ -49,7 +49,11 @@ let initialState = {
         activeSetIndex: 0,
         spec: {
             size: 100,
-            margin: 2
+            margin: 2,
+            verticalGap: 5,
+            branchLen: 8,
+            leaveHeight: 4,
+            leaveHighlightWidth: 16
         },
         treeOrder: {
             static: true,      // if static is true, only order by tree id (preserving the order)
