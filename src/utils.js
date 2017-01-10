@@ -85,7 +85,7 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
         console.log('Calculating local coordinates in Overview...');
         order = [];
         let corr = trees[rid].branches[bid].correspondingBranches;
-        for (let tid in corr) {
+        for (let tid in corr) if (corr.hasOwnProperty(tid)) {
             order.push({treeId: tid, branchId: corr[tid].branchId});
         }
     } else {

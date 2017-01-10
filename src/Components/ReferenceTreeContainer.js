@@ -2,7 +2,7 @@
  * Created by Zipeng Liu on 2016-11-07.
  */
 
-import React, { Component } from 'react';
+import React from 'react';
 import {connect} from 'react-redux';
 import {ButtonGroup, Button, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
 import FullDendrogram from './FullDendrogram';

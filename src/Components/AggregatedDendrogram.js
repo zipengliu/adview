@@ -20,7 +20,7 @@ class AggregatedDendrogram extends Component {
         let splitBlock = function (blockId, curBid) {
             let b = data.branches[curBid];
             let newBlockId = blockId;
-            if (data.expand[curBid] && curBid != data.rootBranch) {
+            if (data.expand[curBid] && curBid !== data.rootBranch) {
                 // split block
                 blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
                     isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
@@ -72,7 +72,7 @@ class AggregatedDendrogram extends Component {
 
         let calcWidth = function (blockId, x) {
             let b = blocks[blockId];
-            if (b.n == 0) {
+            if (b.n === 0) {
                 // Add a branch to connect the children
                 // If this block does not contain any entity, it should has at least two children
                 branches[blockId + '-x'] = {id: blockId + '-x', y1: branches[b.children[0]].y1, y2: branches[b.children[b.children.length - 1]].y1, x1: x, x2: x};
@@ -92,12 +92,12 @@ class AggregatedDendrogram extends Component {
 
         let blockArr = [];
         let e = createMappingFromArray(exploreEntities);
-        for (let bid in blocks) {
+        for (let bid in blocks) if (blocks.hasOwnProperty(bid)) {
             blocks[bid].fillPercentage = getIntersection(blocks[bid].entities, e) / parseFloat(Object.keys(blocks[bid].entities).length);
             blockArr.push(blocks[bid]);
         }
         let branchArr = [];
-        for (let bid in branches) {
+        for (let bid in branches) if (branches.hasOwnProperty(bid)) {
             branchArr.push(branches[bid]);
         }
 

@@ -19,11 +19,11 @@ class DendrogramContainer extends Component {
         let boxSize = spec.size + 2 * spec.margin + 4;     // Padding + border
         let getDendroBox = t => {
             return (
-            <div className={cn("agg-dendro-box", {selected: this.props.activeTreeId == t._id})} key={t._id}
+            <div className={cn("agg-dendro-box", {selected: this.props.activeTreeId === t._id})} key={t._id}
                  style={{width: boxSize + 'px', height: boxSize + 'px'}}
                  onMouseEnter={this.props.onEnter.bind(null, t._id)}
                  onMouseOut={this.props.onExit}
-                 onClick={this.props.onClick.bind(null, this.props.activeTreeId == t._id? null: t._id)}>
+                 onClick={this.props.onClick.bind(null, this.props.activeTreeId === t._id? null: t._id)}>
                 <AggregatedDendrogram key={t._id} data={t} exploreEntities={this.props.exploreEntities} spec={spec} />
             </div>
         )};
@@ -33,14 +33,9 @@ class DendrogramContainer extends Component {
                 <div className="tools">
                     <ButtonGroup bsSize="small">
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
-                            <Button disabled={this.props.activeSetIndex == 0}
+                            <Button disabled={this.props.activeSetIndex === 0}
                                 onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
                                 <Glyphicon glyph="remove" />
-                            </Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-pin">Blabla</Tooltip>}>
-                            <Button disabled={disabledTools}>
-                                <Glyphicon glyph="pushpin" />
                             </Button>
                         </OverlayTrigger>
                         <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
@@ -92,7 +87,7 @@ let getTrees = createSelector(
         let ref = trees[rid];
         let sortFunc;
         if (order.static) {
-            sortFunc = (t1, t2) => t1 == t2? 0: (t1 > t2? 1: -1);
+            sortFunc = (t1, t2) => t1 === t2? 0: (t1 > t2? 1: -1);
         } else if (order.branchId) {
             let corr = ref.branches[order.branchId].correspondingBranches;
             sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
@@ -106,8 +101,8 @@ let getTrees = createSelector(
             let expansion = {};
             for (let e in selected) {
                 if (selected[e]) {
-                    let corr = tid == rid? e: ref.branches[e]['correspondingBranches'][tid]['branchId'];
-                    if (corr != trees[tid].rootBranch) {
+                    let corr = tid === rid? e: ref.branches[e]['correspondingBranches'][tid]['branchId'];
+                    if (corr !== trees[tid].rootBranch) {
                         expansion[corr] = true;
                     }
                 }

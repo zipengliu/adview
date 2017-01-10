@@ -2,8 +2,7 @@
  * Created by Zipeng Liu on 2016-12-19.
  */
 
-import React, { Component } from 'react';
-import {ReactDOM} from 'react-dom';
+import React from 'react';
 import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 

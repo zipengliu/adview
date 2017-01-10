@@ -3,7 +3,7 @@
  */
 
 import * as TYPE from './actionTypes';
-import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
+import {scaleOrdinal, schemeCategory10} from 'd3-scale';
 import {getCoordinates} from './utils';
 
 let initialState = {
@@ -92,7 +92,7 @@ let getColor = idx => idx < 10? colorPallete(idx): 'black';
 let mergeSets = (a, b) => {
     let c = a.slice();
     for (let i = 0; i < b.length; i++) {
-        if (a.indexOf(b[i]) == -1) {c.push(b[i])}
+        if (a.indexOf(b[i]) === -1) {c.push(b[i])}
     }
     return c;
 }
@@ -337,7 +337,7 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     metricMode: action.mode,
-                    metricBranch: action.mode == 'local'? action.bid: state.overview.metricBranch,
+                    metricBranch: action.mode === 'local'? action.bid: state.overview.metricBranch,
                     pickingBranch: false
                 },
                 toast: {
@@ -392,7 +392,7 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.REMOVE_FROM_SET:
             return Object.assign({}, state, {
-                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid != action.tid)}),
+                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid !== action.tid)}),
             });
         case TYPE.TOGGLE_SORTING:
             return {
@@ -420,7 +420,7 @@ function visphyReducer(state = initialState, action) {
             let found = -1;
             let oldTrees = state.inspector.trees;
             for (let i = 0; i < oldTrees.length; i++) {
-                if (oldTrees[i].id == action.tid) {
+                if (oldTrees[i].id === action.tid) {
                     found = i; break;
                 }
             }
@@ -444,7 +444,7 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 inspector: {
                     ...state.inspector,
-                    trees: state.inspector.trees.filter(t => t.id != action.tid)
+                    trees: state.inspector.trees.filter(t => t.id !== action.tid)
                 }
             };
 
@@ -454,7 +454,7 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    currentModeId: action .currentModeId
+                    currentModeId: action.currentModeId
                 }
             };
         case TYPE.TOGGLE_MOVE_HANDLE:
@@ -469,7 +469,7 @@ function visphyReducer(state = initialState, action) {
         case TYPE.MOVE_CONTROL_HANDLE:
             let oldRange = state.attributeExplorer.selectedRange[state.attributeExplorer.controllingAttribute];
             let newRange;
-            if (state.attributeExplorer.movingHandle == 'left') {
+            if (state.attributeExplorer.movingHandle === 'left') {
                 newRange = [Math.min(action.value, oldRange[1]), oldRange[1]];
             } else {
                 newRange = [oldRange[0], Math.max(action.value, oldRange[0])];

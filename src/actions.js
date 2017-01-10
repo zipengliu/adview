@@ -7,7 +7,7 @@ import * as TYPE from './actionTypes';
 import {getCoordinates} from './utils';
 
 // Fetch data actions
-const baseUrl = process.env.NODE_ENV == 'production'? 'http://visphy.cs.ubc.ca/api': 'http://localhost:33333';
+const baseUrl = process.env.NODE_ENV === 'production'? 'http://visphy.cs.ubc.ca/api': 'http://localhost:33333';
 
 // Trigger the UI change
 function requestInputGroup(id) {
@@ -169,14 +169,15 @@ export function changeDistanceMetric(mode, bid) {
         dispatch(changeDistanceMetricRequest(mode, bid));
 
         // calculate coordinates
-        if (mode == 'local' && bid == null) {
+        if (mode === 'local' && bid == null) {
             dispatch(changeDIstanceMetricFailure('Should pick a branch to get local distance metric'))
-        } else if (mode == 'global'  && !state.overview.metricBranch) {
+        } else if (mode === 'global'  && !state.overview.metricBranch) {
             // Previously its actually the global overview being shown, and now it does not change the coordinates
             dispatch(changeDistanceMetricSuccess(state.overview.coordinates));
         } else {
             setTimeout(() => {
-                dispatch(changeDistanceMetricSuccess(getCoordinates(state.inputGroupData.trees, mode == 'global' || bid == null, state.referenceTree.id, bid)));
+                dispatch(changeDistanceMetricSuccess(
+                    getCoordinates(state.inputGroupData.trees, mode === 'global' || bid == null, state.referenceTree.id, bid)));
             }, 100);
         }
     }

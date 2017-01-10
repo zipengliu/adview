@@ -19,7 +19,7 @@ class FullDendrogram extends Component {
             (<g key={d.bid || i}>
                 <line className={cn('branch-line', {selected: tree.selected && tree.selected[d.bid]})}
                       x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
-                {this.props.metricBranch == d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
+                {this.props.metricBranch === d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
             </g>));
         let names = textSpecs.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
@@ -40,7 +40,7 @@ class FullDendrogram extends Component {
                                   onMouseOver={this.props.onMouseOver.bind(null, d.bid)}
                                   onMouseOut={this.props.onMouseOut}
                                   onClick={() => {if (this.props.pickingBranch) {
-                                      if (this.props.metricBranch != d.bid) this.props.onChangeDistanceMetric(d.bid)
+                                      if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {
                                       this.props.onSelectBranch(d.bid)
                                   } }}
@@ -122,7 +122,7 @@ let getDendrogramSpecs = createSelector(
 
         let branchSpecs = [];
         let responsiveBoxes = [];
-        for (let bid in b) {
+        for (let bid in b) if (b.hasOwnProperty(bid)) {
             branchSpecs.push({...b[bid], bid});
             responsiveBoxes.push({x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
                 width: b[bid].x2 - b[bid].x1, height: spec.responsiveAreaSize, bid});
@@ -144,7 +144,7 @@ function mapStateToProps(state, ownProps) {
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         pickingBranch: state.overview.pickingBranch,
-        metricBranch: state.overview.metricMode == 'global'? null: state.overview.metricBranch
+        metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch
     }
 }
 

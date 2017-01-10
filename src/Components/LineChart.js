@@ -2,8 +2,8 @@
  * Created by zipeng on 2017-01-06.
  */
 
-import React, { Component} from 'react';
-import {scaleLinear, line, format} from 'd3';
+import React from 'react';
+import {scaleLinear, line} from 'd3';
 
 let LineChart = props => {
     let {spec, data} = props;

@@ -2,10 +2,9 @@
  * Created by Zipeng Liu on 2016-11-07.
  */
 
-import React, { Component } from 'react';
+import React from 'react';
 import {ButtonToolbar, Badge, Button, ButtonGroup, DropdownButton, MenuItem, Glyphicon, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {connect} from 'react-redux';
-import {createSelector} from 'reselect';
 import Dotplot from './Dotplot';
 import PopupWindow from './PopupWindow';
 import {popCreateNewSetWindow, addToSet, changeDistanceMetric, togglePickingMetricBranch} from '../actions';
@@ -17,7 +16,7 @@ let Overview = props => (
             <Button bsSize="xsmall" onClick={props.onCreate} disabled={!props.hasSelection}>Create new set</Button>
             <DropdownButton bsSize="xsmall" title="Add to set" id="add-to-set"
                             onSelect={props.onAddToSet}
-                            disabled={!props.hasSelection || props.sets.length == 0}>
+                            disabled={!props.hasSelection || props.sets.length === 0}>
                 {props.sets.map((d, i) =>
                     <MenuItem eventKey={i} key={i}>
                         {d.title}
@@ -36,10 +35,10 @@ let Overview = props => (
         <div>
             <span style={{fontSize: '12px'}}>Dist. Metric:</span>
             <ButtonGroup bsSize="xsmall" style={{padding: '2px'}}>
-                <Button active={props.metricMode == 'global'}
-                        onClick={props.metricMode == 'global'? null: props.onChangeMetricMode.bind(null, 'global', props.metricBranch)}>global</Button>
-                <Button active={props.metricMode == 'local'}
-                        onClick={props.metricMode == 'local'? null: props.onChangeMetricMode.bind(null, 'local', props.metricBranch)}>local</Button>
+                <Button active={props.metricMode === 'global'}
+                        onClick={props.metricMode === 'global'? null: props.onChangeMetricMode.bind(null, 'global', props.metricBranch)}>global</Button>
+                <Button active={props.metricMode === 'local'}
+                        onClick={props.metricMode === 'local'? null: props.onChangeMetricMode.bind(null, 'local', props.metricBranch)}>local</Button>
                 <OverlayTrigger placement="top"
                                 overlay={<Tooltip id="tooltip-pick-branch">Pick a partition on the reference tree as the
                                     scope of the local distance metric</Tooltip>}>

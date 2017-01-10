@@ -30,7 +30,7 @@ class AttributeExplorer extends Component {
                     {bins != null &&
                     Object.keys(bins).map((attrName, i) => <Histogram key={i} bins={bins[attrName]} attributeName={attrName}
                                                                       selectedRange={this.props.selectedRange[attrName]}
-                                                                      isMovingHandle={this.props.controllingAttribute == attrName}
+                                                                      isMovingHandle={this.props.controllingAttribute === attrName}
                                                                       toggleMoveHandle={this.props.toggleMoveHandle}
                                                                       moveControlHandle={this.props.moveControlHandle}
                                                                       spec={this.props.spec} />)
@@ -51,7 +51,7 @@ class AttributeExplorer extends Component {
 let getBins = values => {
     let hist = histogram().domain([0, 1]).thresholds(scaleLinear().ticks(20));
     let bins = {};
-    for (let key in values) {
+    for (let key in values) if (values.hasOwnProperty(key)) {
         bins[key] = hist(values[key]);
     }
     return bins;
@@ -61,9 +61,9 @@ let getGlobalBins = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames],
     (trees, attrNames) => {
         let values = attrNames.reduce((acc, a) => {acc[a] = []; return acc}, {});
-        for (let i in trees) {
+        for (let i in trees) if (trees.hasOwnProperty(i)) {
             let t = trees[i];
-            for (let j in t.branches) {
+            for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
                 for (let k = 0; k < attrNames.length; k++) {
                     values[attrNames[k]].push(t.branches[j][attrNames[k]]);
                 }
@@ -80,7 +80,7 @@ let getSetWiseBins = createSelector(
         let values = attrNames.reduce((acc, a) => {acc[a] = []; return acc}, {});
         for (let i = 0; i < set.tids.length; i++) {
             let t = trees[set.tids[i]];
-            for (let j in t.branches) {
+            for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
                 for (let k = 0; k < attrNames.length; k++) {
                     values[attrNames[k]].push(t.branches[j][attrNames[k]]);
                 }
@@ -95,7 +95,7 @@ let getTreeWiseBins = createSelector(
         (_, attrNames) => attrNames],
     (tree, attrNames) => {
         let values = attrNames.reduce((acc, a) => {acc[a] = []; return acc}, {});
-        for (let j in tree.branches) {
+        for (let j in tree.branches) if (tree.branches.hasOwnProperty(j)) {
             for (let k = 0; k < attrNames.length; k++) {
                 values[attrNames[k]].push(tree.branches[j][attrNames[k]]);
             }
@@ -115,7 +115,7 @@ let getBranchWiseBins = createSelector(
         for (let k = 0; k < attrNames.length; k++) {
             values[attrNames[k]].push(b[attrNames[k]]);
         }
-        for (let tid in corr) {
+        for (let tid in corr) if (corr.hasOwnProperty(tid)) {
             let bid = corr[tid].branchId;
             for (let k = 0; k < attrNames.length; k++) {
                 values[attrNames[k]].push(trees[tid].branches[bid][attrNames[k]]);
@@ -137,11 +137,11 @@ let mapStateToProps = state => {
     let {attributeNames, modes, currentModeId} = state.attributeExplorer;
     let mode = modes[currentModeId];
     let bins = null;
-    if (mode == 'global') {
+    if (mode === 'global') {
         bins = getGlobalBins(state, attributeNames);
-    } else if (mode == 'set-wise') {
+    } else if (mode === 'set-wise') {
         bins = getSetWiseBins(state, attributeNames);
-    } else if (mode == 'tree-wise') {
+    } else if (mode === 'tree-wise') {
         bins = getTreeWiseBins(state, attributeNames);
     } else {
         bins = getBranchWiseBins(state, attributeNames);

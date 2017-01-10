@@ -2,7 +2,7 @@
  * Created by Zipeng Liu on 2016-11-11.
  */
 
-import React, {Component} from 'react';
+import React from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import './TreeList.css';
