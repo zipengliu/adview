@@ -21,13 +21,19 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
   // return 0 mean unit standard deviation random number
   var return_v = false;
   var v_val = 0.0;
+  Math.seededRandom = () => {
+      Math.seed = (Math.seed * 9301 + 49297) % 233280;
+      return Math.seed / 233280;
+  };
   var gaussRandom = function() {
-    if(return_v) { 
+    if(return_v) {
       return_v = false;
-      return v_val; 
+      return v_val;
     }
-    var u = 2*Math.random()-1;
-    var v = 2*Math.random()-1;
+    // var u = 2*Math.random()-1;
+    // var v = 2*Math.random()-1;
+      var u = 2* Math.seededRandom() -1;
+      var v = 2* Math.seededRandom() -1;
     var r = u*u + v*v;
     if(r == 0 || r > 1) return gaussRandom();
     var c = Math.sqrt(-2*Math.log(r)/r);
@@ -59,11 +65,11 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
     var x = [];
     for(var i=0;i<n;i++) {
       var xhere = [];
-      for(var j=0;j<d;j++) { 
+      for(var j=0;j<d;j++) {
         if(uses) {
-          xhere.push(s); 
+          xhere.push(s);
         } else {
-          xhere.push(randn(0.0, 1e-4)); 
+          xhere.push(randn(0.0, 1e-4));
         }
       }
       x.push(xhere);
@@ -75,7 +81,7 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
   var L2 = function(x1, x2) {
     var D = x1.length;
     var d = 0;
-    for(var i=0;i<D;i++) { 
+    for(var i=0;i<D;i++) {
       var x1i = x1[i];
       var x2i = x2[i];
       d += (x1i-x2i)*(x1i-x2i);
@@ -209,6 +215,7 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
     // matrix P from them.
     // D is assumed to be provided as a list of lists, and should be symmetric
     initDataDist: function(D) {
+        Math.seed = 5;
       var N = D.length;
       assert(N > 0, " X is empty? You must have some data!");
       // convert D to a (fast) typed array version
@@ -267,7 +274,7 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
           this.ystep[i][d] = newsid; // remember the step we took
 
           // step!
-          this.Y[i][d] += newsid; 
+          this.Y[i][d] += newsid;
 
           ymean[d] += this.Y[i][d]; // accumulate mean so that we can center later
         }
@@ -302,7 +309,7 @@ var tsnejs = tsnejs || { REVISION: 'ALPHA' };
 
           this.Y[i][d] = yold - e;
           var cg1 = this.costGrad(this.Y);
-          
+
           var analytic = grad[i][d];
           var numerical = (cg0.cost - cg1.cost) / ( 2 * e );
           console.log(i + ',' + d + ': gradcheck analytic: ' + analytic + ' vs. numerical: ' + numerical);

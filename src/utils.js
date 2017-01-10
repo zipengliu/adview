@@ -71,8 +71,7 @@ export function getJaccardIndex(x, y) {
     let a = createMappingFromArray(x);
     let b = createMappingFromArray(y);
     let c = getIntersection(a, b);
-    let intersect = Object.keys(c).length;
-    return  intersect / (x.length + y.length - intersect);
+    return  c / (x.length + y.length - c);
 }
 
 export function getCoordinates(trees, isGlobal, rid, bid) {
