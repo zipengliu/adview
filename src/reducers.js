@@ -149,9 +149,10 @@ function visphyReducer(state = initialState, action) {
                 },
                 overview: {
                     ...state.overview,
+                    coordinates: getCoordinates(state.inputGroupData.trees, true, null, null),
                     metricMode: 'global',
-                    metricBranch: null
-                    // TODO re-calc overview
+                    metricBranch: null,
+                    pickingBranch: false
                 },
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
