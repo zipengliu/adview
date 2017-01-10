@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram} from '../actions';
+import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric} from '../actions';
 
 import './FullDendrogram.css';
 
@@ -16,8 +16,11 @@ class FullDendrogram extends Component {
         let {spec, tree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities} = this.props;
         let allLines = branchSpecs.concat(verticalLines).map((d, i) =>
-            (<line className={cn('branch-line', {selected: tree.selected && tree.selected[d.bid]})}
-                   x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2} key={d.bid || i}></line>));
+            (<g key={d.bid || i}>
+                <line className={cn('branch-line', {selected: tree.selected && tree.selected[d.bid]})}
+                      x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
+                {this.props.metricBranch == d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
+            </g>));
         let names = textSpecs.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
         return (
@@ -36,7 +39,11 @@ class FullDendrogram extends Component {
                                   x={d.x} y={d.y} width={d.width} height={d.height}
                                   onMouseOver={this.props.onMouseOver.bind(null, d.bid)}
                                   onMouseOut={this.props.onMouseOut}
-                                  onClick={this.props.onSelectBranch.bind(null, d.bid)}
+                                  onClick={() => {if (this.props.pickingBranch) {
+                                      if (this.props.metricBranch != d.bid) this.props.onChangeDistanceMetric(d.bid)
+                                  } else {
+                                      this.props.onSelectBranch(d.bid)
+                                  } }}
                                   key={d.bid}>
                             </rect>)}
                     </g>
@@ -135,7 +142,9 @@ function mapStateToProps(state, ownProps) {
         ...getDendrogramSpecs(state, ownProps),
         tree: ownProps.tree? ownProps.tree: state.referenceTree,
         spec: state.dendrogramSpec,
-        entities: state.inputGroupData.entities
+        entities: state.inputGroupData.entities,
+        pickingBranch: state.overview.pickingBranch,
+        metricBranch: state.overview.metricMode == 'global'? null: state.overview.metricBranch
     }
 }
 
@@ -150,7 +159,9 @@ function mapDispatchToProps(dispatch) {
         onSelectBranch: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));
         },
-        // onSelectExploreBranch: (bid) => {dispatch(toggleSelectExploreBranch(bid))}
+        onChangeDistanceMetric: (bid) => {
+            dispatch(changeDistanceMetric('local', bid));
+        }
     }
 }
 

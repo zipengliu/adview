@@ -4,6 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import {scaleLinear, scaleOrdinal, schemeCategory10} from 'd3-scale';
+import {getCoordinates} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -33,6 +34,7 @@ let initialState = {
     },
     sets: [],
     overview: {
+        coordinates: [],
         metricMode: 'global',
         pickingBranch: false,
         metricBranch: null,
@@ -122,8 +124,6 @@ function visphyReducer(state = initialState, action) {
                     highlightMonophyly: null,
                     selected: {},
                     isFetching: true,
-                    exploreMode: false,
-                    exploreBranch: null,
                 }
             });
         case TYPE.FETCH_TREE_SUCCESS:
@@ -146,6 +146,12 @@ function visphyReducer(state = initialState, action) {
                             branches: action.data
                         }
                     }
+                },
+                overview: {
+                    ...state.overview,
+                    metricMode: 'global',
+                    metricBranch: null
+                    // TODO re-calc overview
                 },
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
@@ -170,26 +176,15 @@ function visphyReducer(state = initialState, action) {
             });
 
         case TYPE.SELECT_BRANCH:
-            if (state.overview.pickingBranch) {
-                return {
-                    ...state,
-                    overview: {
-                        ...state.overview,
-                        metricBranch: action.bid
-                    },
-                    toast: {msg: null}
-                }
-            } else {
-                return Object.assign({}, state, {
-                    referenceTree: {
-                        ...state.referenceTree,
-                        selected: {
-                            ...state.referenceTree.selected,
-                            [action.bid]: !state.referenceTree.selected[action.bid]
-                        }
+            return Object.assign({}, state, {
+                referenceTree: {
+                    ...state.referenceTree,
+                    selected: {
+                        ...state.referenceTree.selected,
+                        [action.bid]: !state.referenceTree.selected[action.bid]
                     }
-                });
-            }
+                }
+            });
         case TYPE.CLEAR_BRANCH_SELECTION:
             return Object.assign({}, state, {
                 referenceTree: {
@@ -325,17 +320,54 @@ function visphyReducer(state = initialState, action) {
                     pickingBranch: !state.overview.pickingBranch,
                 },
             };
-        case TYPE.CHANGE_DISTANCE_METRIC:
+        // case TYPE.CHANGE_DISTANCE_METRIC:
+        //     return {
+        //         ...state,
+        //         overview: {
+        //             ...state.overview,
+        //             metricMode: action.mode,
+        //             pickingBranch: false
+        //         },
+        //         toast: action.mode == 'local' && state.overview.metricBranch == null?
+        //             {msg: ''}: state.toast
+        //     };
+        case TYPE.CHANGE_DISTANCE_METRIC_REQUEST:
             return {
                 ...state,
                 overview: {
                     ...state.overview,
                     metricMode: action.mode,
+                    metricBranch: action.mode == 'local'? action.bid: state.overview.metricBranch,
                     pickingBranch: false
                 },
-                toast: action.mode == 'local' && state.overview.metricBranch == null?
-                    {msg: 'Should pick a branch to get local distance metric'}: state.toast
+                toast: {
+                    ...state.toast,
+                    msg: 'Calculating overview...'
+                }
             };
+        case TYPE.CHANGE_DISTANCE_METRIC_SUCCESS:
+            return {
+                ...state,
+                overview: {
+                    ...state.overview,
+                    coordinates: action.coordinates,
+                    pickingBranch: false
+                },
+                toast: {...state.toast, msg: null}
+            };
+        case TYPE.CHANGE_DISTANCE_METRIC_FAILURE:
+            return {
+                ...state,
+                overview: {
+                    ...state.overview,
+                    pickingBranch: true,
+                },
+                toast: {
+                    ...state.toast,
+                    msg: action.error.toString()
+                }
+            };
+
 
         case TYPE.TOGGLE_HIGHLIGHT_TREE:
             return Object.assign({}, state, {
@@ -480,6 +512,10 @@ function visphyReducer(state = initialState, action) {
                     tids: Object.keys(action.data.trees),
                     color: 'grey'
                 }],
+                overview: {
+                    ...state.overview,
+                    coordinates: getCoordinates(action.data.trees, true, null, null)
+                },
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     treeOrder: {

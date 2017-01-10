@@ -74,3 +74,50 @@ export function getJaccardIndex(x, y) {
     let intersect = Object.keys(c).length;
     return  intersect / (x.length + y.length - intersect);
 }
+
+export function getCoordinates(trees, isGlobal, rid, bid) {
+    // Concat all rf_dist in trees to a distance matrix
+    // First, decide an order of trees for the matrix
+
+    let order;
+    let dist = [];
+    if (!isGlobal) {
+        // Local distance matrix
+        console.log('Calculating local coordinates in Overview...');
+        order = [];
+        let corr = trees[rid].branches[bid].correspondingBranches;
+        for (let tid in corr) {
+            order.push({treeId: tid, branchId: corr[tid].branchId});
+        }
+    } else {
+        console.log('Calculating global coordinates in Overview...');
+        // Global distance matrix
+        order = Object.keys(trees);
+    }
+    for (let i = 0; i < order.length; i++) {
+        let cur = [];
+        // let t = trees[order[i]];
+        for (let j = 0; j < order.length; j++) {
+            if (j > i) {
+                if (!isGlobal) {
+                    // TODO: can make it faster by caching the entities first
+                    cur.push(1.0 - getJaccardIndex(trees[order[i].treeId].branches[order[i].branchId].entities,
+                            trees[order[j].treeId].branches[order[j].branchId].entities));
+                } else {
+                    cur.push(trees[order[i]].rfDistance[order[j]]);
+                }
+            } else if (j < i) {
+                // The distance matrix is symmetric
+                cur.push(dist[j][i]);
+            } else {
+                cur.push(0);
+            }
+        }
+        dist.push(cur);
+    }
+
+    // Second run t-SNE
+    let coords = runTSNE(dist);
+
+    return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].treeId: order[i]}))
+}

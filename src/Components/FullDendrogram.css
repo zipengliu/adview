@@ -25,3 +25,7 @@
     fill: steelblue;
     fill-opacity: .3;
 }
+
+circle.metric-branch-indicator {
+    fill: grey;
+}
