@@ -38,7 +38,7 @@ class Dotplot extends Component {
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
             {coordinates.map(d => <circle className={classNames('dot', {selected: selectedDots.indexOf(d.treeId) !== -1,
-                highlight: this.props.highlightDot === d.treeId})}
+                highlight: this.props.highlightDots.indexOf(d.treeId) !== -1})}
                                           style={{fill: colors[d.treeId] || 'grey'}}
                                           r={this.props.highlightDot === d.treeId? 6: 3}
                                           cx={scale(d.x)} cy={scale(d.y)} key={d.treeId}></circle>)}

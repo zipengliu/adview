@@ -37,8 +37,8 @@ class FullDendrogram extends Component {
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
-                                  onMouseOver={this.props.onMouseOver.bind(null, d.bid)}
-                                  onMouseOut={this.props.onMouseOut}
+                                  onMouseEnter={this.props.onMouseOver.bind(null, d.bid)}
+                                  onMouseLeave={this.props.onMouseOut}
                                   onClick={() => {if (this.props.pickingBranch) {
                                       if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {

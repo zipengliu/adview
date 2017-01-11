@@ -41,7 +41,7 @@ let initialState = {
         createWindow: false,
         currentTitle: '',
         selectedDots: [],
-        highlightDot: null,
+        highlightDots: [],
         dotplotSize: 0,
         isSelecting: false,
         selectingArea: null
@@ -377,7 +377,7 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
-                    highlightDot: action.tid
+                    highlightDots: action.isHighlight? action.tids: []
                 }
             });
         case TYPE.TOGGLE_SELECT_AGG_DENDRO:
@@ -385,6 +385,10 @@ function visphyReducer(state = initialState, action) {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     activeTreeId: action.tid
+                },
+                overview: {
+                    ...state.overview,
+                    selectedDots: state.aggregatedDendrogram.isClusterMode? action.tids: state.overview.selectedDots
                 }
             });
         case TYPE.SELECT_SET:
@@ -396,7 +400,7 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.REMOVE_FROM_SET:
             return Object.assign({}, state, {
-                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => tid !== action.tid)}),
+                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => action.tids.indexOf(tid) === -1)}),
             });
         case TYPE.TOGGLE_SORTING:
             return {

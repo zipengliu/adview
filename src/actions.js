@@ -200,17 +200,18 @@ export function togglePickingMetricBranch() {
     return {type: TYPE.TOGGLE_PICKING_METRIC_BRANCH}
 }
 
-export function toggleHighlightTree(tid) {
+export function toggleHighlightTree(tids, isHighlight) {
     return {
         type: TYPE.TOGGLE_HIGHLIGHT_TREE,
-        tid
+        tids,
+        isHighlight
     }
 }
 
-export function toggleSelectAggDendro(tid) {
+export function toggleSelectAggDendro(tid, tids) {
     return {
         type: TYPE.TOGGLE_SELECT_AGG_DENDRO,
-        tid
+        tid, tids
     }
 }
 
@@ -221,9 +222,9 @@ export function selectSet(i) {
     }
 }
 
-export function removeFromSet(tid, setIndex) {
+export function removeFromSet(tids, setIndex) {
     return {
-        type: TYPE.REMOVE_FROM_SET, tid, setIndex
+        type: TYPE.REMOVE_FROM_SET, tids, setIndex
     }
 }
 
