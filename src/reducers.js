@@ -49,13 +49,16 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0,
+        isClusterMode: true,
         spec: {
             size: 100,
             margin: 2,
             verticalGap: 5,
             branchLen: 8,
             leaveHeight: 4,
-            leaveHighlightWidth: 16
+            leaveHighlightWidth: 16,
+            proportionTopMargin: 4,
+            proportionBarHeight: 10
         },
         treeOrder: {
             static: true,      // if static is true, only order by tree id (preserving the order)
@@ -404,6 +407,14 @@ function visphyReducer(state = initialState, action) {
                         ...state.aggregatedDendrogram.treeOrder,
                         static: !state.aggregatedDendrogram.treeOrder.static
                     }
+                }
+            };
+        case TYPE.TOGGLE_CLUSTER_MODE:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    isClusterMode: action.isClusterMode
                 }
             };
 

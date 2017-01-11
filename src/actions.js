@@ -231,6 +231,10 @@ export function toggleSorting() {
     return {type: TYPE.TOGGLE_SORTING}
 }
 
+export function toggleCLusterMode(isClusterMode) {
+    return {type: TYPE.TOGGLE_CLUSTER_MODE, isClusterMode};
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}

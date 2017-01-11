@@ -45,6 +45,13 @@ export function runTSNE(dist) {
     return coords;
 }
 
+export function createArrayFromMapping(a) {
+    let r = [];
+    for (let k in a) if (a.hasOwnProperty(k)) {
+        r.push(a[k]);
+    }
+    return r;
+}
 export function createMappingFromArray(a) {
     return a.reduce((acc, k) => {acc[k] = true; return acc}, {});
 }
@@ -120,3 +127,4 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
 
     return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].treeId: order[i]}))
 }
+

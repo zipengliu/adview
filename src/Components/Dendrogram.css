@@ -57,3 +57,19 @@
     height: 14px;
     width: 14px;
 }
+
+.proportion .total {
+    stroke: grey;
+    stroke-width: 1px;
+    fill: none;
+}
+
+.proportion .num {
+    stroke: none;
+    fill: steelblue;
+    fill-opacity: .5;
+}
+
+.proportion text {
+    font-size: 10px;
+}
