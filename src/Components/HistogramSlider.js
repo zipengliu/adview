@@ -10,9 +10,14 @@ let HistogramSlider = props => {
     let {bins, spec, selectedRange, attributeName} = props;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
     let xScale = scaleLinear().domain([0, 1]).range([0, effectiveWidth]).clamp(true);
-    let tickFormat = xScale.tickFormat(5, '.1f');
+    let xTickFormat = xScale.tickFormat(5, '.1f');
     let rangeFormat = format('.2f');
-    let yScale = scaleLog().base(2).domain([1, d3Max(bins, d => d.length + 1)]).rangeRound([0, spec.histogramHeight]);
+    let yMax = d3Max(bins, d => d.length + 1);
+    let yScale = scaleLog().base(10).domain([1, yMax]).rangeRound([0, spec.histogramHeight]);
+    let yTicks = [];
+    for (let i = 0; i <= Math.floor(Math.log(yMax) / Math.log(10)); i++) {
+        yTicks.push(Math.pow(10, i));
+    }
     let controlPos = selectedRange.map(xScale);
 
     let onDragging = (event) => {
@@ -37,12 +42,22 @@ let HistogramSlider = props => {
                                   width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)} />
                         </OverlayTrigger>)}
                 </g>
+                <g className="axis">
+                    <line x1="-2" y1="0" x2="-2" y2={spec.histogramHeight} />
+                    {yTicks.map((t, i) => <g key={i}>
+                        <line x1="-5" y1={spec.histogramHeight - yScale(t + 1)} x2="-2" y2={spec.histogramHeight - yScale(t + 1)} />
+                        <text x="-5" y={spec.histogramHeight - yScale(t + 1)} dx="-17" dy="5">{i === 0? 1: 10}</text>
+                        {i > 1 &&
+                        <text x="-5" y={spec.histogramHeight - yScale(t + 1)} dx="-5" dy="0" style={{fontSize: '8px'}}>{i}</text>
+                        }
+                    </g>)}
+                </g>
                 <g className="slider" transform={`translate(0,${spec.histogramHeight})`}>
                     <g className="axis" transform="translate(0, 1)">
                         <line x1="0" y1="1" x2={effectiveWidth} y2="1"/>
                         {xScale.ticks(5).map((t, i) => <g key={i} transform={`translate(${xScale(t)},0)`}>
                             <line x1="0" y1="0" x2="0" y2="5" />
-                            <text dx="-7" dy="16">{tickFormat(t)}</text>
+                            <text dx="-7" dy="16">{xTickFormat(t)}</text>
                         </g>)}
                     </g>
                     <g transform="translate(0,2)">

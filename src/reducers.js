@@ -74,7 +74,7 @@ let initialState = {
             width: 180,
             histogramHeight: 80,
             sliderHeight: 30,
-            margin: {left: 8, right: 8, top: 10, bottom: 2}
+            margin: {left: 25, right: 8, top: 10, bottom: 2}
         },
         attributeNames: ['support'],
         controllingAttribute: null,
@@ -196,46 +196,6 @@ function visphyReducer(state = initialState, action) {
                     selected: {}
                 }
             });
-        // case TYPE.TOGGLE_EXPLORE_MODE:
-        //     let shouldChangeOverview = state.referenceTree.exploreBranch != null;
-        //     return Object.assign({}, state, {
-        //         referenceTree: {
-        //             ...state.referenceTree,
-        //             exploreMode: !state.referenceTree.exploreMode,
-        //             exploreBranch: null,
-        //         },
-        //         overview: {
-        //             ...state.overview,
-        //             coordinates: shouldChangeOverview? getCoordinates(state.inputGroupData.trees): state.overview.coordinates
-        //         },
-        //         aggregatedDendrogram: {
-        //             ...state.aggregatedDendrogram,
-        //             treeOrder: {
-        //                 ...state.aggregatedDendrogram.treeOrder,
-        //                 branchId: null
-        //             }
-        //         }
-        //     });
-        // case TYPE.TOGGLE_SELECT_EXPLORE_BRANCH:
-        //     let newExploreBranch = action.bid == state.referenceTree.exploreBranch? null: action.bid;
-        //     return {
-        //         ...state,
-        //         referenceTree: {
-        //             ...state.referenceTree,
-        //             exploreBranch: newExploreBranch,
-        //         },
-        //         overview: {
-        //             ...state.overview,
-        //             coordinates: getCoordinates(state.inputGroupData.trees, state.referenceTree.id, newExploreBranch)
-        //         },
-        //         aggregatedDendrogram: {
-        //             ...state.aggregatedDendrogram,
-        //             treeOrder: {
-        //                 ...state.aggregatedDendrogram.treeOrder,
-        //                 branchId: newExploreBranch,
-        //             }
-        //         }
-        //     };
 
         case TYPE.POP_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {
