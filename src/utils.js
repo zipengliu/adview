@@ -16,7 +16,7 @@ export function runTSNE(dist) {
     tsne.initDataDist(dist);
 
     console.log('Begin tSNE');
-    for (let k = 0; k < 500; k++) {
+    for (let k = 0; k < 300; k++) {
         tsne.step();
     }
     console.log('Finish tSNE');
