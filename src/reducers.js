@@ -68,7 +68,8 @@ let initialState = {
         }
     },
     attributeExplorer: {
-        modes: ['global', 'set-wise', 'tree-wise', 'branch-wise'],
+        modes: ['global', 'set-wise', 'tree-wise', 'global counterpart', 'set-wise counterpart',
+            'set-wise | global', 'tree-wise | global', 'global counterpart | global'],
         currentModeId: 0,
         spec: {
             width: 180,

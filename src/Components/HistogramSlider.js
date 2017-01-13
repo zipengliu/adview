@@ -7,12 +7,14 @@ import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 let HistogramSlider = props => {
-    let {bins, spec, selectedRange, attributeName} = props;
+    let {foregroundBins, backgroundBins, spec, selectedRange, attributeName} = props;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
+    // The x domain is always [0, 1]
     let xScale = scaleLinear().domain([0, 1]).range([0, effectiveWidth]).clamp(true);
     let xTickFormat = xScale.tickFormat(5, '.1f');
     let rangeFormat = format('.2f');
-    let yMax = d3Max(bins, d => d.length + 1);
+
+    let yMax = d3Max(backgroundBins? backgroundBins: foregroundBins, d => d.length + 1);
     let yScale = scaleLog().base(10).domain([1, yMax]).rangeRound([0, spec.histogramHeight]);
     let yTicks = [];
     for (let i = 0; i <= Math.floor(Math.log(yMax) / Math.log(10)); i++) {
@@ -36,9 +38,17 @@ let HistogramSlider = props => {
                 <text className="title">{attributeName}</text>
                 <text className="range-text" dy="12">{`${rangeFormat(selectedRange[0])} - ${rangeFormat(selectedRange[1])}`}</text>
                 <g className="bars">
-                    {bins.map((b, i) =>
-                        <OverlayTrigger key={i} placement="top" overlay={<Tooltip id={`bar-${i}`}>{b.length}</Tooltip>}>
-                            <rect className="bar" x={xScale(b.x0)} y={spec.histogramHeight - yScale(b.length + 1)}
+                    {!!backgroundBins &&
+                    backgroundBins.map((b, i) =>
+                        <OverlayTrigger key={i} placement="top" overlay={<Tooltip id={`background-bar-${i}`}>{b.length}</Tooltip>}>
+                        <rect className="bar background" x={xScale(b.x0)} y={spec.histogramHeight - yScale(b.length + 1)}
+                        width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)} />
+                        </OverlayTrigger>)
+                    }
+                    {foregroundBins &&
+                    foregroundBins.map((b, i) =>
+                        <OverlayTrigger key={i} placement="top" overlay={<Tooltip id={`foreground-bar-${i}`}>{b.length}</Tooltip>}>
+                            <rect className="bar foreground" x={xScale(b.x0)} y={spec.histogramHeight - yScale(b.length + 1)}
                                   width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)} />
                         </OverlayTrigger>)}
                 </g>

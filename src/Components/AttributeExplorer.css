@@ -1,5 +1,10 @@
-.attribute-chart .bar {
+.attribute-chart .bar.foreground {
     fill: steelblue;
+}
+
+.attribute-chart .bar.background {
+    fill: grey;
+    fill-opacity: .5;
 }
 
 #attribute-explorer .dropdown {
