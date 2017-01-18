@@ -4,16 +4,15 @@
 
 .tree-list .list {
     overflow: scroll;
-    height: 90%;
+    height: 80%;
 }
 .list-item {
     padding: 0 3px;
+    font-size: 10px;
+    margin: 1px 0;
 }
 
 .tree-name {
-    font-size: 10px;
-    text-align: left;
-    float: left;
 }
 
 .color-block {
@@ -23,3 +22,14 @@
     margin: 3px 3px 0 0;
 }
 
+.tree-name.current-set {
+    background: #ddd;
+}
+
+.tree-name.selected {
+    border: 1px solid red;
+}
+
+.tree-list .legends {
+    font-size: 10px;
+}
