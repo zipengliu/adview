@@ -11,8 +11,8 @@ import {popCreateNewSetWindow, addToSet, changeDistanceMetric, togglePickingMetr
 
 let Overview = props => (
     <div>
-        <div>Overview</div>
-        <ButtonToolbar style={{marginBottom: '5px'}}>
+        <div className="view-title">Overview</div>
+        <ButtonToolbar>
             <Button bsSize="xsmall" onClick={props.onCreate} disabled={!props.hasSelection}>Create new set</Button>
             <DropdownButton bsSize="xsmall" title="Add to set" id="add-to-set"
                             onSelect={props.onAddToSet}
@@ -29,16 +29,18 @@ let Overview = props => (
                 )}
             </DropdownButton>
         </ButtonToolbar>
-        <div style={{width: '100%', height: '100%', border: '1px solid black'}}>
-            <Dotplot />
-        </div>
-        <div>
-            <span style={{fontSize: '12px'}}>Dist. Metric:</span>
+        <div style={{textAlign: 'left'}}>
+            <span style={{fontSize: '12px'}}>Distance:</span>
             <ButtonGroup bsSize="xsmall" style={{padding: '2px'}}>
-                <Button active={props.metricMode === 'global'}
-                        onClick={props.metricMode === 'global'? null: props.onChangeMetricMode.bind(null, 'global', props.metricBranch)}>global</Button>
-                <Button active={props.metricMode === 'local'}
-                        onClick={props.metricMode === 'local'? null: props.onChangeMetricMode.bind(null, 'local', props.metricBranch)}>local</Button>
+                <OverlayTrigger placement="top" overlay={<Tooltip id="dist-metric-full">RF distance between trees</Tooltip>}>
+                    <Button active={props.metricMode === 'global'}
+                            onClick={props.metricMode === 'global'? null: props.onChangeMetricMode.bind(null, 'global', props.metricBranch)}>full</Button>
+                </OverlayTrigger>
+                <OverlayTrigger placement="top" overlay={<Tooltip id="dist-metric-subtree">
+                    Distance between trees is calculated by comparing two corresponding subtrees (Jaccard Index of the two sets of taxa).</Tooltip>}>
+                    <Button active={props.metricMode === 'local'}
+                            onClick={props.metricMode === 'local'? null: props.onChangeMetricMode.bind(null, 'local', props.metricBranch)}>subtree</Button>
+                </OverlayTrigger>
                 <OverlayTrigger placement="top"
                                 overlay={<Tooltip id="tooltip-pick-branch">Pick a partition on the reference tree as the
                                     scope of the local distance metric</Tooltip>}>
@@ -49,6 +51,9 @@ let Overview = props => (
                     </Button>
                 </OverlayTrigger>
             </ButtonGroup>
+        </div>
+        <div style={{width: '100%', height: '100%', border: '1px solid black'}}>
+            <Dotplot />
         </div>
 
         <PopupWindow />

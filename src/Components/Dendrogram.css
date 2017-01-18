@@ -7,8 +7,11 @@
     justify-content: flex-start;
 
     position: relative;
-    height: 100%;
+    height: 90%;
     overflow: scroll;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
 }
 
 .agg-dendro-box {
@@ -72,4 +75,8 @@
 
 .proportion text {
     font-size: 10px;
+}
+
+.btn .glyph-text {
+    margin-left: 2px;
 }

@@ -39,3 +39,29 @@
     stroke-width: 1px;
     fill: none;
 }
+
+.attribute-heading {
+    font-size: 14px;
+    text-align: left;
+}
+
+#attribute-explorer .form-group {
+    font-size: 12px;
+    margin-bottom: 0;
+}
+#attribute-explorer .form-group .checkbox {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+#attribute-explorer .form-group .checkbox input[type="checkbox"] {
+    margin-left: -16px;
+    width: 1em;
+    height: 1em;
+}
+
+#attribute-explorer .form-group input[type="radio"] {
+    margin-left: -14px;
+    width: 1em;
+    height: 1em;
+}

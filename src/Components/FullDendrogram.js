@@ -17,7 +17,7 @@ class FullDendrogram extends Component {
             hoverBoxes, textSpecs, entities} = this.props;
         let allLines = branchSpecs.concat(verticalLines).map((d, i) =>
             (<g key={d.bid || i}>
-                <line className={cn('branch-line', {selected: tree.selected && tree.selected[d.bid]})}
+                <line className={cn('branch-line', {selected: tree.selected && tree.selected.indexOf(d.bid) !== -1})}
                       x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                 {this.props.metricBranch === d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
             </g>));

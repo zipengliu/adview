@@ -9,8 +9,12 @@ import FullDendrogram from './FullDendrogram';
 import {clearBranchSelection} from '../actions';
 
 let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'relative'}}>
-    <p>Reference Tree: {props.title}</p>
-    <div style={{height: '100%'}}>
+    <div style={{textAlign: 'center'}}>
+        <span className="view-title">Reference Tree </span>
+        <span>({props.title})</span>
+    </div>
+
+    <div style={{height: '95%'}}>
         <FullDendrogram />
     </div>
     <div style={{position: 'absolute', right: '10px', top: 0}}>

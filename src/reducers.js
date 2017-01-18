@@ -20,7 +20,7 @@ let initialState = {
     },
     dendrogramSpec: {
         width: 500,
-        height: 960,
+        height: 900,
         margin: {left: 5, right: 5, top: 10, bottom: 10},
         marginOnEntity: 8,
         labelWidth: 100,
@@ -29,7 +29,7 @@ let initialState = {
     referenceTree: {
         id: null,
         highlightMonophyly: null,
-        selected: {},
+        selected: [],
         isFetching: false,
     },
     sets: [],
@@ -68,12 +68,20 @@ let initialState = {
         }
     },
     attributeExplorer: {
-        modes: ['global', 'set-wise', 'tree-wise', 'global counterpart', 'set-wise counterpart',
-            'set-wise | global', 'tree-wise | global', 'global counterpart | global'],
-        currentModeId: 0,
+        modes: {
+            all: {
+                scope: 'all',           // could be 'all', 'set', 'tree'
+                context: false,
+            },
+            corr: {
+                scope: 'all',           // could be 'all', 'set'
+                context: false,
+            }
+        },
+        shownAsHistogram: true,
         spec: {
             width: 180,
-            histogramHeight: 80,
+            chartHeight: 60,
             sliderHeight: 30,
             margin: {left: 25, right: 8, top: 10, bottom: 2}
         },
@@ -126,7 +134,7 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightMonophyly: null,
-                    selected: {},
+                    selected: [],
                     isFetching: true,
                 }
             });
@@ -184,17 +192,16 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: {
-                        ...state.referenceTree.selected,
-                        [action.bid]: !state.referenceTree.selected[action.bid]
-                    }
+                    selected: state.referenceTree.selected.indexOf(action.bid) !== -1?
+                        state.referenceTree.selected.filter(bid => bid !== action.bid):
+                        [action.bid, ...state.referenceTree.selected]
                 }
             });
         case TYPE.CLEAR_BRANCH_SELECTION:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: {}
+                    selected: []
                 }
             });
 
@@ -431,7 +438,13 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    currentModeId: action.currentModeId
+                    modes: {
+                        ...state.attributeExplorer.modes,
+                        [action.section]: {
+                            scope: action.scope? action.scope: state.attributeExplorer.modes[action.section].scope,
+                            context: action.isContext != null? action.isContext: state.attributeExplorer.modes[action.section].context
+                        }
+                    }
                 }
             };
         case TYPE.TOGGLE_MOVE_HANDLE:
@@ -462,7 +475,14 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             };
-
+        case TYPE.TOGGLE_HISTOGRAM_OR_CDF:
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    shownAsHistogram: action.isHistogram
+                }
+            }
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {

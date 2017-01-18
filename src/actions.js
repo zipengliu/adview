@@ -251,8 +251,8 @@ export function removeTreeFromInspector(tid) {
 }
 
 
-export function changeAttributeExplorerMode(k) {
-    return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, currentModeId: k}
+export function changeAttributeExplorerMode(section, scope, isContext) {
+    return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, section, scope, isContext}
 }
 
 export function toggleMoveHandle(attributeName, handle) {
@@ -260,6 +260,10 @@ export function toggleMoveHandle(attributeName, handle) {
 }
 export function moveControlHandle(value) {
     return {type: TYPE.MOVE_CONTROL_HANDLE, value}
+}
+
+export function toggleHistogramOrCDF(isHistogram) {
+    return {type: TYPE.TOGGLE_HISTOGRAM_OR_CDF, isHistogram};
 }
 
 

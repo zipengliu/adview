@@ -3,6 +3,7 @@
     min-height: 800px;
     max-height: 960px;
     display: flex;
+    display: -webkit-flex;
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: space-between;
@@ -12,11 +13,14 @@
     flex: 0 0 auto;
     width: 200px;
     display: flex;
+    display: -webkit-flex;
     flex-direction: column;
     justify-content: space-between;
+    padding: 0 5px;
 }
 .middle-column {
     flex: 1 1 auto;
+    margin: 0 5px;
 }
 .right-column {
     flex: 0 0 auto;
@@ -27,18 +31,16 @@
 .overview {
     flex: 0 0 auto;
     height: 280px;
-    padding: 5px;
 }
 
 .filter {
-    flex: 1;
+    flex: 2;
     min-height: 250px;
 }
 
 .tree-list {
-    flex: 1;
-    /*max-height: 200px;*/
-    padding: 5px;
+    flex: 0 1 auto;
+    height: 200px;
 }
 
 .show-bg {
@@ -85,3 +87,9 @@
     visibility: visible;
 }
 
+
+.view-title {
+    font-size: 16px;
+    text-align: center;
+    font-weight: bold;
+}
