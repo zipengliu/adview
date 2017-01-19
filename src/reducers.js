@@ -60,11 +60,14 @@ let initialState = {
             proportionTopMargin: 4,
             proportionBarHeight: 10
         },
+        // treeOrder: 'static',        // either 'static' or 'dynamic'
+        //                             // static means sort by similarity to reference tree
+        //                             // dynamic means sort by similarity to highlighting subtree in reference tree
         treeOrder: {
             static: true,      // if static is true, only order by tree id (preserving the order)
-            treeId: null,
-            branchId: null,     // when this is null, order by rf distance between trees;
-                                // otherwise by similarity (jaccard index currently) between the corresponding branches
+            // treeId: null,
+            // branchId: null,     // when this is null, order by rf distance between trees;
+            //                     // otherwise by similarity (jaccard index currently) between the corresponding branches
         }
     },
     attributeExplorer: {
@@ -165,14 +168,6 @@ function visphyReducer(state = initialState, action) {
                     metricMode: 'global',
                     metricBranch: null,
                     pickingBranch: false
-                },
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        treeId: state.referenceTree.id,
-                        branchId: null
-                    }
                 }
             });
 
@@ -512,14 +507,6 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.trees, true, null, null)
-                },
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        treeId: action.data.defaultReferenceTree,
-                        branchId: null
-                    }
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:

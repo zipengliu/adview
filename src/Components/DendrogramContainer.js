@@ -17,6 +17,7 @@ import './Dendrogram.css';
 class DendrogramContainer extends Component {
     render() {
         let {spec, isClusterMode, dendrograms, activeTreeId} = this.props;
+        let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
         let boxSize = spec.size + 2 * spec.margin + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
         let activeTids;
@@ -55,42 +56,45 @@ class DendrogramContainer extends Component {
                         )
                     </FormGroup>
                 </div>
-                <div style={{textAlign: 'left', marginBottom: '5px'}}>
-                    <ButtonGroup bsSize="xsmall" style={{marginLeft: '10px'}}>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
+
+                <div style={{marginBottom: '5px'}}>
+                    <ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>
+                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
                             <Button disabled={this.props.activeSetIndex === 0}
                                     onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
                                 <Glyphicon glyph="trash"/><span className="glyph-text">Remove set</span>
                             </Button>
                         </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
+                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
                             <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, isClusterMode? activeTids: [activeTreeId], this.props.activeSetIndex)}>
                                 <Glyphicon glyph="trash"/><span className="glyph-text">Remove tree</span>
                             </Button>
                         </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
+                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
                             <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, activeTreeId)}>
                                 <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
 
                             </Button>
                         </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-sort-tree">{
-                            `${this.props.treeOrder.static? 'Enable': 'Disable'} sorting by similarity to reference tree`}</Tooltip>}>
-                            <Button active={!this.props.treeOrder.static} onClick={this.props.onChangeSorting}>
-                                <Glyphicon glyph="sort-by-attributes" /><span className="glyph-text">Sort by similarity</span>
-                            </Button>
-                        </OverlayTrigger>
-                    </ButtonGroup>
-
-                    <ButtonGroup bsSize="xsmall" style={{marginLeft: '10px'}}>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
+                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
                             <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
                                 <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
                             </Button>
                         </OverlayTrigger>
                     </ButtonGroup>
 
+                    <div style={{fontSize: '12px', display: 'inline-block'}}>
+                        <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
+                        {isClusterMode? <span>proportion of clusters</span>:
+                            <ButtonGroup bsSize="xsmall">
+                                <Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>
+                                <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
+                            </ButtonGroup>
+                        }
+                        <span style={{marginLeft: '2px'}}> of the ref. tree</span>
+                    </div>
                 </div>
+
                 <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
                     {this.props.sets.map((s, i) => <Tab eventKey={i} key={i}
                                                         title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}<Badge style={{marginLeft: '5px'}}>{s.tids.length}</Badge></div>} >
@@ -107,19 +111,18 @@ class DendrogramContainer extends Component {
 let getTrees = createSelector(
     [state => state.inputGroupData.trees, state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
         state => state.aggregatedDendrogram.treeOrder,
+        state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
         state => state.referenceTree.id, state => state.referenceTree.selected],
-    (trees, setTids, order, rid, selected) => {
+    (trees, setTids, order, bid, rid, selected) => {
         console.log('Getting new trees in the dendrogram container');
         let res = [];
         let ref = trees[rid];
         let sortFunc;
-        if (order.static) {
-            sortFunc = (t1, t2) => t1 === t2? 0: (t1 > t2? 1: -1);
-        } else if (order.branchId) {
-            let corr = ref.branches[order.branchId].correspondingBranches;
-            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
-        } else {
+        if (order.static || !bid) {
             sortFunc = (t1, t2) => (ref.rfDistance[t1] || 0) - (ref.rfDistance[t2] || 0);
+        } else {
+            let corr = ref.branches[bid].correspondingBranches;
+            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
         }
         let sortedTids = setTids.slice().sort(sortFunc);
 

@@ -45,22 +45,22 @@
     text-align: left;
 }
 
-#attribute-explorer .form-group {
+.form-group {
     font-size: 12px;
     margin-bottom: 0;
 }
-#attribute-explorer .form-group .checkbox {
+.form-group .checkbox {
     margin-top: 0;
     margin-bottom: 0;
 }
 
-#attribute-explorer .form-group .checkbox input[type="checkbox"] {
+.form-group .checkbox input[type="checkbox"] {
     margin-left: -16px;
     width: 1em;
     height: 1em;
 }
 
-#attribute-explorer .form-group input[type="radio"] {
+.form-group input[type="radio"] {
     margin-left: -14px;
     width: 1em;
     height: 1em;
