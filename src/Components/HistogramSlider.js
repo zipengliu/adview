@@ -7,14 +7,14 @@ import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 let HistogramSlider = props => {
-    let {foregroundBins, backgroundBins, spec, selectedRange, attributeName} = props;
+    let {foregroundBins, backgroundBins, spec, attributeName, selection} = props;
     let hasData = !!foregroundBins || !!backgroundBins;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
     // The x domain is always [0, 1]
     let xScale = scaleLinear().domain([0, 1]).range([0, effectiveWidth]).clamp(true);
     let xTickFormat = xScale.tickFormat(5, '.1f');
     let rangeFormat = format('.2f');
-    let controlPos = selectedRange.map(xScale);
+    let controlPos = selection? selection.range.map(xScale): null;
 
     let yMax, yScale, yTicks = [], onDragging;
     if (hasData) {
@@ -35,13 +35,13 @@ let HistogramSlider = props => {
 
     return (
         <svg width={spec.width} height={spec.chartHeight + spec.sliderHeight} className="attribute-chart"
-             onMouseMove={hasData && props.isMovingHandle? onDragging: null}
-             onMouseUp={hasData? props.toggleMoveHandle: null}
+             onMouseMove={hasData && selection && selection.isMoving? onDragging: null}
+             onMouseUp={hasData? props.toggleMoveHandle.bind(null, null): null}
         >
             <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                 <text className="title" dx="5">{hasData? attributeName: 'Not Applicable'}</text>
-                {hasData &&
-                <text className="range-text" dx="5" dy="12">{`${rangeFormat(selectedRange[0])} - ${rangeFormat(selectedRange[1])}`}</text>
+                {hasData && selection &&
+                <text className="range-text" dx="5" dy="12">{`${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])}`}</text>
                 }
                 {hasData &&
                 <g className="bars">
@@ -78,13 +78,15 @@ let HistogramSlider = props => {
                             <text dx="-7" dy="16">{xTickFormat(t)}</text>
                         </g>)}
                     </g>
+                    {selection &&
                     <g transform="translate(0,2)">
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[0]}, 0)`}
-                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, attributeName, 'left'): null}/>
+                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[1]}, 0)`}
-                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, attributeName, 'right'): null}/>
+                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'right'): null}/>
                         <rect className="selected-area" x={controlPos[0]} y="-3" width={controlPos[1] - controlPos[0]} height="6"/>
                     </g>
+                    }
                 </g>
             </g>
         </svg>

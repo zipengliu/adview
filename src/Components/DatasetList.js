@@ -15,7 +15,7 @@ class DatasetList extends Component {
     render() {
         return (
             <div>
-                <h1>Example datasets from 1KP</h1>
+                <h1 style={{textAlign: 'center'}}>Example datasets from 1KP</h1>
                 <div className="list-container">
                     {this.props.datasets.map((d, i) => <div className="dataset-item" key={i}>
                         <h3><a href={`/dataset/${d.inputGroupId}`}>{d.title}</a></h3>

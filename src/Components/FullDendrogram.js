@@ -8,16 +8,18 @@ import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {highlightMonophyly, unhighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric} from '../actions';
+import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
 
 class FullDendrogram extends Component {
     render() {
         let {spec, tree, branchSpecs, verticalLines, responsiveBoxes,
-            hoverBoxes, textSpecs, entities} = this.props;
+            hoverBoxes, textSpecs, entities, highlightBranches} = this.props;
         let allLines = branchSpecs.concat(verticalLines).map((d, i) =>
             (<g key={d.bid || i}>
-                <line className={cn('branch-line', {selected: tree.selected && tree.selected.indexOf(d.bid) !== -1})}
+                <line className={cn('branch-line', {selected: tree.selected && tree.selected.indexOf(d.bid) !== -1,
+                    highlighted: highlightBranches && highlightBranches.hasOwnProperty(d.bid)})}
                       x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                 {this.props.metricBranch === d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
             </g>));
@@ -144,7 +146,8 @@ function mapStateToProps(state, ownProps) {
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         pickingBranch: state.overview.pickingBranch,
-        metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch
+        metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
+        highlightBranches: createMappingFromArray(state.attributeExplorer.selectedBranches[state.referenceTree.id] || [])
     }
 }
 

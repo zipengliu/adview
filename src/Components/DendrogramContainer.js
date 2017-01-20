@@ -9,7 +9,7 @@ import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Toolti
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
-    addTreeToInspector, toggleInspector, toggleSorting, toggleCLusterMode} from '../actions';
+    addTreeToInspector, toggleInspector, toggleSorting, toggleCLusterMode, clearBranchSelection} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersection, createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -43,64 +43,74 @@ class DendrogramContainer extends Component {
                      isClusterMode? t.trees: null)}>
                 <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} />
             </div>
-        )};
+            )};
         const disabledTools = activeTreeId == null;
         return (
-            <div style={{height: '100%', position: 'relative'}}>
-                <div style={{textAlign: 'center'}}>
-                    <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
-                    <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
-                        <span style={{marginRight: '5px'}}>(as</span>
-                        <Radio inline checked={isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, true)}>cluster</Radio>
-                        <Radio inline checked={!isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, false)}>individual</Radio>
-                        )
-                    </FormGroup>
-                </div>
-
-                <div style={{marginBottom: '5px'}}>
-                    <ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>
-                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
-                            <Button disabled={this.props.activeSetIndex === 0}
-                                    onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
-                                <Glyphicon glyph="trash"/><span className="glyph-text">Remove set</span>
-                            </Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
-                            <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, isClusterMode? activeTids: [activeTreeId], this.props.activeSetIndex)}>
-                                <Glyphicon glyph="trash"/><span className="glyph-text">Remove tree</span>
-                            </Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
-                            <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, activeTreeId)}>
-                                <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
-
-                            </Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
-                            <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
-                                <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
-                            </Button>
-                        </OverlayTrigger>
-                    </ButtonGroup>
-
-                    <div style={{fontSize: '12px', display: 'inline-block'}}>
-                        <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
-                        {isClusterMode? <span>proportion of clusters</span>:
-                            <ButtonGroup bsSize="xsmall">
-                                <Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>
-                                <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
-                            </ButtonGroup>
-                        }
-                        <span style={{marginLeft: '2px'}}> of the ref. tree</span>
+            <div className="view" style={{height: '98%'}}>
+                <div className="view-header">
+                    <div style={{textAlign: 'center'}}>
+                        <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
+                        <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
+                            <span style={{marginRight: '5px'}}>(as</span>
+                            <Radio inline checked={isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, true)}>cluster</Radio>
+                            <Radio inline checked={!isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, false)}>individual</Radio>
+                            )
+                        </FormGroup>
                     </div>
-                </div>
 
-                <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
-                    {this.props.sets.map((s, i) => <Tab eventKey={i} key={i}
-                                                        title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}<Badge style={{marginLeft: '5px'}}>{s.tids.length}</Badge></div>} >
-                    </Tab>)}
-                </Tabs>
-                <div className="dendrogram-container">
+                    <div style={{marginBottom: '5px'}}>
+                        <ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>
+                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
+                                <Button disabled={this.props.activeSetIndex === 0}
+                                        onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
+                                    <Glyphicon glyph="trash"/><span className="glyph-text">Remove set</span>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
+                                <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, isClusterMode? activeTids: [activeTreeId], this.props.activeSetIndex)}>
+                                    <Glyphicon glyph="trash"/><span className="glyph-text">Remove tree</span>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
+                                <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, activeTreeId)}>
+                                    <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
+
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
+                                <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
+                                    <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch expansion</Tooltip>}>
+                                <Button onClick={this.props.clearSelection}>
+                                    <Glyphicon glyph="refresh" /><span className="glyph-text">Reset</span>
+                                </Button>
+                            </OverlayTrigger>
+                        </ButtonGroup>
+
+                        <div style={{fontSize: '12px', display: 'inline-block'}}>
+                            <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
+                            {isClusterMode? <span>proportion of clusters</span>:
+                                <ButtonGroup bsSize="xsmall">
+                                    <Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>
+                                    <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
+                                </ButtonGroup>
+                            }
+                            <span style={{marginLeft: '2px'}}> of the ref. tree</span>
+                        </div>
+                    </div>
+
+                    <div className="view-body">
+
+                    </div>
+                    <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
+                        {this.props.sets.map((s, i) => <Tab eventKey={i} key={i}
+                                                            title={<div><div className="color-block" style={{backgroundColor: s.color}}></div>{s.title}<Badge style={{marginLeft: '5px'}}>{s.tids.length}</Badge></div>} >
+                        </Tab>)}
+                    </Tabs>
+                </div>
+                <div className="view-body dendrogram-container">
                     {dendrograms.map(getDendroBox)}
                 </div>
             </div>
@@ -307,7 +317,7 @@ let getClusters = createSelector(
         }
 
         return clusters.sort((a, b) => b.num - a.num)
-            .map(c => ({num: c.num, trees: c.trees, total: c.total, treeId: c.treeId,
+            .map(c => ({num: c.num, trees: c.trees, total: c.total, treeId: c.treeId, blocks: c.blocks,
                 blockArr: createArrayFromMapping(c.blocks), branchArr: createArrayFromMapping(c.branches)}));
     });
 
@@ -316,19 +326,27 @@ let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.isClusterMode, (_, trees) => trees,
     state => state.referenceTree.highlightMonophyly != null?
                 state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
-    state => state.aggregatedDendrogram.spec],
-    (isClusterMode, trees, highlightEntities, spec) => {
+    state => state.aggregatedDendrogram.spec, state => state.inputGroupData.trees],
+    (isClusterMode, trees, highlightEntities, spec, rawTrees) => {
         let layouts = getLayouts(trees, spec);
-        let dendros = isClusterMode? getClusters(layouts):
+        let dendros = isClusterMode? getClusters(layouts).slice():
             layouts.map(t => ({...t, blockArr: createArrayFromMapping(t.blocks), branchArr: createArrayFromMapping(t.branches)}));
 
         // Get the highlight portion of each block
         let h = createMappingFromArray(highlightEntities);
-        for (let i = 0; i < layouts.length; i++) {
-            let t = layouts[i];
+        for (let i = 0; i < dendros.length; i++) {
+            let t = dendros[i];
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
                 let b = t.blocks[bid];
-                b.fillPercentage = getIntersection(b.entities, h) / parseFloat(Object.keys(b.entities).length);
+                if (isClusterMode) {
+                    b.fillPercentage = [];
+                    for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
+                        let e = rawTrees[tid].branches[b.represent[tid]].entities;
+                        b.fillPercentage.push(getIntersection(createMappingFromArray(e), h) / e.length);
+                    }
+                } else {
+                    b.fillPercentage = getIntersection(b.entities, h) / Object.keys(b.entities).length;
+                }
             }
         }
         return dendros;
@@ -362,6 +380,7 @@ let mapDispatchToProps = (dispatch) => ({
         }
     },
     onChangeSorting: () => {dispatch(toggleSorting())},
+    clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleClusterMode: (m) => {dispatch(toggleCLusterMode(m))}
 });
 

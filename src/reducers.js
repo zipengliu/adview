@@ -20,8 +20,8 @@ let initialState = {
     },
     dendrogramSpec: {
         width: 500,
-        height: 900,
-        margin: {left: 5, right: 5, top: 10, bottom: 10},
+        height: 870,
+        margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
         labelWidth: 100,
         responsiveAreaSize: 7
@@ -89,11 +89,9 @@ let initialState = {
             margin: {left: 25, right: 8, top: 10, bottom: 2}
         },
         attributeNames: ['support'],
-        controllingAttribute: null,
-        movingHandle: null,
-        selectedRange: {
-            support: [0.2, 0.6]
-        }
+        selection: [{isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}],
+        activeSelectionId: null,
+        selectedBranches: {}
     }
 };
 
@@ -103,6 +101,24 @@ let initialState = {
 let colorPallete = scaleOrdinal(schemeCategory10);
 let getColor = idx => idx < 10? colorPallete(idx): 'black';
 
+let selectBranchByAttribute = (trees, whichAttr, r) => {
+    let res = {};
+    // TODO make it work for the corresponding branch section (whichAttr === 1)
+    let attrName = whichAttr === 0? 'support': null;
+    for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+        for (let bid in trees[tid].branches) if (trees[tid].branches.hasOwnProperty(bid)) {
+            let b = trees[tid].branches[bid];
+            if (r[0] <= b[attrName] && b[attrName] <= r[1]) {
+                if (!res.hasOwnProperty(tid)) {
+                    res[tid] = [bid];
+                } else {
+                    res[tid].push(bid);
+                }
+            }
+        }
+    }
+    return res;
+};
 
 let mergeSets = (a, b) => {
     let c = a.slice();
@@ -110,7 +126,7 @@ let mergeSets = (a, b) => {
         if (a.indexOf(b[i]) === -1) {c.push(b[i])}
     }
     return c;
-}
+};
 
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
@@ -447,27 +463,25 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    controllingAttribute: action.attributeName,
-                    movingHandle: action.handle
+                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId?
+                        {...s, isMoving: action.handle? true: false, movingHandle: action.handle}: s)
                 }
             };
         case TYPE.MOVE_CONTROL_HANDLE:
-            let oldRange = state.attributeExplorer.selectedRange[state.attributeExplorer.controllingAttribute];
+            let sel = state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId];
             let newRange;
-            if (state.attributeExplorer.movingHandle === 'left') {
-                newRange = [Math.min(action.value, oldRange[1]), oldRange[1]];
+            if (sel.movingHandle === 'left') {
+                newRange = [Math.min(action.value, sel.range[1]), sel.range[1]];
             } else {
-                newRange = [oldRange[0], Math.max(action.value, oldRange[0])];
+                newRange = [sel.range[0], Math.max(action.value, sel.range[0])];
             }
 
             return {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    selectedRange: {
-                        ...state.attributeExplorer.selectedRange,
-                        [state.attributeExplorer.controllingAttribute]: newRange
-                    }
+                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId? {...s, range: newRange}: s),
+                    selectedBranches: selectBranchByAttribute(state.inputGroupData.trees, state.attributeExplorer.activeSelectionId, newRange)
                 }
             };
         case TYPE.TOGGLE_HISTOGRAM_OR_CDF:
@@ -477,7 +491,18 @@ function visphyReducer(state = initialState, action) {
                     ...state.attributeExplorer,
                     shownAsHistogram: action.isHistogram
                 }
-            }
+            };
+        case TYPE.CHANGE_ACTIVE_RANGE_SELECTION:
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    selectedBranches: action.id != null && action.id !== state.attributeExplorer.activeSelectionId?
+                        selectBranchByAttribute(state.inputGroupData.trees, action.id, state.attributeExplorer.selection[action.id].range):
+                        {},
+                    activeSelectionId: action.id,
+                }
+            };
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {

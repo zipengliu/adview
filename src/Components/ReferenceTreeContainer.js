@@ -4,35 +4,23 @@
 
 import React from 'react';
 import {connect} from 'react-redux';
-import {ButtonGroup, Button, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
 import FullDendrogram from './FullDendrogram';
-import {clearBranchSelection} from '../actions';
 
-let ReferenceTreeContainer = props => (<div style={{height: '100%', position: 'relative'}}>
-    <div style={{textAlign: 'center'}}>
-        <span className="view-title">Reference Tree </span>
-        <span>({props.title})</span>
-    </div>
-
-    <div style={{height: '95%'}}>
-        <FullDendrogram />
-    </div>
-    <div style={{position: 'absolute', right: '10px', top: 0}}>
-        <ButtonGroup bsSize="xsmall">
-            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch selections</Tooltip>}>
-                <Button onClick={props.clearSelection}>
-                    <Glyphicon glyph="refresh" />
-                </Button>
-            </OverlayTrigger>
-        </ButtonGroup>
-    </div>
+let ReferenceTreeContainer = props => (
+    <div className="view" style={{height: '98%'}}>
+        <div className="view-header">
+            <div style={{textAlign: 'center'}}>
+                <span className="view-title">Reference Tree </span>
+                <span>({props.title})</span>
+            </div>
+        </div>
+        <div className="view-body">
+            <FullDendrogram />
+        </div>
 </div>);
 
 let mapStateToProps = state => ({
     title: state.inputGroupData.trees[state.referenceTree.id].name,
 });
-let mapDispatchToProps = dispatch => ({
-    clearSelection: () => {dispatch(clearBranchSelection())},
-});
 
-export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);
+export default connect(mapStateToProps)(ReferenceTreeContainer);

@@ -10,18 +10,20 @@ import cn from 'classnames';
 import './TreeList.css';
 
 let TreeList = (props) => (
-    <div className="tree-list">
-        <div className="view-title">Tree List</div>
-        <div className="list">
-            {props.trees.map((t, i) =>
-                <div className="list-item" key={t.tid}>
-                    {i === 0 && <Glyphicon glyph="tree-conifer" />}
-                    <span className={cn('tree-name', {'current-set': t.isCurrentSet,
-                        'selected': props.highlighted.length? props.highlighted.indexOf(t.tid) !== -1:
-                            props.selected.indexOf(t.tid) !== -1})}>{t.name}</span>
-                </div>)}
+    <div className="view" id="tree-list">
+        <div className="view-header">
+            <div className="view-title">Tree List</div>
         </div>
-        <div className="legends">
+        <div className="view-body">
+                {props.trees.map((t, i) =>
+                    <div className="list-item" key={t.tid}>
+                        {i === 0 && <Glyphicon glyph="tree-conifer" />}
+                        <span className={cn('tree-name', {'current-set': t.isCurrentSet,
+                            'selected': props.highlighted.length? props.highlighted.indexOf(t.tid) !== -1:
+                                props.selected.indexOf(t.tid) !== -1})}>{t.name}</span>
+                    </div>)}
+        </div>
+        <div className="view-footer legends">
             <Glyphicon glyph="tree-conifer" />
             <span>ref. tree</span>
             <span className="tree-name current-set" style={{marginLeft: '10px', marginRight: '10px'}}>in current set</span>

@@ -1,10 +1,5 @@
-.tree-list {
+#tree-list .list {
     height: 100%;
-}
-
-.tree-list .list {
-    overflow: scroll;
-    height: 80%;
 }
 .list-item {
     padding: 0 3px;
@@ -30,6 +25,6 @@
     border: 1px solid red;
 }
 
-.tree-list .legends {
+#tree-list .legends {
     font-size: 10px;
 }

@@ -26,15 +26,9 @@ class MainView extends Component {
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
                 <div className="mainview-container">
                     <div className="left-column">
-                        <div className="overview">
-                            <Overview></Overview>
-                        </div>
-                        <div className="filter">
-                            <AttributeExplorer />
-                        </div>
-                        <div className="tree-list">
-                            <TreeList />
-                        </div>
+                        <Overview />
+                        <AttributeExplorer />
+                        <TreeList />
                     </div>
                     <div className="middle-column">
                         <DendrogramContainer />

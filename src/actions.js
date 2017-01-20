@@ -255,8 +255,8 @@ export function changeAttributeExplorerMode(section, scope, isContext) {
     return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, section, scope, isContext}
 }
 
-export function toggleMoveHandle(attributeName, handle) {
-    return {type: TYPE.TOGGLE_MOVE_HANDLE, attributeName, handle}
+export function toggleMoveHandle(handle) {
+    return {type: TYPE.TOGGLE_MOVE_HANDLE, handle}
 }
 export function moveControlHandle(value) {
     return {type: TYPE.MOVE_CONTROL_HANDLE, value}
@@ -264,6 +264,10 @@ export function moveControlHandle(value) {
 
 export function toggleHistogramOrCDF(isHistogram) {
     return {type: TYPE.TOGGLE_HISTOGRAM_OR_CDF, isHistogram};
+}
+
+export function changeActiveRangeSelection(id) {
+    return {type: TYPE.CHANGE_ACTIVE_RANGE_SELECTION, id};
 }
 
 

@@ -11,6 +11,7 @@ class AggregatedDendrogram extends Component {
         let {spec, isClusterMode} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {blockArr, branchArr, num, total} = this.props.data;
+        let unitOpacity = isClusterMode? 1/num: null;
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
@@ -19,12 +20,19 @@ class AggregatedDendrogram extends Component {
                             <g key={b.id}>
                                 {b.width > 0 &&
                                 <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />}
-                                {b.fillPercentage > 0.001 &&
+
+                                {isClusterMode && b.fillPercentage && b.fillPercentage.map((f, i) =>
+                                    <rect key={i} className="highlight-block" x={b.x + (1 - f) * b.width} y={b.y} width={f * b.width} height={b.height}
+                                          style={{fillOpacity: unitOpacity}} />
+                                )}
+
+                                {!isClusterMode && b.fillPercentage > 0.001 &&
                                 <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}
                                       width={b.fillPercentage * b.width} height={b.height} />}
-                                {b.fillPercentage > 0.5 && b.isLeaf &&
+                                {!isClusterMode && b.fillPercentage > 0.5 && b.isLeaf &&
                                 <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
                                       width={b.highlightWidth} height={b.height} />}
+
                                 {b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                             </g>
                         )}

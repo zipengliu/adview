@@ -33,7 +33,7 @@ class Dotplot extends Component {
         };
 
         // Transform the coordinates from [0, 1] to [s, s]
-        return <svg width={s} height={s}
+        return <svg width={s} height={s} style={{border: '1px solid black'}}
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>

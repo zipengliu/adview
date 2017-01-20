@@ -7,8 +7,7 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {ButtonGroup, Button, FormGroup, Radio, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
-import {changeAttributeExplorerMode} from '../actions';
-import {toggleMoveHandle, moveControlHandle, toggleHistogramOrCDF} from '../actions';
+import {toggleMoveHandle, moveControlHandle, toggleHistogramOrCDF, changeAttributeExplorerMode, changeActiveRangeSelection} from '../actions';
 import Histogram from './HistogramSlider';
 import LineChart from './LineChart';
 
@@ -16,85 +15,95 @@ import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
-        let {modes, onChangeMode, shownAsHistogram, data} = this.props;
+        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId} = this.props;
         let attrName = this.props.attributeNames[0];
 
-        let renderChart = (fgData, bgData, att) => shownAsHistogram?
+        let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
             (<Histogram foregroundBins={fgData} backgroundBins={bgData} attributeName={att}
-                        selectedRange={this.props.selectedRange[attrName]}
-                        isMovingHandle={this.props.controllingAttribute === attrName}
+                        selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
                         spec={this.props.spec} />):
             (<LineChart data={fgData} attributeName={att}
-                        selectedRange={this.props.selectedRange[attrName]}
-                        isMovingHandle={this.props.controllingAttribute === attrName}
+                        selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
-                        spec={this.props.spec} />)
+                        spec={this.props.spec} />);
 
+        let getSelectionButton = (id, disabled) =>
+            <Button bsSize="xsmall" disabled={disabled || id === 2}
+                    onClick={this.props.onChangeActiveRangeSelection.bind(null, activeSelectionId === id? null: id)}>
+                {activeSelectionId === id? 'deactivate range selection': 'activate range selection'}
+            </Button>;
 
         return (
-            <div id="attribute-explorer" style={{position: 'relative'}}>
-                <div className="view-title">Attribute Explorer</div>
-                <FormGroup style={{textAlign: 'center'}}>
-                    <span style={{marginRight: '2px'}}>as</span>
-                    <Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>
-                    <Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>
-                </FormGroup>
+            <div id="attribute-explorer" className="view">
+                <div className="view-header">
+                    <div className="view-title">Attribute Explorer</div>
+                    <FormGroup style={{textAlign: 'center'}}>
+                        <span style={{marginRight: '2px'}}>as</span>
+                        <Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>
+                        <Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>
+                    </FormGroup>
+                </div>
 
-                <div className="attribute-heading">&bull; All branches</div>
-                <ButtonGroup bsSize="xsmall">
-                    <OverlayTrigger placement="top" overlay={<Tooltip id="att-all-trees">
-                        Show distribution of attributes of all branches from all trees in this dataset.</Tooltip>}>
-                        <Button active={modes.all.scope === 'all'} onClick={onChangeMode.bind(null, 'all', 'all', null)}>all trees</Button>
-                    </OverlayTrigger>
-                    <OverlayTrigger placement="top" overlay={<Tooltip id="att-current-set">
-                        Show distribution of attributes of all branches from trees of the current subset.</Tooltip>}>
-                        <Button active={modes.all.scope === 'set'}
-                                onClick={onChangeMode.bind(null, 'all', 'set', null)}>cur. set</Button>
-                    </OverlayTrigger>
-                    <OverlayTrigger placement="top" overlay={<Tooltip id="att-selected-trees">
-                        Show distribution of attributes of all branches from the selected trees (reference tree if none is selected).</Tooltip>}>
-                        <Button active={modes.all.scope === 'tree'}
-                                onClick={onChangeMode.bind(null, 'all', 'tree', null)}>sel. trees</Button>
-                    </OverlayTrigger>
-                </ButtonGroup>
-                <FormGroup>
-                    <OverlayTrigger placement="right" overlay={<Tooltip id="att-in-context">
-                        Show the global distribution as background and partial one as foreground</Tooltip>}>
-                        <Radio inline disabled={modes.all.scope === 'all' || !shownAsHistogram} checked={modes.all.context}
-                                  onChange={onChangeMode.bind(null, 'all', null, !modes.all.context)}>show in context</Radio>
-                    </OverlayTrigger>
-                </FormGroup>
+                <div className="view-body">
+                    <div className="attribute-heading">&bull; All branches</div>
+                    <ButtonGroup bsSize="xsmall">
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-all-trees">
+                            Show distribution of attributes of all branches from all trees in this dataset.</Tooltip>}>
+                            <Button active={modes.all.scope === 'all'} onClick={onChangeMode.bind(null, 'all', 'all', null)}>all trees</Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-current-set">
+                            Show distribution of attributes of all branches from trees of the current subset.</Tooltip>}>
+                            <Button active={modes.all.scope === 'set'}
+                                    onClick={onChangeMode.bind(null, 'all', 'set', null)}>cur. set</Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-selected-trees">
+                            Show distribution of attributes of all branches from the selected trees (reference tree if none is selected).</Tooltip>}>
+                            <Button active={modes.all.scope === 'tree'}
+                                    onClick={onChangeMode.bind(null, 'all', 'tree', null)}>sel. trees</Button>
+                        </OverlayTrigger>
+                    </ButtonGroup>
+                    <FormGroup>
+                        <OverlayTrigger placement="right" overlay={<Tooltip id="att-in-context">
+                            Show the global distribution as background and partial one as foreground</Tooltip>}>
+                            <Radio inline disabled={modes.all.scope === 'all' || !shownAsHistogram} checked={modes.all.context}
+                                   onChange={onChangeMode.bind(null, 'all', null, !modes.all.context)}>show in context</Radio>
+                        </OverlayTrigger>
+                    </FormGroup>
 
-                {renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName)}
+                    {getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
+                    {renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
 
-                <OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>
-                    <div className="attribute-heading">&bull; Corresponding branches</div>
-                </OverlayTrigger>
-                <ButtonGroup bsSize="xsmall">
-                    <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-all-trees">
-                        Show distribution of attributes of corresponding branches from all trees in this dataset.</Tooltip>}>
-                        <Button active={modes.corr.scope === 'all'} onClick={onChangeMode.bind(null, 'corr', 'all', null)}>all trees</Button>
+                    <OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>
+                        <div className="attribute-heading">&bull; Corresponding branches</div>
                     </OverlayTrigger>
-                    <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-current-set">
-                        Show distribution of attributes of corresponding branches from trees of the current subset.</Tooltip>}>
-                        <Button active={modes.corr.scope === 'set'}
-                                onClick={onChangeMode.bind(null, 'corr', 'set', null)}>cur. set</Button>
-                    </OverlayTrigger>
-                </ButtonGroup>
-                <FormGroup>
-                    <OverlayTrigger placement="right" overlay={<Tooltip id="att-corr-in-context">
-                        Show the global distribution as background and partial one as foreground</Tooltip>}>
-                        <Radio inline disabled={modes.corr.scope === 'all' || !shownAsHistogram} checked={modes.corr.context}
-                                  onChange={onChangeMode.bind(null, 'corr', null, !modes.corr.context)}>show in context</Radio>
-                    </OverlayTrigger>
-                </FormGroup>
+                    <ButtonGroup bsSize="xsmall">
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-all-trees">
+                            Show distribution of attributes of corresponding branches from all trees in this dataset.</Tooltip>}>
+                            <Button active={modes.corr.scope === 'all'} onClick={onChangeMode.bind(null, 'corr', 'all', null)}>all trees</Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-current-set">
+                            Show distribution of attributes of corresponding branches from trees of the current subset.</Tooltip>}>
+                            <Button active={modes.corr.scope === 'set'}
+                                    onClick={onChangeMode.bind(null, 'corr', 'set', null)}>cur. set</Button>
+                        </OverlayTrigger>
+                    </ButtonGroup>
+                    <FormGroup>
+                        <OverlayTrigger placement="right" overlay={<Tooltip id="att-corr-in-context">
+                            Show the global distribution as background and partial one as foreground</Tooltip>}>
+                            <Radio inline disabled={modes.corr.scope === 'all' || !shownAsHistogram} checked={modes.corr.context}
+                                   onChange={onChangeMode.bind(null, 'corr', null, !modes.corr.context)}>show in context</Radio>
+                        </OverlayTrigger>
+                    </FormGroup>
 
-                {renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName)}
-                {renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity')}
+                    {getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}
+                    {renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}
+                    {getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}
+                    {renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}
 
+                </div>
             </div>
         )
     }
@@ -136,7 +145,7 @@ let getSetWiseValues = createSelector(
 );
 
 let getTreeWiseValues = createSelector(
-    [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId || state.referenceTree.id],
+    [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
         (_, attrName) => attrName],
     (tree, attrName) => {
         let values = [];
@@ -259,15 +268,15 @@ let mapStateToProps = state => {
     return {
         ...state.attributeExplorer,
         data,
-        // jaccardArray: state.referenceTree.highlightMonophyly? jac: null
     };
 };
 
 let mapDispatchToProps = dispatch => ({
     onChangeMode: (section, scope, context) => {dispatch(changeAttributeExplorerMode(section, scope, context))},
-    toggleMoveHandle: (a, h) => {dispatch(toggleMoveHandle(a, h))},
+    toggleMoveHandle: (h) => {dispatch(toggleMoveHandle(h))},
     moveControlHandle: (v) => {dispatch(moveControlHandle(v))},
-    toggleHistogram: (a) => {dispatch(toggleHistogramOrCDF(a))}
+    toggleHistogram: (a) => {dispatch(toggleHistogramOrCDF(a))},
+    onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(AttributeExplorer);

@@ -6,6 +6,10 @@
     stroke-width: 3;
     stroke: red;
 }
+.branch-line.highlighted {
+    stroke-width: 3;
+    stroke: cyan;
+}
 
 .entity-name {
     font-size: 8px;

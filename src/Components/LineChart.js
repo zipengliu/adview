@@ -6,13 +6,13 @@ import React from 'react';
 import {scaleLinear, line, format} from 'd3';
 
 let LineChart = props => {
-    let {spec, data, attributeName, selectedRange} = props;
+    let {spec, data, attributeName, selection} = props;
     let hasData = !!data;
 
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
     let xScale = scaleLinear().domain([0, 1]).range([0, effectiveWidth]).clamp(true);
     let tickFormat = xScale.tickFormat(5, '.1f');
-    let controlPos = selectedRange.map(xScale);
+    let controlPos = selection? selection.range.map(xScale): null;
     let rangeFormat = format('.2f');
 
     let yScale, yTicks, yTickFormat, onDragging, points, l;
@@ -40,13 +40,13 @@ let LineChart = props => {
 
     return (
         <svg width={spec.width} height={spec.chartHeight + spec.sliderHeight} className="attribute-chart"
-             onMouseMove={hasData && props.isMovingHandle? onDragging: null}
+             onMouseMove={hasData && selection && selection.isMoving? onDragging: null}
              onMouseUp={hasData? props.toggleMoveHandle: null}
         >
             <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                 <text className="title" dx="5">{hasData? attributeName + ' (%)': 'Not Applicable'}</text>
-                {hasData &&
-                <text className="range-text" dx="5" dy="12">{`${rangeFormat(selectedRange[0])} - ${rangeFormat(selectedRange[1])}`}</text>
+                {hasData && selection &&
+                <text className="range-text" dx="5" dy="12">{`${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])}`}</text>
                 }
 
                 {hasData &&
@@ -68,6 +68,7 @@ let LineChart = props => {
                             <text dx="-7" dy="16">{tickFormat(t)}</text>
                         </g>)}
                     </g>
+                    {selection &&
                     <g transform="translate(0,2)">
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[0]}, 0)`}
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, attributeName, 'left'): null}/>
@@ -75,6 +76,7 @@ let LineChart = props => {
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, attributeName, 'right'): null}/>
                         <rect className="selected-area" x={controlPos[0]} y="-3" width={controlPos[1] - controlPos[0]} height="6"/>
                     </g>
+                    }
                 </g>
             </g>
         </svg>
