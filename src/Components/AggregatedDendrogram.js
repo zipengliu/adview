@@ -10,7 +10,7 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, isClusterMode} = this.props;
+        let {spec, isClusterMode, shadedGranularity} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
@@ -37,6 +37,12 @@ class AggregatedDendrogram extends Component {
                                 {!isClusterMode && b.fillPercentage > 0.5 && b.isLeaf &&
                                 <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
                                       width={b.highlightWidth} height={b.height} />}
+
+                                {isClusterMode && b.colorBins &&
+                                b.colorBins.map((d, i) =>
+                                    <line key={i} style={{stroke: d, strokeWidth: shadedGranularity}}
+                                          x1={b.x + b.width - (i+1) * shadedGranularity} y1={b.y}
+                                          x2={b.x + b.width - (i+1) * shadedGranularity} y2={b.y+b.height}/>)}
 
                                 {b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                             </g>

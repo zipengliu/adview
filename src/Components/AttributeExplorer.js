@@ -168,7 +168,7 @@ let getCorrSetWiseValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
         state => state.referenceTree.id, state => state.referenceTree.selected[0],
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, rid, highlightMonophyly, set) => getAttributeValues(trees. set.tids, attrName, rid, highlightMonophyly)
+    (trees, attrName, rid, highlightMonophyly, set) => getAttributeValues(trees, set.tids, attrName, rid, highlightMonophyly)
 );
 
 let getGlobalJaccardArray = createSelector(

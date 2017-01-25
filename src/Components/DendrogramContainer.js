@@ -5,6 +5,7 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
+import {scaleLinear, hsl} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
@@ -41,7 +42,8 @@ class DendrogramContainer extends Component {
                  onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode? t.trees: null)}>
-                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} rangeSelection={rangeSelection} />
+                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode}
+                                      rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
             </div>
             )};
         const disabledTools = activeTreeId == null;
@@ -338,10 +340,26 @@ let getClusters = createSelector(
     });
 
 
+let getKDEBins = (n, values, kernel) => {
+    let bins = [], min = 100, max = 0;
+    for (let j = 0; j < n; j++) {
+        let b = 0;
+        for (let i = 0; i < values.length; i++) {
+            b += kernel(j/n - values[i])
+        }
+        if (b < min) min = b;
+        if (b > max) max = b;
+        bins.push(b);
+    }
+    let scale = scaleLinear().domain([min, max]).range([1, .5]);
+    let colorBins = bins.map(scale).map(l => hsl(210, 1, l).toString());
+    return colorBins;
+};
+
 // Get the highlight portion of each block
 // Also determine whether there is branch that falls into the range selection
 // FIXME: bottleneck!
-let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection, trees) => {
+let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection, trees, shadedHistogram) => {
     let h = createMappingFromArray(entities);
     let {attrName, range} = rangeSelection || {};
     if (isClusterMode) {
@@ -365,6 +383,10 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
                             }
                     }
                 }
+
+                // construct the shaded histogram
+                b.colorBins = entities.length > 0?
+                    getKDEBins(shadedHistogram.binsFunc(b.width), b.fillPercentage, shadedHistogram.kernel): null;
             }
         }
     } else {
@@ -398,15 +420,17 @@ let getDendrograms = createSelector(
         state => state.attributeExplorer.activeSelectionId === 0? {
                 attrName: 'support',
                 range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
-            }: null],
-    (isClusterMode, trees, highlightEntities, spec, rawTrees, rangeSelection) => {
-        let dendros = getLayouts(trees, spec).slice();
+            }: null,
+        state => state.aggregatedDendrogram.shadedHistogram],
+    (isClusterMode, trees, highlightEntities, spec, rawTrees, rangeSelection, shadedHistogram) => {
+        let dendros = getLayouts(trees, spec);
         let clusters = isClusterMode? getClusters(dendros).slice(): [];
+        dendros = dendros.slice();
         let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {
             dendroMapping[dendros[i].tid] = dendros[i];
         }
-        getFill(dendroMapping, clusters, isClusterMode, highlightEntities, rangeSelection, rawTrees);
+        getFill(dendroMapping, clusters, isClusterMode, highlightEntities, rangeSelection, rawTrees, shadedHistogram);
         return isClusterMode? clusters: dendros;
     }
 );

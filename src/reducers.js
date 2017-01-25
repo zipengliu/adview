@@ -68,6 +68,11 @@ let initialState = {
             // treeId: null,
             // branchId: null,     // when this is null, order by rf distance between trees;
             //                     // otherwise by similarity (jaccard index currently) between the corresponding branches
+        },
+        shadedHistogram: {
+            granularity: 1,
+            binsFunc: width => Math.floor(width / 1),
+            kernel: x => Math.pow(Math.E, -50*x*x)
         }
     },
     attributeExplorer: {
