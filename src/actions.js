@@ -51,16 +51,10 @@ function fetchInputGroupFailure(err) {
     }
 }
 
-export function highlightMonophyly(bid) {
+export function toggleHighlightMonophyly(bid) {
     return {
-        type: TYPE.HIGHLIGHT_MONOPHYLY,
+        type: TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY,
         bid
-    }
-}
-
-export function unhighlightMonophyly() {
-    return {
-        type: TYPE.UNHIGHLIGHT_MONOPHYLY,
     }
 }
 

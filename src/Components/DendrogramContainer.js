@@ -10,7 +10,7 @@ import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
     addTreeToInspector, toggleInspector, toggleSorting, toggleCLusterMode, clearBranchSelection} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersection, createArrayFromMapping} from '../utils';
+import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
 import './Dendrogram.css';
 
 
@@ -24,7 +24,7 @@ class DendrogramContainer extends Component {
         if (isClusterMode && activeTreeId) {
             let activeDendrogram;
             for (let i = 0; i < dendrograms.length; i++) {
-                if (dendrograms[i].treeId === activeTreeId) {
+                if (dendrograms[i].tid === activeTreeId) {
                     activeDendrogram = dendrograms[i];
                     break;
                 }
@@ -35,11 +35,11 @@ class DendrogramContainer extends Component {
         }
         let getDendroBox = (t, i) => {
             return (
-            <div className={cn("agg-dendro-box", {selected: activeTreeId === t.treeId})} key={i}
+            <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={i}
                  style={{width: boxSize + 'px', height: boxSize + 'px'}}
-                 onMouseEnter={this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.treeId], true)}
+                 onMouseEnter={this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
                  onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
-                 onClick={this.props.onClick.bind(null, activeTreeId === t.treeId? null: t.treeId,
+                 onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode? t.trees: null)}>
                 <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} />
             </div>
@@ -245,7 +245,7 @@ let calcLayout = (tree, spec) => {
     };
     calcWidth(tree.rootBranch, 0);
 
-    return {blocks, branches, rootBlockId: tree.rootBranch, treeId: tree._id};
+    return {blocks, branches, rootBlockId: tree.rootBranch, tid: tree._id};
 };
 
 let getLayouts = createSelector(
@@ -266,7 +266,7 @@ let getHash = (blocks, rootBlockId) => {
 };
 
 // Cluster trees by visual representations
-// trees is an array of tree objects {treeId, blocks, rootBlockId, branches}
+// trees is an array of tree objects {tid, blocks, rootBlockId, branches}
 // Return an array of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let getClusters = createSelector(
@@ -307,49 +307,60 @@ let getClusters = createSelector(
             let t = trees[i];
             if (i === 0 || t.hash !== trees[i - 1].hash) {
                 // create a new cluster
-                c = {treeId: t.treeId + '-r', blocks: t.blocks, rootBlockId: t.rootBlockId, branches: t.branches,
+                c = {tid: t.tid + '-r', blocks: t.blocks, rootBlockId: t.rootBlockId, branches: t.branches,
                     num: 0, trees: [], total: trees.length};
                 clusters.push(c);
             }
             c.num += 1;
-            c.trees.push(t.treeId);
-            addRepresent(c.blocks, c.rootBlockId, t.blocks, t.treeId, t.rootBlockId);
+            c.trees.push(t.tid);
+            addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
         }
 
-        return clusters.sort((a, b) => b.num - a.num)
-            .map(c => ({num: c.num, trees: c.trees, total: c.total, treeId: c.treeId, blocks: c.blocks,
-                blockArr: createArrayFromMapping(c.blocks), branchArr: createArrayFromMapping(c.branches)}));
+        return clusters.sort((a, b) => b.num - a.num);
     });
+
+
+// Get the highlight portion of each block
+let getFill = (dendroMapping, clusters, isClusterMode, entities) => {
+    let h = createMappingFromArray(entities);
+    if (isClusterMode) {
+        for (let i = 0; i < clusters.length; i++) {
+            let t = clusters[i];
+            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+                let b = t.blocks[bid];
+                b.fillPercentage = [];
+                for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
+                    let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
+                    b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
+                }
+            }
+        }
+    } else {
+        for (let tid in dendroMapping) if (dendroMapping.hasOwnProperty(tid)) {
+            let t = dendroMapping[tid];
+            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+                let b = t.blocks[bid];
+                b.fillPercentage = getIntersection(b.entities, h) / Object.keys(b.entities).length;
+            }
+        }
+    }
+};
 
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.isClusterMode, (_, trees) => trees,
     state => state.referenceTree.highlightMonophyly != null?
                 state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
-    state => state.aggregatedDendrogram.spec, state => state.inputGroupData.trees],
-    (isClusterMode, trees, highlightEntities, spec, rawTrees) => {
-        let layouts = getLayouts(trees, spec);
-        let dendros = isClusterMode? getClusters(layouts).slice():
-            layouts.map(t => ({...t, blockArr: createArrayFromMapping(t.blocks), branchArr: createArrayFromMapping(t.branches)}));
-
-        // Get the highlight portion of each block
-        let h = createMappingFromArray(highlightEntities);
+    state => state.aggregatedDendrogram.spec],
+    (isClusterMode, trees, highlightEntities, spec) => {
+        let dendros = getLayouts(trees, spec).slice();
+        let clusters = isClusterMode? getClusters(dendros).slice(): [];
+        let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {
-            let t = dendros[i];
-            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-                let b = t.blocks[bid];
-                if (isClusterMode) {
-                    b.fillPercentage = [];
-                    for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
-                        let e = rawTrees[tid].branches[b.represent[tid]].entities;
-                        b.fillPercentage.push(getIntersection(createMappingFromArray(e), h) / e.length);
-                    }
-                } else {
-                    b.fillPercentage = getIntersection(b.entities, h) / Object.keys(b.entities).length;
-                }
-            }
+            dendroMapping[dendros[i].tid] = dendros[i];
         }
-        return dendros;
+        getFill(dendroMapping, clusters, isClusterMode, highlightEntities);
+        return isClusterMode? clusters: dendros;
     }
 );
 

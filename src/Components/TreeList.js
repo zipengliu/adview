@@ -17,7 +17,7 @@ let TreeList = (props) => (
         <div className="view-body">
                 {props.trees.map((t, i) =>
                     <div className="list-item" key={t.tid}>
-                        {i === 0 && <Glyphicon glyph="tree-conifer" />}
+                        {i === 0 && <Glyphicon glyph="tree-conifer" style={{display: 'inline'}} />}
                         <span className={cn('tree-name', {'current-set': t.isCurrentSet,
                             'selected': props.highlighted.length? props.highlighted.indexOf(t.tid) !== -1:
                                 props.selected.indexOf(t.tid) !== -1})}>{t.name}</span>

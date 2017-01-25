@@ -31,7 +31,7 @@ class AttributeExplorer extends Component {
                         spec={this.props.spec} />);
 
         let getSelectionButton = (id, disabled) =>
-            <Button bsSize="xsmall" disabled={disabled || id === 2}
+            <Button bsSize="xsmall" disabled={disabled || id !== 0}
                     onClick={this.props.onChangeActiveRangeSelection.bind(null, activeSelectionId === id? null: id)}>
                 {activeSelectionId === id? 'deactivate range selection': 'activate range selection'}
             </Button>;
@@ -115,82 +115,60 @@ let getBinsFromArray = values => {
     return hist(values);
 };
 
-let getGlobalValues = createSelector(
-    [state => state.inputGroupData.trees, (_, attrName) => attrName],
-    (trees, attrName) => {
-        let values = [];
-        for (let i in trees) if (trees.hasOwnProperty(i)) {
-            let t = trees[i];
+let getAttributeValues = (trees, tids, attrName, rid, highlightMonophyly) => {
+    let values = [];
+    let corr, b;
+    if (highlightMonophyly) {
+        b = trees[rid].branches[highlightMonophyly];
+        corr = b.correspondingBranches;
+        // values.push(b[attrName]);
+    }
+    for (let i = 0; i < tids.length; i++) {
+        let tid = tids[i];
+        let t = trees[tid];
+        if (corr) {
+            if (corr.hasOwnProperty(tid) && corr[tid].branchId) {
+                values.push(trees[tid].branches[corr[tid].branchId][attrName]);
+            }
+        } else {
             for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
-                values.push(t.branches[j][attrName]);
+                if (!t.branches[j].isLeaf && j !== t.rootBranch) {
+                    values.push(t.branches[j][attrName]);
+                }
             }
         }
-        return values;
     }
+    return values;
+};
+
+let getGlobalValues = createSelector(
+    [state => state.inputGroupData.trees, (_, attrName) => attrName],
+    (trees, attrName) => getAttributeValues(trees, Object.keys(trees), attrName)
 );
 
 let getSetWiseValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrName) => attrName,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, set) => {
-        let values = [];
-        for (let i = 0; i < set.tids.length; i++) {
-            let t = trees[set.tids[i]];
-            for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
-                values.push(t.branches[j][attrName]);
-            }
-        }
-        return values;
-    }
+    (trees, attrName, set) => getAttributeValues(trees, set.tids, attrName)
 );
 
 let getTreeWiseValues = createSelector(
     [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
         (_, attrName) => attrName],
-    (tree, attrName) => {
-        let values = [];
-        for (let j in tree.branches) if (tree.branches.hasOwnProperty(j)) {
-            values.push(tree.branches[j][attrName]);
-        }
-        return values;
-    }
+    (tree, attrName) => getAttributeValues({[tree._id]: tree}, [tree._id], attrName)
 );
 
 let getCorrGlobalValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
         state => state.referenceTree.id, state => state.referenceTree.selected[0]],
-    (trees, attrName, referenceTreeId, highlightMonophyly) => {
-        if (highlightMonophyly == null) return null;
-        let b = trees[referenceTreeId].branches[highlightMonophyly];
-        let values = [b[attrName]];
-        let corr = b.correspondingBranches;
-
-        for (let tid in corr)
-            if (corr.hasOwnProperty(tid)) {
-                let bid = corr[tid].branchId;
-                values.push(trees[tid].branches[bid][attrName]);
-            }
-        return values;
-    }
+    (trees, attrName, rid, highlightMonophyly) => getAttributeValues(trees, Object.keys(trees), attrName, rid, highlightMonophyly)
 );
 
 let getCorrSetWiseValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
         state => state.referenceTree.id, state => state.referenceTree.selected[0],
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, referenceTreeId, highlightMonophyly, set) => {
-        if (highlightMonophyly == null || set.tids.length === 0) return null;
-        let b = trees[referenceTreeId].branches[highlightMonophyly];
-        let values = [b[attrName]];
-        let corr = b.correspondingBranches;
-
-        for (let tid in corr)
-            if (corr.hasOwnProperty(tid) && set.tids.indexOf(tid)!== -1) {
-                let bid = corr[tid].branchId;
-                values.push(trees[tid].branches[bid][attrName]);
-            }
-        return values;
-    }
+    (trees, attrName, rid, highlightMonophyly, set) => getAttributeValues(trees. set.tids, attrName, rid, highlightMonophyly)
 );
 
 let getGlobalJaccardArray = createSelector(

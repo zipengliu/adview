@@ -25,13 +25,13 @@
 
 
 .attribute-chart .slider .control {
-    fill: black;
+    fill: purple;
     cursor: pointer;
 }
 
 .attribute-chart .slider .selected-area {
-    fill: grey;
-    fill-opacity: .5;
+    fill: purple;
+    fill-opacity: .3;
 }
 
 .attribute-chart .line {

@@ -91,7 +91,6 @@ let initialState = {
         attributeNames: ['support'],
         selection: [{isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}],
         activeSelectionId: null,
-        selectedBranches: {}
     }
 };
 
@@ -100,25 +99,6 @@ let initialState = {
 
 let colorPallete = scaleOrdinal(schemeCategory10);
 let getColor = idx => idx < 10? colorPallete(idx): 'black';
-
-let selectBranchByAttribute = (trees, whichAttr, r) => {
-    let res = {};
-    // TODO make it work for the corresponding branch section (whichAttr === 1)
-    let attrName = whichAttr === 0? 'support': null;
-    for (let tid in trees) if (trees.hasOwnProperty(tid)) {
-        for (let bid in trees[tid].branches) if (trees[tid].branches.hasOwnProperty(bid)) {
-            let b = trees[tid].branches[bid];
-            if (r[0] <= b[attrName] && b[attrName] <= r[1]) {
-                if (!res.hasOwnProperty(tid)) {
-                    res[tid] = [bid];
-                } else {
-                    res[tid].push(bid);
-                }
-            }
-        }
-    }
-    return res;
-};
 
 let mergeSets = (a, b) => {
     let c = a.slice();
@@ -130,19 +110,12 @@ let mergeSets = (a, b) => {
 
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
-        case TYPE.HIGHLIGHT_MONOPHYLY:
+        case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightMonophyly: action.bid
                 },
-            });
-        case TYPE.UNHIGHLIGHT_MONOPHYLY:
-            return Object.assign({}, state, {
-                referenceTree: {
-                    ...state.referenceTree,
-                    highlightMonophyly: null
-                }
             });
         case TYPE.FETCH_TREE_REQUEST:
             return Object.assign({}, state, {
@@ -481,7 +454,6 @@ function visphyReducer(state = initialState, action) {
                 attributeExplorer: {
                     ...state.attributeExplorer,
                     selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId? {...s, range: newRange}: s),
-                    selectedBranches: selectBranchByAttribute(state.inputGroupData.trees, state.attributeExplorer.activeSelectionId, newRange)
                 }
             };
         case TYPE.TOGGLE_HISTOGRAM_OR_CDF:
@@ -497,9 +469,6 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    selectedBranches: action.id != null && action.id !== state.attributeExplorer.activeSelectionId?
-                        selectBranchByAttribute(state.inputGroupData.trees, action.id, state.attributeExplorer.selection[action.id].range):
-                        {},
                     activeSelectionId: action.id,
                 }
             };

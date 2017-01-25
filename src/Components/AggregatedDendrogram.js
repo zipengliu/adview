@@ -3,6 +3,7 @@
  */
 
 import React, { Component } from 'react';
+import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
 class AggregatedDendrogram extends Component {
@@ -10,8 +11,9 @@ class AggregatedDendrogram extends Component {
         // console.log(this.props.data);
         let {spec, isClusterMode} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {blockArr, branchArr, num, total} = this.props.data;
-        let unitOpacity = isClusterMode? 1/num: null;
+        let {blocks, branches, num, total} = this.props.data;
+        let blockArr = createArrayFromMapping(blocks);
+        let branchArr = createArrayFromMapping(branches);
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
@@ -21,10 +23,10 @@ class AggregatedDendrogram extends Component {
                                 {b.width > 0 &&
                                 <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />}
 
-                                {isClusterMode && b.fillPercentage && b.fillPercentage.map((f, i) =>
-                                    <rect key={i} className="highlight-block" x={b.x + (1 - f) * b.width} y={b.y} width={f * b.width} height={b.height}
-                                          style={{fillOpacity: unitOpacity}} />
-                                )}
+                                {/*{isClusterMode && b.fillPercentage && b.fillPercentage.map((f, i) =>*/}
+                                    {/*<rect key={i} className="highlight-block" x={b.x + (1 - f) * b.width} y={b.y} width={f * b.width} height={b.height}*/}
+                                          {/*style={{fillOpacity: unitOpacity}} />*/}
+                                {/*)}*/}
 
                                 {!isClusterMode && b.fillPercentage > 0.001 &&
                                 <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}

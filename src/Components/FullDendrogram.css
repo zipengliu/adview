@@ -6,9 +6,9 @@
     stroke-width: 3;
     stroke: red;
 }
-.branch-line.highlighted {
+.branch-line.range-selected {
     stroke-width: 3;
-    stroke: cyan;
+    stroke: purple;
 }
 
 .entity-name {
