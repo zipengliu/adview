@@ -84,9 +84,9 @@ let initialState = {
         shownAsHistogram: true,
         spec: {
             width: 180,
-            chartHeight: 60,
-            sliderHeight: 30,
-            margin: {left: 25, right: 8, top: 10, bottom: 2}
+            chartHeight: 50,
+            sliderHeight: 34,
+            margin: {left: 25, right: 8, top: 14, bottom: 2}
         },
         attributeNames: ['support'],
         selection: [{isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}],

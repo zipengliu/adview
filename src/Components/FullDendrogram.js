@@ -8,13 +8,12 @@ import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric} from '../actions';
-import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
 
 class FullDendrogram extends Component {
     render() {
-        let {spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
+        let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
         let {attrName, range} = rangeSelection || {};
 
@@ -44,6 +43,7 @@ class FullDendrogram extends Component {
                         )}
                     </g>
                     <g className="names">{names}</g>
+                    {!isStatic &&
                     <g className="responding-boxes">
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
@@ -58,6 +58,7 @@ class FullDendrogram extends Component {
                                   key={d.bid}>
                             </rect>)}
                     </g>
+                    }
                 </g>
             </svg>
         )
@@ -150,9 +151,10 @@ let getDendrogramSpecs = createSelector(
 
 function mapStateToProps(state, ownProps) {
     return {
+        isStatic: !!ownProps.isStatic,
         ...getDendrogramSpecs(state, ownProps),
         referenceTree: state.referenceTree,
-        tree: ownProps.tree? ownProps.tree: state.inputGroupData.trees[state.referenceTree.id],
+        tree: state.inputGroupData.trees[ownProps.tree? ownProps.tree.id: state.referenceTree.id],
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         pickingBranch: state.overview.pickingBranch,

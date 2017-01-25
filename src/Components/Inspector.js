@@ -32,7 +32,7 @@ class Inspector extends Component {
                                         </OverlayTrigger>
                                     </ButtonGroup>
                                 </div>
-                                <FullDendrogram key={t.id} tree={t} />
+                                <FullDendrogram key={t.id} tree={t} isStatic={true} />
                             </div>)}
                     </div>
                 </Modal.Body>

@@ -38,11 +38,11 @@ let HistogramSlider = props => {
              onMouseMove={hasData && selection && selection.isMoving? onDragging: null}
              onMouseUp={hasData? props.toggleMoveHandle.bind(null, null): null}
         >
+            <text className="title" x={spec.margin.left} y="12">
+                {hasData? attributeName: 'Not Applicable'}
+                {hasData && selection && `   (${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])})`}
+            </text>
             <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
-                <text className="title" dx="5">{hasData? attributeName: 'Not Applicable'}</text>
-                {hasData && selection &&
-                <text className="range-text" dx="5" dy="12">{`${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])}`}</text>
-                }
                 {hasData &&
                 <g className="bars">
                     {!!backgroundBins &&

@@ -336,6 +336,8 @@ let getClusters = createSelector(
 
 
 // Get the highlight portion of each block
+// Also determine whether there is branch that falls into the range selection
+// FIXME: bottleneck!
 let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection, trees) => {
     let h = createMappingFromArray(entities);
     let {attrName, range} = rangeSelection || {};
