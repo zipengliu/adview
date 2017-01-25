@@ -25,6 +25,10 @@
     stroke-width: 1px;
     stroke: black;
 }
+.block.range-selected {
+    stroke-width: 2px;
+    stroke: purple;
+}
 .highlight-block {
     fill: steelblue;
     fill-opacity: .6;

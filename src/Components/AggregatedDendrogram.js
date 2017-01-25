@@ -3,6 +3,7 @@
  */
 
 import React, { Component } from 'react';
+import cn from 'classnames';
 import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -14,6 +15,7 @@ class AggregatedDendrogram extends Component {
         let {blocks, branches, num, total} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
+
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
@@ -21,7 +23,8 @@ class AggregatedDendrogram extends Component {
                         {blockArr.map(b =>
                             <g key={b.id}>
                                 {b.width > 0 &&
-                                <rect className="block" x={b.x} y={b.y} width={b.width} height={b.height} />}
+                                <rect className={cn('block', {'range-selected': b.rangeSelected > 0})}
+                                      x={b.x} y={b.y} width={b.width} height={b.height} />}
 
                                 {/*{isClusterMode && b.fillPercentage && b.fillPercentage.map((f, i) =>*/}
                                     {/*<rect key={i} className="highlight-block" x={b.x + (1 - f) * b.width} y={b.y} width={f * b.width} height={b.height}*/}

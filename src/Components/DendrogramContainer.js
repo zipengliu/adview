@@ -16,7 +16,7 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, isClusterMode, dendrograms, activeTreeId} = this.props;
+        let {spec, isClusterMode, dendrograms, activeTreeId, rangeSelection} = this.props;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
         let boxSize = spec.size + 2 * spec.margin + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
@@ -41,7 +41,7 @@ class DendrogramContainer extends Component {
                  onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode? t.trees: null)}>
-                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} />
+                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} rangeSelection={rangeSelection} />
             </div>
             )};
         const disabledTools = activeTreeId == null;
@@ -170,7 +170,20 @@ let calcLayout = (tree, spec) => {
         [tree.rootBranch]: {id: tree.rootBranch, children: [], level: 1,
             height, width: 0, x: 0, y: 0,
             n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
+            branches: createMappingFromArray(Object.keys(tree.branches)),
             entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)}
+    };
+    let getBranchesInSubtree = (bid) => {
+        let res = {};
+        let dfs = (bid) => {
+            res[bid] = true;
+            if (!tree.branches[bid].isLeaf) {
+                dfs(tree.branches[bid].left);
+                dfs(tree.branches[bid].right);
+            }
+        };
+        dfs(bid);
+        return res;
     };
     let splitBlock = function (blockId, curBid) {
         let b = tree.branches[curBid];
@@ -178,9 +191,11 @@ let calcLayout = (tree, spec) => {
         if (tree.expand[curBid] && curBid !== tree.rootBranch) {
             // split block
             blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
+                branches: getBranchesInSubtree(curBid),
                 isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
             blocks[blockId].n -= b.entities.length;
             blocks[blockId].entities = subtractMapping(blocks[blockId].entities, blocks[curBid].entities);
+            blocks[blockId].branches = subtractMapping(blocks[blockId].branches, blocks[curBid].branches);
             blocks[blockId].children.push(curBid);
             newBlockId = curBid;
         }
@@ -321,17 +336,28 @@ let getClusters = createSelector(
 
 
 // Get the highlight portion of each block
-let getFill = (dendroMapping, clusters, isClusterMode, entities) => {
+let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection, trees) => {
     let h = createMappingFromArray(entities);
+    let {attrName, range} = rangeSelection || {};
     if (isClusterMode) {
         for (let i = 0; i < clusters.length; i++) {
             let t = clusters[i];
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
                 let b = t.blocks[bid];
                 b.fillPercentage = [];
+                b.rangeSelected = 0;
                 for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
                     let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
                     b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
+
+                    if (rangeSelection) {
+                        let checkingBlock = dendroMapping[tid].blocks[b.represent[tid]];
+                        for (let bid1 in checkingBlock.branches)
+                            if (checkingBlock.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
+                                && trees[tid].branches[bid1][attrName] <= range[1]) {
+                                b.rangeSelected += 1;
+                            }
+                    }
                 }
             }
         }
@@ -341,6 +367,15 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities) => {
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
                 let b = t.blocks[bid];
                 b.fillPercentage = getIntersection(b.entities, h) / Object.keys(b.entities).length;
+
+                b.rangeSelected = 0;
+                if (rangeSelection) {
+                    for (let bid1 in b.branches)
+                        if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
+                            && trees[tid].branches[bid1][attrName] <= range[1]) {
+                            b.rangeSelected += 1;
+                        }
+                }
             }
         }
     }
@@ -349,17 +384,22 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities) => {
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.isClusterMode, (_, trees) => trees,
-    state => state.referenceTree.highlightMonophyly != null?
-                state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
-    state => state.aggregatedDendrogram.spec],
-    (isClusterMode, trees, highlightEntities, spec) => {
+        state => state.referenceTree.highlightMonophyly != null?
+            state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
+        state => state.aggregatedDendrogram.spec,
+        state => state.inputGroupData.trees,
+        state => state.attributeExplorer.activeSelectionId === 0? {
+                attrName: 'support',
+                range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
+            }: null],
+    (isClusterMode, trees, highlightEntities, spec, rawTrees, rangeSelection) => {
         let dendros = getLayouts(trees, spec).slice();
         let clusters = isClusterMode? getClusters(dendros).slice(): [];
         let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {
             dendroMapping[dendros[i].tid] = dendros[i];
         }
-        getFill(dendroMapping, clusters, isClusterMode, highlightEntities);
+        getFill(dendroMapping, clusters, isClusterMode, highlightEntities, rangeSelection, rawTrees);
         return isClusterMode? clusters: dendros;
     }
 );
@@ -372,7 +412,11 @@ let mapStateToProps = (state) => {
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
-        dendrograms: getDendrograms(state, trees)
+        dendrograms: getDendrograms(state, trees),
+        rangeSelection: state.attributeExplorer.activeSelectionId === 0? {
+            attrName: 'support',
+            range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
+        }: null,
     }
 };
 
