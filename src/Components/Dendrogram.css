@@ -17,7 +17,7 @@
     position: relative;
 }
 .agg-dendro-box.selected {
-    border: 2px solid darkgreen;
+    border: 2px dashed #e41a1c;
 }
 
 .block {
@@ -27,7 +27,7 @@
 }
 .block.range-selected {
     stroke-width: 2px;
-    stroke: purple;
+    stroke: #984ea3;
 }
 .highlight-block {
     fill: steelblue;
@@ -36,7 +36,7 @@
 
 .branch {
     stroke-width: 2px;
-    stroke: red;
+    stroke: #e41a1c;
 }
 
 .label {
@@ -80,4 +80,9 @@
 
 .btn .glyph-text {
     margin-left: 2px;
+}
+
+.agg-dendro-box line.last-selected-indicator {
+    stroke: steelblue;
+    stroke-width: 2px;
 }

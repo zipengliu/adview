@@ -139,16 +139,19 @@ let getTrees = createSelector(
         for (let i = 0; i < sortedTids.length; i++) {
             let tid = sortedTids[i];
             let expansion = {};
+            let last = null;
             for (let j = 0; j < selected.length; j++) {
                 let e = selected[j];
                 let corr = tid === rid? e: ref.branches[e]['correspondingBranches'][tid]['branchId'];
                 if (corr !== trees[tid].rootBranch) {
                     expansion[corr] = true;
+                    if (j === 0) last = corr;
                 }
             }
             res.push({
                 ...trees[tid],
-                expand: expansion
+                expand: expansion,
+                lastSelected: last
             })
         }
         return res;
@@ -229,7 +232,7 @@ let calcLayout = (tree, spec) => {
                 c.y = y + (i - curNumLeaves) * nonLeaveHeight + curNumLeaves * leaveHeight + i * verticalGap;
                 let branchPosY = (c.y + c.y + c.height) / 2;
 
-                branches[b.children[i]] = {id: b.children[i], y1: branchPosY, y2: branchPosY};
+                branches[b.children[i]] = {bid: b.children[i], y1: branchPosY, y2: branchPosY};
                 curNumLeaves += c.isLeaf;
                 calcHeight(b.children[i], nonLeaveHeight, c.y, accN);
             }
@@ -245,7 +248,7 @@ let calcLayout = (tree, spec) => {
         if (b.n === 0) {
             // Add a branch to connect the children
             // If this block does not contain any entity, it should has at least two children
-            branches[blockId + '-x'] = {id: blockId + '-x', y1: branches[b.children[0]].y1, y2: branches[b.children[b.children.length - 1]].y1, x1: x, x2: x};
+            branches[blockId + '-x'] = {bid: blockId + '-x', y1: branches[b.children[0]].y1, y2: branches[b.children[b.children.length - 1]].y1, x1: x, x2: x};
         }
         b.width = widthCoeff * Math.log(b.n || 1);
         // b.width = Math.max(widthCoeff * b.n, 1);
@@ -260,7 +263,7 @@ let calcLayout = (tree, spec) => {
     };
     calcWidth(tree.rootBranch, 0);
 
-    return {blocks, branches, rootBlockId: tree.rootBranch, tid: tree._id};
+    return {blocks, branches, rootBlockId: tree.rootBranch, tid: tree._id, lastSelected: tree.lastSelected};
 };
 
 let getLayouts = createSelector(
@@ -322,7 +325,7 @@ let getClusters = createSelector(
             let t = trees[i];
             if (i === 0 || t.hash !== trees[i - 1].hash) {
                 // create a new cluster
-                c = {tid: t.tid + '-r', blocks: t.blocks, rootBlockId: t.rootBlockId, branches: t.branches,
+                c = {...t, tid: t.tid + '-r',
                     num: 0, trees: [], total: trees.length};
                 clusters.push(c);
             }
@@ -352,12 +355,13 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
                     let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
                     b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
 
-                    if (rangeSelection) {
+                    if (rangeSelection && b.rangeSelected === 0) {
                         let checkingBlock = dendroMapping[tid].blocks[b.represent[tid]];
                         for (let bid1 in checkingBlock.branches)
                             if (checkingBlock.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
                                 && trees[tid].branches[bid1][attrName] <= range[1]) {
                                 b.rangeSelected += 1;
+                                break;
                             }
                     }
                 }
@@ -376,6 +380,7 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
                         if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
                             && trees[tid].branches[bid1][attrName] <= range[1]) {
                             b.rangeSelected += 1;
+                            break;
                         }
                 }
             }

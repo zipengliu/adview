@@ -15,6 +15,7 @@ class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
+        let {selected} = referenceTree;
         let {attrName, range} = rangeSelection || {};
 
         let inRange = d => rangeSelection && !d.isLeaf &&
@@ -33,10 +34,15 @@ class FullDendrogram extends Component {
                     <g className="topology">
                         {branchSpecs.map((d, i) =>
                             (<g key={d.bid}>
-                                <line className={cn('branch-line', {selected: referenceTree.selected && referenceTree.selected.indexOf(d.bid) !== -1,
-                                    ['range-selected']: inRange(d) })}
+                                <line className={cn('branch-line', {selected: selected && selected.indexOf(d.bid) !== -1, 'range-selected': inRange(d) })}
                                       x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
-                                {this.props.metricBranch === d.bid && d.bid != null && <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
+                                {this.props.metricBranch === d.bid && d.bid != null &&
+                                <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
+                                {selected.length && selected[0] === d.bid &&
+                                <g>
+                                    <line className="last-selected-indicator" x1={d.x1} y1={d.y1-3} x2={d.x2} y2={d.y2-3} />
+                                    <line className="last-selected-indicator" x1={d.x1} y1={d.y1+3} x2={d.x2} y2={d.y2+3} />
+                                </g>}
                             </g>))}
                         {verticalLines.map((d, i) =>
                             <line className="branch-line" key={i} x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />

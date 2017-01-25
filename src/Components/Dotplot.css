@@ -3,11 +3,12 @@
 }
 
 .dot.selected {
-    stroke: red;
-    stroke-width: 1px;
+    stroke: #e41a1c;
+    /*stroke-dasharray: 1,1;*/
+    stroke-width: 2px;
 }
 .dot.highlight {
-    stroke: red;
+    stroke: #e41a1c;
     stroke-width: 2px;
 }
 

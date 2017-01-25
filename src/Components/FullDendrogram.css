@@ -4,11 +4,11 @@
 }
 .branch-line.range-selected {
     stroke-width: 3;
-    stroke: purple;
+    stroke: #984ea3;
 }
 .branch-line.selected {
     stroke-width: 3;
-    stroke: red;
+    stroke: #e41a1c;
 }
 
 .entity-name {
@@ -32,4 +32,8 @@
 
 circle.metric-branch-indicator {
     fill: grey;
+}
+line.last-selected-indicator {
+    stroke: steelblue;
+    stroke-width: 3px;
 }

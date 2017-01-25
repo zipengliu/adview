@@ -12,7 +12,7 @@ class AggregatedDendrogram extends Component {
         // console.log(this.props.data);
         let {spec, isClusterMode} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {blocks, branches, num, total} = this.props.data;
+        let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
 
@@ -43,8 +43,14 @@ class AggregatedDendrogram extends Component {
                         )}
                     </g>
                     <g className="branches">
-                        {branchArr.map(b => <line className="branch" key={b.id}
+                        {branchArr.map(b => <line className="branch" key={b.bid}
                                                  x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
+                        {branches[lastSelected] && <g>
+                            <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
+                            x2={branches[lastSelected].x2} y2={branches[lastSelected].y2-2}/>
+                            <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1+2}
+                                  x2={branches[lastSelected].x2} y2={branches[lastSelected].y2+2}/>
+                        </g>}
                     </g>
                     {isClusterMode &&
                     <g className="proportion" transform={`translate(0,${size + proportionTopMargin})`}>
