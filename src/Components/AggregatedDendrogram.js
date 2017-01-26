@@ -32,7 +32,7 @@ class AggregatedDendrogram extends Component {
                                 {/*)}*/}
 
                                 {!isClusterMode && b.fillPercentage > 0.001 &&
-                                <rect className="highlight-block" x={b.x + (1 - b.fillPercentage) * b.width} y={b.y}
+                                <rect className="highlight-block" x={b.x} y={b.y}
                                       width={b.fillPercentage * b.width} height={b.height} />}
                                 {!isClusterMode && b.fillPercentage > 0.5 && b.isLeaf &&
                                 <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
@@ -41,8 +41,8 @@ class AggregatedDendrogram extends Component {
                                 {isClusterMode && b.colorBins &&
                                 b.colorBins.map((d, i) =>
                                     <line key={i} style={{stroke: d, strokeWidth: shadedGranularity}}
-                                          x1={b.x + b.width - (i+1) * shadedGranularity} y1={b.y}
-                                          x2={b.x + b.width - (i+1) * shadedGranularity} y2={b.y+b.height}/>)}
+                                          x1={b.x + i * shadedGranularity} y1={b.y}
+                                          x2={b.x + i * shadedGranularity} y2={b.y+b.height}/>)}
 
                                 {b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                             </g>
