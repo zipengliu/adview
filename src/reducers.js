@@ -20,7 +20,7 @@ let initialState = {
     },
     dendrogramSpec: {
         width: 500,
-        height: 870,
+        height: 860,
         margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
         labelWidth: 100,
