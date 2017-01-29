@@ -100,6 +100,9 @@ export function changeReferenceTree(tid) {
     };
 }
 
+export function togglePersistHighlight() {
+    return {type: TYPE.TOGGLE_PERSIST_HIGHLIGHT};
+}
 
 export function createNewSet() {
     return {

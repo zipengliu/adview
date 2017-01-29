@@ -20,7 +20,7 @@ let initialState = {
     },
     dendrogramSpec: {
         width: 500,
-        height: 860,
+        height: 840,
         margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
         labelWidth: 100,
@@ -31,6 +31,7 @@ let initialState = {
         highlightMonophyly: null,
         selected: [],
         isFetching: false,
+        persist: false
     },
     sets: [],
     overview: {
@@ -193,6 +194,15 @@ function visphyReducer(state = initialState, action) {
                     selected: []
                 }
             });
+        case TYPE.TOGGLE_PERSIST_HIGHLIGHT:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    highlightMonophyly: state.referenceTree.persist? null: state.referenceTree.highlightMonophyly,
+                    persist: !state.referenceTree.persist
+                }
+            };
 
         case TYPE.POP_CREATE_NEW_SET_WINDOW:
             return Object.assign({}, state, {

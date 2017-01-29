@@ -15,7 +15,7 @@ class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
-        let {selected} = referenceTree;
+        let {selected, persist, highlightMonophyly} = referenceTree;
         let {attrName, range} = rangeSelection || {};
 
         let inRange = d => rangeSelection && !d.isLeaf &&
@@ -54,12 +54,16 @@ class FullDendrogram extends Component {
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
-                                  onMouseEnter={this.props.onMouseOver.bind(null, d.bid)}
-                                  onMouseLeave={this.props.onMouseOut}
+                                  onMouseEnter={persist? null: this.props.toggleHighlightMonophyly.bind(null, d.bid)}
+                                  onMouseLeave={persist? null: this.props.toggleHighlightMonophyly.bind(null, null)}
                                   onClick={() => {if (this.props.pickingBranch) {
                                       if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {
-                                      this.props.onSelectBranch(d.bid)
+                                      if (persist) {
+                                          this.props.toggleHighlightMonophyly(highlightMonophyly === d.bid? null: d.bid)
+                                      } else {
+                                          this.props.onSelectBranch(d.bid)
+                                      }
                                   } }}
                                   key={d.bid}>
                             </rect>)}
@@ -174,11 +178,8 @@ function mapStateToProps(state, ownProps) {
 
 function mapDispatchToProps(dispatch) {
     return {
-        onMouseOver: (bid) => {
+        toggleHighlightMonophyly: (bid) => {
             dispatch(toggleHighlightMonophyly(bid));
-        },
-        onMouseOut: () => {
-            dispatch(toggleHighlightMonophyly(null));
         },
         onSelectBranch: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));

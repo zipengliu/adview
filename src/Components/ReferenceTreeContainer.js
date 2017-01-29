@@ -3,8 +3,10 @@
  */
 
 import React from 'react';
+import {OverlayTrigger, Button, Tooltip} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
+import {togglePersistHighlight} from '../actions';
 
 let ReferenceTreeContainer = props => (
     <div className="view" style={{height: '98%'}}>
@@ -12,6 +14,13 @@ let ReferenceTreeContainer = props => (
             <div style={{textAlign: 'center'}}>
                 <span className="view-title">Reference Tree </span>
                 <span>({props.title})</span>
+            </div>
+            <div style={{marginBottom: '5px'}}>
+                <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-persist">Persist highlighting of taxa in aggregated dendrograms</Tooltip>}>
+                    <Button bsSize="xsmall" onClick={props.togglePersist} bsStyle={props.persist? 'primary': 'default'}>
+                        Persist highlight
+                    </Button>
+                </OverlayTrigger>
             </div>
         </div>
         <div className="view-body">
@@ -67,6 +76,11 @@ let ReferenceTreeContainer = props => (
 
 let mapStateToProps = state => ({
     title: state.inputGroupData.trees[state.referenceTree.id].name,
+    persist: state.referenceTree.persist,
 });
 
-export default connect(mapStateToProps)(ReferenceTreeContainer);
+let mapDispatchToProps = dispatch => ({
+    togglePersist: () => {dispatch(togglePersistHighlight())}
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);
