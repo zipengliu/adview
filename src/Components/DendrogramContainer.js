@@ -41,7 +41,7 @@ class DendrogramContainer extends Component {
                  onMouseEnter={this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
                  onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
-                     isClusterMode? t.trees: null)}>
+                     isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
                 <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode}
                                       rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
             </div>
@@ -144,11 +144,9 @@ let getTrees = createSelector(
             let last = null;
             for (let j = 0; j < selected.length; j++) {
                 let e = selected[j];
-                let corr = tid === rid? e: ref.branches[e]['correspondingBranches'][tid]['branchId'];
-                if (corr !== trees[tid].rootBranch) {
-                    expansion[corr] = true;
-                    if (j === 0) last = corr;
-                }
+                let corr = tid === rid? e: ref.branches[e]['correspondingBranches'][tid];
+                expansion[corr.branchId] = corr.jaccard;
+                if (j === 0) last = corr.branchId;
             }
             res.push({
                 ...trees[tid],
@@ -171,8 +169,9 @@ let calcLayout = (tree, spec) => {
     let height = size, width = size;
 
     // Generate all blocks needed to display.  Blocks are indexed by their expanded branch id except the root block.
+    // Create a seudo root with id rootBranchId + "-a"
     let blocks = {
-        [tree.rootBranch]: {id: tree.rootBranch, children: [], level: 1,
+        [tree.rootBranch + '-a']: {id: tree.rootBranch + '-a', children: [], level: 1,
             height, width: 0, x: 0, y: 0,
             n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
             branches: createMappingFromArray(Object.keys(tree.branches)),
@@ -193,9 +192,10 @@ let calcLayout = (tree, spec) => {
     let splitBlock = function (blockId, curBid) {
         let b = tree.branches[curBid];
         let newBlockId = blockId;
-        if (tree.expand[curBid] && curBid !== tree.rootBranch) {
+        if (tree.expand.hasOwnProperty(curBid)) {
             // split block
             blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
+                similarity: tree.expand[curBid],
                 branches: getBranchesInSubtree(curBid),
                 isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
             blocks[blockId].n -= b.entities.length;
@@ -210,7 +210,7 @@ let calcLayout = (tree, spec) => {
             splitBlock(newBlockId, b['right']);
         }
     };
-    splitBlock(tree.rootBranch, tree.rootBranch);
+    splitBlock(tree.rootBranch + '-a', tree.rootBranch);
 
     // branches are the lines connecting the blocks
     let branches = {};
@@ -234,7 +234,7 @@ let calcLayout = (tree, spec) => {
                 c.y = y + (i - curNumLeaves) * nonLeaveHeight + curNumLeaves * leaveHeight + i * verticalGap;
                 let branchPosY = (c.y + c.y + c.height) / 2;
 
-                branches[b.children[i]] = {bid: b.children[i], y1: branchPosY, y2: branchPosY};
+                branches[b.children[i]] = {bid: b.children[i], y1: branchPosY, y2: branchPosY, similarity: c.similarity};
                 curNumLeaves += c.isLeaf;
                 calcHeight(b.children[i], nonLeaveHeight, c.y, accN);
             }
@@ -243,7 +243,7 @@ let calcLayout = (tree, spec) => {
             widthCoeff = Math.min(k, widthCoeff);
         }
     };
-    calcHeight(tree.rootBranch, height, 0, 0);
+    calcHeight(tree.rootBranch + '-a', height, 0, 0);
 
     let calcWidth = function (blockId, x) {
         let b = blocks[blockId];
@@ -263,9 +263,9 @@ let calcLayout = (tree, spec) => {
             calcWidth(b.children[i], c.x);
         }
     };
-    calcWidth(tree.rootBranch, 0);
+    calcWidth(tree.rootBranch + '-a', 0);
 
-    return {blocks, branches, rootBlockId: tree.rootBranch, tid: tree._id, lastSelected: tree.lastSelected};
+    return {blocks, branches, rootBlockId: tree.rootBranch + '-a', tid: tree._id, lastSelected: tree.lastSelected};
 };
 
 let getLayouts = createSelector(

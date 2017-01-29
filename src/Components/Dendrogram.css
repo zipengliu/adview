@@ -29,6 +29,9 @@
     stroke-width: 2px;
     stroke: #984ea3;
 }
+.block.fuzzy {
+    stroke-dasharray: 3 3;
+}
 .highlight-block {
     fill: steelblue;
     fill-opacity: .6;

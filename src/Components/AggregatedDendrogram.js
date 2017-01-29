@@ -23,13 +23,8 @@ class AggregatedDendrogram extends Component {
                         {blockArr.map(b =>
                             <g key={b.id}>
                                 {b.width > 0 &&
-                                <rect className={cn('block', {'range-selected': b.rangeSelected > 0})}
+                                <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': !isClusterMode && b.similarity < 1.0})}
                                       x={b.x} y={b.y} width={b.width} height={b.height} />}
-
-                                {/*{isClusterMode && b.fillPercentage && b.fillPercentage.map((f, i) =>*/}
-                                    {/*<rect key={i} className="highlight-block" x={b.x + (1 - f) * b.width} y={b.y} width={f * b.width} height={b.height}*/}
-                                          {/*style={{fillOpacity: unitOpacity}} />*/}
-                                {/*)}*/}
 
                                 {!isClusterMode && b.fillPercentage > 0.001 &&
                                 <rect className="highlight-block" x={b.x} y={b.y}

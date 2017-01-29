@@ -23,7 +23,7 @@ export function runTSNE(dist) {
 
     // Normalize the coordinates to (0, 1) by linear transformation
     // how much do you want to relax the extent of the coordinates so that they don't show up on the border of the dotplot
-    let relaxCoefficient = 0.1;
+    let relaxCoefficient = 0.2;
     let coords = tsne.getSolution();
     let xArr = coords.map(x => x[0]);
     let yArr = coords.map(x => x[1]);
