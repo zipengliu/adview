@@ -21,7 +21,7 @@
 }
 
 .block {
-    fill: none;
+    fill: #fff;
     stroke-width: 1px;
     stroke: black;
 }
@@ -31,6 +31,11 @@
 }
 .block.fuzzy {
     stroke-dasharray: 3 3;
+}
+.respond-box {
+    fill: #fff;
+    opacity: 0;
+    stroke: none;
 }
 .highlight-block {
     fill: steelblue;

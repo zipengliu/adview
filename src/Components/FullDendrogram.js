@@ -8,6 +8,7 @@ import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric} from '../actions';
+import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
 
@@ -15,13 +16,15 @@ class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
-        let {selected, persist, highlightMonophyly} = referenceTree;
+        let {selected, persist, highlightMonophyly, highlightEntities} = referenceTree;
+        let highlightEntitiesMapping = createMappingFromArray(highlightEntities);
         let {attrName, range} = rangeSelection || {};
 
         let inRange = d => rangeSelection && !d.isLeaf &&
         range[0] <= tree.branches[d.bid][attrName] && tree.branches[d.bid][attrName] <= range[1];
 
-        let names = textSpecs.map(d => (<text className="entity-name" x={d.x} y={d.y} dx={5} dy={3}
+        let names = textSpecs.map(d => (<text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id)})}
+                                              x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
         return (
             <svg width={spec.width + spec.margin.left + spec.margin.right}

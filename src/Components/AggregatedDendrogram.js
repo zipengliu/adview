@@ -10,7 +10,7 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, isClusterMode, shadedGranularity} = this.props;
+        let {spec, isClusterMode, shadedGranularity, onToggleBlock} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
@@ -24,7 +24,8 @@ class AggregatedDendrogram extends Component {
                             <g key={b.id}>
                                 {b.width > 0 &&
                                 <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': !isClusterMode && b.similarity < 1.0})}
-                                      x={b.x} y={b.y} width={b.width} height={b.height} />}
+                                      x={b.x} y={b.y} width={b.width} height={b.height}
+                                />}
 
                                 {!isClusterMode && b.fillPercentage > 0.001 &&
                                 <rect className="highlight-block" x={b.x} y={b.y}
@@ -38,6 +39,13 @@ class AggregatedDendrogram extends Component {
                                     <line key={i} style={{stroke: d, strokeWidth: shadedGranularity}}
                                           x1={b.x + i * shadedGranularity} y1={b.y}
                                           x2={b.x + i * shadedGranularity} y2={b.y+b.height}/>)}
+
+                                {!isClusterMode &&
+                                <rect className="respond-box"
+                                    x={b.x} y={b.y} width={b.width} height={b.height}
+                                    onMouseEnter={isClusterMode? null: onToggleBlock.bind(null, Object.keys(b.entities))}
+                                    onMouseLeave={isClusterMode? null: onToggleBlock.bind(null, [])}
+                                />}
 
                                 {b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                             </g>

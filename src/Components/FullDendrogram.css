@@ -14,6 +14,9 @@
 .entity-name {
     font-size: 8px;
 }
+.entity-name.highlighted {
+    fill: blue;
+}
 
 .box {
     fill: grey;

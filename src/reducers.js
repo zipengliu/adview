@@ -31,7 +31,8 @@ let initialState = {
         highlightMonophyly: null,
         selected: [],
         isFetching: false,
-        persist: false
+        persist: false,
+        highlightEntities: [],
     },
     sets: [],
     overview: {
@@ -386,6 +387,14 @@ function visphyReducer(state = initialState, action) {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     isClusterMode: action.isClusterMode
+                }
+            };
+        case TYPE.TOGGLE_HIGHLIGHT_ENTITIES:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    highlightEntities: action.entities,
                 }
             };
 

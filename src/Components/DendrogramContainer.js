@@ -10,7 +10,7 @@ import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Toolti
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
-    addTreeToInspector, toggleInspector, toggleSorting, toggleCLusterMode, clearBranchSelection} from '../actions';
+    addTreeToInspector, toggleInspector, toggleSorting, toggleCLusterMode, clearBranchSelection, toggleHighlightEntities} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
 import './Dendrogram.css';
 
@@ -43,6 +43,7 @@ class DendrogramContainer extends Component {
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
                 <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode}
+                                      onToggleBlock={this.props.onToggleBlock}
                                       rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
             </div>
             )};
@@ -467,7 +468,8 @@ let mapDispatchToProps = (dispatch) => ({
     },
     onChangeSorting: () => {dispatch(toggleSorting())},
     clearSelection: () => {dispatch(clearBranchSelection())},
-    onToggleClusterMode: (m) => {dispatch(toggleCLusterMode(m))}
+    onToggleClusterMode: (m) => {dispatch(toggleCLusterMode(m))},
+    onToggleBlock: (e) => {dispatch(toggleHighlightEntities(e))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);
