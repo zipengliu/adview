@@ -115,6 +115,25 @@ let mergeSets = (a, b) => {
     return c;
 };
 
+let ladderize = (tree) => {
+   let traverse = bid => {
+       let b = tree.branches[bid];
+       if (!b.isLeaf) {
+           let left = tree.branches[b.left];
+           let right = tree.branches[b.right];
+           if (left.entities.length > right.entities.length) {
+               let tmp = b.left;
+               b.left = b.right;
+               b.right = tmp;
+           }
+           traverse(b.left);
+           traverse(b.right);
+       }
+   };
+   traverse(tree.rootBranch);
+   return tree;
+};
+
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
@@ -506,6 +525,9 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
+            for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
+                action.data.trees[tid] = ladderize(action.data.trees[tid]);
+            }
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
