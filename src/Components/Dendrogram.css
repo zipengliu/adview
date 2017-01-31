@@ -17,7 +17,7 @@
     position: relative;
 }
 .agg-dendro-box.selected {
-    border: 2px dashed #e41a1c;
+    border: 2px solid #e41a1c;
 }
 
 .block {
@@ -31,6 +31,9 @@
 }
 .block.fuzzy {
     stroke-dasharray: 3 3;
+}
+.block.is-missing {
+    stroke-dasharray: 5 5;
 }
 .respond-box {
     fill: #fff;

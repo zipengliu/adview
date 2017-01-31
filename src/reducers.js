@@ -4,7 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import {scaleOrdinal, schemeCategory10} from 'd3-scale';
-import {getCoordinates} from './utils';
+import {getCoordinates, createMappingFromArray} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -113,6 +113,19 @@ let mergeSets = (a, b) => {
         if (a.indexOf(b[i]) === -1) {c.push(b[i])}
     }
     return c;
+};
+
+let findMissing = (geneTree, speciesTree) => {
+    let geneEntities = geneTree.branches[geneTree.rootBranch].entities;
+    let speciesEntities = speciesTree.branches[speciesTree.rootBranch].entities;
+    let m = createMappingFromArray(geneEntities);
+    let missing = [];
+    for (let i = 0; i < speciesEntities.length; i++) {
+        if (!m.hasOwnProperty(speciesEntities[i])) {
+            missing.push(speciesEntities[i]);
+        }
+    }
+    return missing;
 };
 
 let ladderize = (tree) => {
@@ -527,6 +540,9 @@ function visphyReducer(state = initialState, action) {
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 action.data.trees[tid] = ladderize(action.data.trees[tid]);
+                if (action.data.isASTRAL && action.data.trees[tid].type === 'gene') {
+                    action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.trees[action.data.defaultReferenceTree])
+                }
             }
             return Object.assign({}, state, {
                 isFetching: false,
@@ -540,7 +556,7 @@ function visphyReducer(state = initialState, action) {
                     id: action.data.defaultReferenceTree
                 },
                 sets: [{
-                    title: 'All',
+                    title: 'All Trees',
                     tids: Object.keys(action.data.trees),
                     color: 'grey'
                 }],

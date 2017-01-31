@@ -13,7 +13,7 @@ let ReferenceTreeContainer = props => (
         <div className="view-header">
             <div style={{textAlign: 'center'}}>
                 <span className="view-title">Reference Tree </span>
-                <span>({props.title})</span>
+                <span>({props.tree.name})</span>
             </div>
             <div style={{marginBottom: '5px'}}>
                 <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-persist">Persist highlighting of taxa in aggregated dendrograms</Tooltip>}>
@@ -21,6 +21,11 @@ let ReferenceTreeContainer = props => (
                         Persist highlight
                     </Button>
                 </OverlayTrigger>
+                {props.tree.missing &&
+                <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
+                    {props.tree.branches[props.tree.rootBranch].entities.length} out of {props.tree.branches[props.tree.rootBranch].entities.length + props.tree.missing.length} taxa are present
+                </div>
+                }
             </div>
         </div>
         <div className="view-body">
@@ -75,7 +80,7 @@ let ReferenceTreeContainer = props => (
 </div>);
 
 let mapStateToProps = state => ({
-    title: state.inputGroupData.trees[state.referenceTree.id].name,
+    tree: state.inputGroupData.trees[state.referenceTree.id],
     persist: state.referenceTree.persist,
 });
 

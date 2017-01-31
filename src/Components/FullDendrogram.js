@@ -17,6 +17,7 @@ class FullDendrogram extends Component {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
         let {selected, persist, highlightMonophyly, highlightEntities} = referenceTree;
+        let {missing} = tree;
         let highlightEntitiesMapping = createMappingFromArray(highlightEntities);
         let {attrName, range} = rangeSelection || {};
 
@@ -26,6 +27,8 @@ class FullDendrogram extends Component {
         let names = textSpecs.map(d => (<text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id)})}
                                               x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
+        let missingBranchPos = missing? (missing.length - 1) / 2 * spec.marginOnEntity: null;
+
         return (
             <svg width={spec.width + spec.margin.left + spec.margin.right}
                  height={spec.height + spec.margin.top + spec.margin.bottom}>
@@ -70,6 +73,26 @@ class FullDendrogram extends Component {
                                   } }}
                                   key={d.bid}>
                             </rect>)}
+                    </g>
+                    }
+                    {missing && missing.length &&
+                    <g className="missing" transform={`translate(0,${(tree.branches[tree.rootBranch].entities.length + 2) * spec.marginOnEntity})`}>
+                        <line className="branch-line" x1="0" y1={missingBranchPos} x2="50" y2={missingBranchPos}/>
+                        <line className="branch-line" x1="50" y1="0" x2="50" y2={(missing.length - 1) * spec.marginOnEntity}/>
+                        <text style={{fontSize: '12px'}} x="0" y={missingBranchPos} dy="-2" >missing</text>
+                        <text style={{fontSize: '12px'}} x="0" y={missingBranchPos} dy="12" >taxa</text>
+                        {missing.map((eid, i) => <g key={i}>
+                            <line className="branch-line" x1="50" y1={i * spec.marginOnEntity} x2="70" y2={i * spec.marginOnEntity} />
+                            <text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(eid)})}
+                                              x={70} y={i * spec.marginOnEntity} dx={5} dy={3}>{entities[eid].name}</text>
+                        </g>)}
+                        {highlightMonophyly === 'missing' &&
+                        <rect className="hover-box" x="0" y="-4" width={spec.width} height={missing.length * spec.marginOnEntity} />}
+                        {!isStatic && <rect className="box" x="0" y={missingBranchPos - 12} width="50" height={24}
+                                            onMouseEnter={persist? null: this.props.toggleHighlightMonophyly.bind(null, 'missing')}
+                                            onMouseLeave={persist? null: this.props.toggleHighlightMonophyly.bind(null, null)}
+                                            onClick={() => {persist? this.props.toggleHighlightMonophyly(highlightMonophyly === 'missing'? null: 'missing'): null}}
+                        />}
                     </g>
                     }
                 </g>

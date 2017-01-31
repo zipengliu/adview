@@ -132,7 +132,7 @@ let getTrees = createSelector(
         let ref = trees[rid];
         let sortFunc;
         if (order.static || !bid) {
-            sortFunc = (t1, t2) => (ref.rfDistance[t1] || 0) - (ref.rfDistance[t2] || 0);
+            sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
         } else {
             let corr = ref.branches[bid].correspondingBranches;
             sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
@@ -169,15 +169,31 @@ let calcLayout = (tree, spec) => {
     let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, size} = spec;
     let height = size, width = size;
 
+    let blocks = {};
+    let missingHeight = 0;
+    if (tree.missing) {
+        missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
+        blocks.missing = {
+            id: 'missing', children: [],
+            isMissing: true,
+            height: missingHeight,
+            width, x: 0, y: height - missingHeight,
+            n: tree.missing.length,          // the number of entities this block represents
+            branches: {},
+            entities: createMappingFromArray(tree.missing)
+        };
+    }
     // Generate all blocks needed to display.  Blocks are indexed by their expanded branch id except the root block.
     // Create a seudo root with id rootBranchId + "-a"
-    let blocks = {
-        [tree.rootBranch + '-a']: {id: tree.rootBranch + '-a', children: [], level: 1,
-            height, width: 0, x: 0, y: 0,
+    let rootBlockId = tree.rootBranch + '-a';
+    blocks[rootBlockId] = {
+            id: rootBlockId, children: [], level: 1,
+            height: missingHeight? height - missingHeight - verticalGap: height, width: 0, x: 0, y: 0,
             n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
             branches: createMappingFromArray(Object.keys(tree.branches)),
-            entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)}
+            entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)
     };
+
     let getBranchesInSubtree = (bid) => {
         let res = {};
         let dfs = (bid) => {
@@ -211,7 +227,7 @@ let calcLayout = (tree, spec) => {
             splitBlock(newBlockId, b['right']);
         }
     };
-    splitBlock(tree.rootBranch + '-a', tree.rootBranch);
+    splitBlock(rootBlockId, tree.rootBranch);
 
     // branches are the lines connecting the blocks
     let branches = {};
@@ -244,7 +260,7 @@ let calcLayout = (tree, spec) => {
             widthCoeff = Math.min(k, widthCoeff);
         }
     };
-    calcHeight(tree.rootBranch + '-a', height, 0, 0);
+    calcHeight(rootBlockId, missingHeight? height - missingHeight - verticalGap: height, 0, 0);
 
     let calcWidth = function (blockId, x) {
         let b = blocks[blockId];
@@ -264,9 +280,12 @@ let calcLayout = (tree, spec) => {
             calcWidth(b.children[i], c.x);
         }
     };
-    calcWidth(tree.rootBranch + '-a', 0);
+    calcWidth(rootBlockId, 0);
+    if (tree.missing) {
+        blocks[rootBlockId].children.push('missing');
+    }
 
-    return {blocks, branches, rootBlockId: tree.rootBranch + '-a', tid: tree._id, lastSelected: tree.lastSelected};
+    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected};
 };
 
 let getLayouts = createSelector(
@@ -343,11 +362,10 @@ let getClusters = createSelector(
 
 let getKDEBins = (n, values, kernel) => {
     let valueExtent = extent(values);
-    if (valueExtent[0] == valueExtent[1]) {
+    if (valueExtent[0] === valueExtent[1]) {
         // No uncertainty
         return false;
     }
-    console.log('KDE...');
 
     let scale, bins = [];
     let min = 100, max = 0;
@@ -422,8 +440,9 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.isClusterMode, (_, trees) => trees,
-        state => state.referenceTree.highlightMonophyly != null?
-            state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities: [],
+        state => state.referenceTree.highlightMonophyly == null? []:
+            (state.referenceTree.highlightMonophyly === 'missing'? state.inputGroupData.trees[state.referenceTree.id].missing:
+                state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities),
         state => state.aggregatedDendrogram.spec,
         state => state.inputGroupData.trees,
         state => state.attributeExplorer.activeSelectionId === 0? {
@@ -446,7 +465,7 @@ let getDendrograms = createSelector(
 
 
 let mapStateToProps = (state) => {
-    let trees = getTrees(state);
+    let trees = getTrees(state).slice();
     return {
         ...state.aggregatedDendrogram,
         isFetching: state.referenceTree.isFetching,

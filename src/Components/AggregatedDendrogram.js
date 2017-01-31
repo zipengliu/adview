@@ -21,11 +21,19 @@ class AggregatedDendrogram extends Component {
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
-                    <g className="blocks">
+                    {isClusterMode &&
+                    <g className="proportion" >
+                        <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
+                        <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
+                        <text x={size} dx="-14" dy="9">{num}</text>
+                    </g>
+                    }
+                    <g className="blocks" transform={`translate(0,${isClusterMode? proportionBarHeight + proportionTopMargin: 0})`}>
                         {blockArr.map(b =>
                             <g key={b.id}>
                                 {b.width > 0 &&
-                                <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': !isClusterMode && b.similarity < 1.0})}
+                                <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': !isClusterMode && b.similarity < 1.0,
+                                    'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                       x={b.x} y={b.y} width={b.width} height={b.height}
                                 />}
 
@@ -66,13 +74,6 @@ class AggregatedDendrogram extends Component {
                                   x2={branches[lastSelected].x2} y2={branches[lastSelected].y2+2}/>
                         </g>}
                     </g>
-                    {isClusterMode &&
-                    <g className="proportion" transform={`translate(0,${size + proportionTopMargin})`}>
-                        <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
-                        <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
-                        <text x={size} dx="-14" dy="9">{num}</text>
-                    </g>
-                    }
                 </g>
             </svg>
         )
