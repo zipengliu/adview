@@ -41,6 +41,9 @@
     fill: steelblue;
     fill-opacity: .6;
 }
+.highlight-block.fuzzy {
+    fill: none;
+}
 
 .branch {
     stroke-width: 2px;

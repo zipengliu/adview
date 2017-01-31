@@ -173,7 +173,7 @@ function visphyReducer(state = initialState, action) {
                         ...state.inputGroupData.trees,
                         [action.tid]: {
                             ...state.inputGroupData.trees[action.tid],
-                            branches: action.data
+                            branches: ladderize({branches: action.data, rootBranch: state.inputGroupData.trees[action.tid].rootBranch}).branches
                         }
                     }
                 },
@@ -375,7 +375,7 @@ function visphyReducer(state = initialState, action) {
                 },
                 overview: {
                     ...state.overview,
-                    selectedDots: state.aggregatedDendrogram.isClusterMode? action.tids: state.overview.selectedDots
+                    selectedDots: state.aggregatedDendrogram.isClusterMode? action.tids: (action.tid || [])
                 }
             });
         case TYPE.SELECT_SET:
@@ -540,7 +540,7 @@ function visphyReducer(state = initialState, action) {
                     id: action.data.defaultReferenceTree
                 },
                 sets: [{
-                    title: 'Default',
+                    title: 'All',
                     tids: Object.keys(action.data.trees),
                     color: 'grey'
                 }],

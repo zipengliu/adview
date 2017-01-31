@@ -4,6 +4,7 @@
 
 import React, { Component } from 'react';
 import cn from 'classnames';
+import {scaleLog} from 'd3';
 import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -15,6 +16,7 @@ class AggregatedDendrogram extends Component {
         let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
+        let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
 
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
@@ -36,9 +38,12 @@ class AggregatedDendrogram extends Component {
 
                                 {isClusterMode && b.colorBins &&
                                 b.colorBins.map((d, i) =>
-                                    <line key={i} style={{stroke: d, strokeWidth: shadedGranularity}}
+                                    <line key={i} className="highlight-block fuzzy" style={{stroke: d, strokeWidth: shadedGranularity}}
                                           x1={b.x + i * shadedGranularity} y1={b.y}
                                           x2={b.x + i * shadedGranularity} y2={b.y+b.height}/>)}
+                                {isClusterMode && !b.colorBins && b.fillPercentage[0] > 0.001 &&
+                                <rect className="highlight-block" x={b.x} y={b.y}
+                                    width={b.fillPercentage[0] * b.width} height={b.height} />}
 
                                 {!isClusterMode &&
                                 <rect className="respond-box"
@@ -64,8 +69,8 @@ class AggregatedDendrogram extends Component {
                     {isClusterMode &&
                     <g className="proportion" transform={`translate(0,${size + proportionTopMargin})`}>
                         <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
-                        <rect x="0" y="0" width={num / total * size} height={proportionBarHeight} className="num" />
-                        <text dx="1" dy="9">{`${num}/${total}`}</text>
+                        <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
+                        <text x={size} dx="-14" dy="9">{num}</text>
                     </g>
                     }
                 </g>

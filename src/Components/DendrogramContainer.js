@@ -5,7 +5,7 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {scaleLinear, hsl} from 'd3';
+import {scaleLinear, hsl, extent} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
@@ -342,7 +342,15 @@ let getClusters = createSelector(
 
 
 let getKDEBins = (n, values, kernel) => {
-    let bins = [], min = 100, max = 0;
+    let valueExtent = extent(values);
+    if (valueExtent[0] == valueExtent[1]) {
+        // No uncertainty
+        return false;
+    }
+    console.log('KDE...');
+
+    let scale, bins = [];
+    let min = 100, max = 0;
     for (let j = 0; j < n; j++) {
         let b = 0;
         for (let i = 0; i < values.length; i++) {
@@ -352,8 +360,8 @@ let getKDEBins = (n, values, kernel) => {
         if (b > max) max = b;
         bins.push(b);
     }
-    let scale = scaleLinear().domain([min, max]).range([1, .5]);
-    let colorBins = bins.map(scale).map(l => hsl(210, 1, l).toString());
+    scale = scaleLinear().domain([min, max]).range([1, .49]);
+    let colorBins = bins.map(scale).map(l => hsl(207, .44, l).toString());
     return colorBins;
 };
 
