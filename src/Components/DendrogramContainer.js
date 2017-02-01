@@ -17,7 +17,7 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, isClusterMode, dendrograms, activeTreeId, rangeSelection} = this.props;
+        let {spec, isClusterMode, isSuperCluster, dendrograms, activeTreeId, rangeSelection} = this.props;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
         let boxSize = spec.size + 2 * spec.margin + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
@@ -42,7 +42,7 @@ class DendrogramContainer extends Component {
                  onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
-                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode}
+                <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} isSuperCluster={isSuperCluster}
                                       onToggleBlock={this.props.onToggleBlock}
                                       rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
             </div>
@@ -55,7 +55,8 @@ class DendrogramContainer extends Component {
                         <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
                         <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
                             <span style={{marginRight: '5px'}}>(as</span>
-                            <Radio inline checked={isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, true)}>cluster</Radio>
+                            <Radio inline checked={isSuperCluster} onChange={this.props.onToggleClusterMode.bind(null, 'super')}>supercluster</Radio>
+                            <Radio inline checked={isClusterMode && !isSuperCluster} onChange={this.props.onToggleClusterMode.bind(null, true)}>cluster</Radio>
                             <Radio inline checked={!isClusterMode} onChange={this.props.onToggleClusterMode.bind(null, false)}>individual</Radio>
                             )
                         </FormGroup>
@@ -298,29 +299,30 @@ let getLayouts = createSelector(
     (trees, spec) => trees.map(t => calcLayout(t, spec))
 )
 
-let getHash = (blocks, rootBlockId) => {
+let getHash = (blocks, rootBlockId, isNumAccountable) => {
     let traverse = (bid) => {
         let b = blocks[bid];
         if (b.children.length > 0) {
-            return '(' + b.children.map(c => traverse(c)).join(',') + ')' + b.n;
+            return '(' + b.children.map(c => traverse(c)).join(',') + ')' + (isNumAccountable? b.n: '');
         } else {
-            return b.n.toString();
+            return isNumAccountable? b.n.toString(): 'x';
         }
     };
     return traverse(rootBlockId);
 };
+
 
 // Cluster trees by visual representations
 // trees is an array of tree objects {tid, blocks, rootBlockId, branches}
 // Return an array of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let getClusters = createSelector(
-    [trees => trees],
-    (trees) => {
-        console.log('Clustering trees...');
+    [trees => trees, (_, isSuperCluster) => isSuperCluster],
+    (trees, isSuperCluster) => {
+        console.log('Clustering trees... isSuperCluster?', isSuperCluster);
         // Get the tree hashes
         for (let i = 0; i < trees.length; i++) {
-            trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId);
+            trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, !isSuperCluster);
         }
 
         // Sort the trees according to their hashes
@@ -444,7 +446,8 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
 
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
-    [state => state.aggregatedDendrogram.isClusterMode, (_, trees) => trees,
+    [state => state.aggregatedDendrogram.isClusterMode, state => state.aggregatedDendrogram.isSuperCluster,
+        (_, trees) => trees,
         state => state.referenceTree.highlightMonophyly == null? []:
             (state.referenceTree.highlightMonophyly === 'missing'? state.inputGroupData.trees[state.referenceTree.id].missing:
                 state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities),
@@ -455,9 +458,9 @@ let getDendrograms = createSelector(
                 range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
             }: null,
         state => state.aggregatedDendrogram.shadedHistogram],
-    (isClusterMode, trees, highlightEntities, spec, rawTrees, rangeSelection, shadedHistogram) => {
+    (isClusterMode, isSuperCluster, trees, highlightEntities, spec, rawTrees, rangeSelection, shadedHistogram) => {
         let dendros = getLayouts(trees, spec);
-        let clusters = isClusterMode? getClusters(dendros).slice(): [];
+        let clusters = isClusterMode? getClusters(dendros, isSuperCluster).slice(): [];
         dendros = dendros.slice();
         let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {

@@ -11,7 +11,7 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, isClusterMode, shadedGranularity, onToggleBlock} = this.props;
+        let {spec, isClusterMode, isSuperCluster, shadedGranularity, onToggleBlock} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
@@ -62,7 +62,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={isClusterMode? null: onToggleBlock.bind(null, [])}
                                     />}
 
-                                    {b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
+                                    {!isSuperCluster && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                                 </g>
                             )}
                         </g>

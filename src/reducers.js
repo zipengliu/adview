@@ -52,6 +52,7 @@ let initialState = {
         activeTreeId: null,
         activeSetIndex: 0,
         isClusterMode: true,
+        isSuperCluster: false,
         spec: {
             size: 100,
             margin: 2,
@@ -418,7 +419,8 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
-                    isClusterMode: action.isClusterMode
+                    isClusterMode: action.isClusterMode === 'super'? true: action.isClusterMode,
+                    isSuperCluster: action.isClusterMode === 'super'
                 }
             };
         case TYPE.TOGGLE_HIGHLIGHT_ENTITIES:
