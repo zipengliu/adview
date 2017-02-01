@@ -30,7 +30,8 @@
     stroke: #984ea3;
 }
 .block.fuzzy {
-    stroke-dasharray: 3 3;
+    stroke-width: 2px;
+    /*stroke-dasharray: 3 3;*/
 }
 .block.is-missing {
     stroke-dasharray: 5 5;

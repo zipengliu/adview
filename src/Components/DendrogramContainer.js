@@ -145,9 +145,14 @@ let getTrees = createSelector(
             let last = null;
             for (let j = 0; j < selected.length; j++) {
                 let e = selected[j];
-                let corr = tid === rid? e: ref.branches[e]['correspondingBranches'][tid];
-                expansion[corr.branchId] = corr.jaccard;
-                if (j === 0) last = corr.branchId;
+                if (tid === rid) {
+                    expansion[e] = 1;
+                    if (j === 0) last = e;
+                } else {
+                    let corr = ref.branches[e]['correspondingBranches'][tid];
+                    expansion[corr.branchId] = corr.jaccard;
+                    if (j === 0) last = corr.branchId;
+                }
             }
             res.push({
                 ...trees[tid],
