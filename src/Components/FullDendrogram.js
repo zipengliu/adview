@@ -16,15 +16,17 @@ class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
-        let {selected, persist, highlightMonophyly, highlightEntities} = referenceTree;
+        let {selected, persist, highlightMonophyly, highlightEntities, highlightUncertainEntities} = referenceTree;
         let {missing} = tree;
         let highlightEntitiesMapping = createMappingFromArray(highlightEntities);
+        let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities);
         let {attrName, range} = rangeSelection || {};
 
         let inRange = d => rangeSelection && !d.isLeaf &&
         range[0] <= tree.branches[d.bid][attrName] && tree.branches[d.bid][attrName] <= range[1];
 
-        let names = textSpecs.map(d => (<text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id)})}
+        let names = textSpecs.map(d => (<text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id),
+            'uncertain-highlighted': highlightUncertainEntitiesMapping.hasOwnProperty(d.entity_id)})}
                                               x={d.x} y={d.y} dx={5} dy={3}
                                               textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
         let missingBranchPos = missing? (missing.length - 1) / 2 * spec.marginOnEntity: null;

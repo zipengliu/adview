@@ -17,6 +17,9 @@
 .entity-name.highlighted {
     fill: blue;
 }
+.entity-name.uncertain-highlighted {
+    fill: #4daf4a;
+}
 
 .box {
     fill: grey;

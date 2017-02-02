@@ -303,7 +303,8 @@ let getHash = (blocks, rootBlockId, isNumAccountable) => {
     let traverse = (bid) => {
         let b = blocks[bid];
         if (b.children.length > 0) {
-            return '(' + b.children.map(c => traverse(c)).join(',') + ')' + (isNumAccountable? b.n: '');
+            return '(' + b.children.map(c => traverse(c)).join(',') + ')'
+                + (isNumAccountable? b.n: (b.n === 0? '0': '')); // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
         } else {
             return isNumAccountable? b.n.toString(): 'x';
         }
@@ -335,16 +336,41 @@ let getClusters = createSelector(
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
             let traverse = (clusterBid, addingBid) => {
                 let b = clusterBlocks[clusterBid];
-                if (!b.hasOwnProperty('represent')) {
-                    b.represent = {};
-                }
                 b.represent[addingTreeId] = addingBid;
+                b.similarity.push(addingBlocks[addingBid].similarity);
+                for (let e in addingBlocks[addingBid].entities) if (addingBlocks[addingBid].entities.hasOwnProperty(e)) {
+                    if (!b.entities.hasOwnProperty(e)) {
+                        b.entities[e] = 0;
+                    }
+                    b.entities[e] += 1;
+                }
+
                 for (let i = 0; i < b.children.length; i++) {
                     traverse(b.children[i], addingBlocks[addingBid].children[i])
                 }
             };
             traverse(clusterRootBlockId, addingRootBlockId);
             return clusterBlocks;
+        };
+
+        let createEmptyClusterFromTree = (t) => {
+            let c = {...t, blocks: {...t.blocks}, branches: {...t.branches},
+                tid: t.tid + '-r',
+                num: 0, trees: [], total: trees.length};
+            let traverse = (bid) => {
+                // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
+                c.blocks[bid] = {
+                    ...c.blocks[bid],
+                    represent: {},
+                    entities: {},
+                    similarity: [],
+                };
+                for (let i = 0; i < t.blocks[bid].children.length; i++) {
+                    traverse(t.blocks[bid].children[i]);
+                }
+            };
+            traverse(t.rootBlockId);
+            return c;
         };
 
         // Scan the array to construct cluster
@@ -354,8 +380,7 @@ let getClusters = createSelector(
             let t = trees[i];
             if (i === 0 || t.hash !== trees[i - 1].hash) {
                 // create a new cluster
-                c = {...t, tid: t.tid + '-r',
-                    num: 0, trees: [], total: trees.length};
+                c = createEmptyClusterFromTree(t);
                 clusters.push(c);
             }
             c.num += 1;
@@ -504,7 +529,7 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSorting: () => {dispatch(toggleSorting())},
     clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleClusterMode: (m) => {dispatch(toggleCLusterMode(m))},
-    onToggleBlock: (e) => {dispatch(toggleHighlightEntities(e))}
+    onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

@@ -233,8 +233,8 @@ export function toggleCLusterMode(isClusterMode) {
     return {type: TYPE.TOGGLE_CLUSTER_MODE, isClusterMode};
 }
 
-export function toggleHighlightEntities(entities) {
-    return {type: TYPE.TOGGLE_HIGHLIGHT_ENTITIES, entities};
+export function toggleHighlightEntities(entities, uncertainEntities=[]) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_ENTITIES, entities, uncertainEntities};
 }
 
 

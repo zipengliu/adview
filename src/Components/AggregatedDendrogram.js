@@ -18,6 +18,23 @@ class AggregatedDendrogram extends Component {
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
 
+        let hasUncertainty = block => {
+            if (!block) return false;
+            if (isClusterMode) {
+                for (let i = 0; i < block.similarity.length; i++) {
+                    if (block.similarity[i] < 1.0) return true;
+                }
+                return false;
+            } else {
+                return block.similarity < 1.0;
+            }
+        };
+
+        let getCertainEntities = block =>
+            isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] === num): Object.keys(block.entities);
+        let getUncertainEntities = block =>
+            isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] < num): [];
+
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
@@ -30,14 +47,13 @@ class AggregatedDendrogram extends Component {
                     }
                     <g transform={`translate(0,${isClusterMode? proportionBarHeight + proportionTopMargin: 0})`}>
                        <g className="blocks" >
-                            {blockArr.map(b =>
+                            {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
-                                    {b.width > 0 &&
-                                    <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': !isClusterMode && b.similarity < 1.0,
+                                    <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': hasUncertainty(b),
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
-                                          filter={!isClusterMode && b.similarity < 1.0? `url(#blur${this.props.data.tid})`: ''}
-                                    />}
+                                          filter={hasUncertainty(b)? `url(#blur${this.props.data.tid})`: ''}
+                                    />
 
                                     {!isClusterMode && b.fillPercentage > 0.001 &&
                                     <rect className="highlight-block" x={b.x} y={b.y}
@@ -55,12 +71,11 @@ class AggregatedDendrogram extends Component {
                                     <rect className="highlight-block" x={b.x} y={b.y}
                                           width={b.fillPercentage[0] * b.width} height={b.height} />}
 
-                                    {!isClusterMode &&
                                     <rect className="respond-box"
                                           x={b.x} y={b.y} width={b.width} height={b.height}
-                                          onMouseEnter={isClusterMode? null: onToggleBlock.bind(null, Object.keys(b.entities))}
-                                          onMouseLeave={isClusterMode? null: onToggleBlock.bind(null, [])}
-                                    />}
+                                          onMouseEnter={onToggleBlock.bind(null, getCertainEntities(b), getUncertainEntities(b))}
+                                          onMouseLeave={onToggleBlock.bind(null, [], [])}
+                                    />
 
                                     {!isSuperCluster && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                                 </g>
@@ -68,8 +83,9 @@ class AggregatedDendrogram extends Component {
                         </g>
                         <g className="branches">
                             {branchArr.map(b => <line className="branch" key={b.bid}
+                                                      filter={hasUncertainty(blocks[b.bid])? `url(#blurBranch${this.props.data.tid})`: ''}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
-                            {branches[lastSelected] && <g>
+                            {branches[lastSelected] && <g filter={hasUncertainty(blocks[lastSelected])? `url(#blurBranch${this.props.data.tid})`: ''}>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2-2}/>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1+2}
@@ -79,8 +95,11 @@ class AggregatedDendrogram extends Component {
                     </g>
                 </g>
                 <defs>
-                    <filter id={`blur${this.props.data.tid}`} x="-10%" y="-10%" width="120%" height="120%">
+                    <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
                         <feGaussianBlur in="StrokePaint" stdDeviation="2" />
+                    </filter>
+                    <filter id={`blurBranch${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
+                        <feGaussianBlur in="StrokePaint" stdDeviation="0,2" />
                     </filter>
                 </defs>
             </svg>

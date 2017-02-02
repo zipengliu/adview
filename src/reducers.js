@@ -33,6 +33,7 @@ let initialState = {
         isFetching: false,
         persist: false,
         highlightEntities: [],
+        highlightUncertainEntities: [],
     },
     sets: [],
     overview: {
@@ -429,6 +430,7 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightEntities: action.entities,
+                    highlightUncertainEntities: action.uncertainEntities
                 }
             };
 
