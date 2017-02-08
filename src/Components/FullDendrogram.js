@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric} from '../actions';
+import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleComparingHighlightMonophyly} from '../actions';
 import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
@@ -15,11 +15,14 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
-            hoverBoxes, textSpecs, entities, rangeSelection} = this.props;
+            hoverBoxes, textSpecs, entities, rangeSelection, alignToSide, isComparing} = this.props;
         let {selected, persist, highlightMonophyly, highlightEntities, highlightUncertainEntities} = referenceTree;
+        highlightMonophyly = isStatic? this.props.comparingMonophyly: highlightMonophyly;
+        highlightEntities = isStatic? this.props.comparingEntities: highlightEntities;
+        highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
         let {missing} = tree;
-        let highlightEntitiesMapping = createMappingFromArray(highlightEntities);
-        let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities);
+        let highlightEntitiesMapping = createMappingFromArray(highlightEntities || []);
+        let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities || []);
         let {attrName, range} = rangeSelection || {};
 
         let inRange = d => rangeSelection && !d.isLeaf &&
@@ -27,8 +30,8 @@ class FullDendrogram extends Component {
 
         let names = textSpecs.map(d => (<text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id),
             'uncertain-highlighted': highlightUncertainEntitiesMapping.hasOwnProperty(d.entity_id)})}
-                                              x={d.x} y={d.y} dx={5} dy={3}
-                                              textAnchor="start" key={d.entity_id}>{entities[d.entity_id].name}</text>));
+                                              x={d.x} y={d.y} dx={alignToSide? 0: 5} dy={3}
+                                              textAnchor={alignToSide === 'right'? 'end': 'start'} key={d.entity_id}>{entities[d.entity_id].name}</text>));
         let missingBranchPos = missing? (missing.length - 1) / 2 * spec.marginOnEntity: null;
 
         return (
@@ -36,8 +39,8 @@ class FullDendrogram extends Component {
                  height={spec.height + spec.margin.top + spec.margin.bottom}>
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                     <g>
-                        {referenceTree.highlightMonophyly &&
-                        <rect className="hover-box" {...hoverBoxes[referenceTree.highlightMonophyly]}></rect>}
+                        {highlightMonophyly &&
+                        <rect className="hover-box" {...hoverBoxes[highlightMonophyly]}></rect>}
                     </g>
                     <g className="topology">
                         {branchSpecs.map((d, i) =>
@@ -57,19 +60,21 @@ class FullDendrogram extends Component {
                         )}
                     </g>
                     <g className="names">{names}</g>
-                    {!isStatic &&
+                    {(!isStatic || isComparing) &&
                     <g className="responding-boxes">
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
-                                  onMouseEnter={persist? null: this.props.toggleHighlightMonophyly.bind(null, d.bid)}
-                                  onMouseLeave={persist? null: this.props.toggleHighlightMonophyly.bind(null, null)}
+                                  onMouseEnter={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, tree._id, d.bid):
+                                          this.props.toggleHighlightMonophyly.bind(null, d.bid))}
+                                  onMouseLeave={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, null, null):
+                                          this.props.toggleHighlightMonophyly.bind(null, null))}
                                   onClick={() => {if (this.props.pickingBranch) {
                                       if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {
                                       if (persist) {
                                           this.props.toggleHighlightMonophyly(highlightMonophyly === d.bid? null: d.bid)
-                                      } else {
+                                      } else if (!isComparing) {
                                           this.props.onSelectBranch(d.bid)
                                       }
                                   } }}
@@ -90,10 +95,12 @@ class FullDendrogram extends Component {
                         </g>)}
                         {highlightMonophyly === 'missing' &&
                         <rect className="hover-box" x="0" y="-4" width={spec.width} height={missing.length * spec.marginOnEntity} />}
-                        {!isStatic && <rect className="box" x="0" y={missingBranchPos - 12} width="50" height={24}
-                                            onMouseEnter={persist? null: this.props.toggleHighlightMonophyly.bind(null, 'missing')}
-                                            onMouseLeave={persist? null: this.props.toggleHighlightMonophyly.bind(null, null)}
-                                            onClick={() => {persist? this.props.toggleHighlightMonophyly(highlightMonophyly === 'missing'? null: 'missing'): null}}
+                        {(!isStatic || isComparing) && <rect className="box" x="0" y={missingBranchPos - 12} width="50" height={24}
+                                            onMouseEnter={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, tree._id, 'missing'):
+                                                    this.props.toggleHighlightMonophyly.bind(null, 'missing'))}
+                                            onMouseLeave={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, null, null):
+                                                    this.props.toggleHighlightMonophyly.bind(null, null))}
+                                            onClick={persist? this.props.toggleHighlightMonophyly.bind(null, highlightMonophyly === 'missing'? null: 'missing'): null}
                         />}
                     </g>
                     }
@@ -123,11 +130,13 @@ function getMaxLength(topo) {
 }
 
 let getDendrogramSpecs = createSelector(
-    [(state, ownProps) => ownProps.tree? state.inputGroupData.trees[ownProps.tree.id]: state.inputGroupData.trees[state.referenceTree.id],
+    [(state, ownProps) => ownProps.tid? state.inputGroupData.trees[ownProps.tid]: state.inputGroupData.trees[state.referenceTree.id],
+        state => state.inputGroupData.entities,
+        (_, ownProps) => ownProps.alignToSide,
         state => state.dendrogramSpec],
-    (tree, spec) => {
+    (tree, entities, side, spec) => {
 
-        let branches = tree.branches;
+        let {branches} = tree;
         let maxLength = getMaxLength(tree);
         let topologyWidth = spec.width - spec.labelWidth;
         let xScale = scaleLinear().domain([0, maxLength]).range([0, topologyWidth]);
@@ -135,6 +144,7 @@ let getDendrogramSpecs = createSelector(
         let connectLines = [];
         let curY = 0;
         let text = [];
+        let aligned = side === 'left' || side === 'right';
 
         // THe bounding box for a subtree, keyed by the leading branch
         let boundingBox = {};
@@ -158,12 +168,16 @@ let getDendrogramSpecs = createSelector(
                     height: boundingBox[right].y + boundingBox[right].height - boundingBox[left].y};
             } else {
                 // Leaf branch
+                let ent_id = branches[bid].entities[0];
                 b[bid].y1 = curY;
                 b[bid].y2 = curY;
+                if (aligned) {
+                    b[bid].x2 = topologyWidth;
+                    b[bid].x2 += Math.max(0, spec.labelWidth - entities[ent_id].name.length * 4.3 - 5);
+                }
                 boundingBox[bid] = {x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
                     width: spec.width - b[bid].x1, height: spec.responsiveAreaSize};
-                let ent_id = branches[bid].entities[0];
-                text.push({entity_id: ent_id,  x: curX, y: curY});
+                text.push({entity_id: ent_id,  x: !aligned? curX: (side === 'right'? spec.width: 0), y: curY});
                 curY += spec.marginOnEntity;
             }
         };
@@ -177,6 +191,27 @@ let getDendrogramSpecs = createSelector(
             responsiveBoxes.push({x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
                 width: b[bid].x2 - b[bid].x1, height: spec.responsiveAreaSize, bid});
         }
+
+        // Align the left, right side or none
+        if (side === 'left') {
+            for (let bid in boundingBox) if (b.hasOwnProperty(bid)) {
+                boundingBox[bid].x = spec.width - boundingBox[bid].x - boundingBox[bid].width;
+            }
+            for (let i = 0; i < branchSpecs.length; i++) {
+                branchSpecs[i].x1 = spec.width - branchSpecs[i].x1;
+                branchSpecs[i].x2 = spec.width - branchSpecs[i].x2;
+            }
+            for (let i = 0; i < connectLines.length; i++) {
+                connectLines[i].x1 = spec.width - connectLines[i].x1;
+                connectLines[i].x2 = spec.width - connectLines[i].x2;
+            }
+            for (let i = 0; i < responsiveBoxes.length; i++) {
+                responsiveBoxes[i].x = spec.width - responsiveBoxes[i].x - responsiveBoxes[i].width;
+            }
+        } else if (side === 'right') {
+
+        }
+
         return {
             branchSpecs,
             verticalLines: connectLines,
@@ -189,10 +224,9 @@ let getDendrogramSpecs = createSelector(
 
 function mapStateToProps(state, ownProps) {
     return {
-        isStatic: !!ownProps.isStatic,
         ...getDendrogramSpecs(state, ownProps),
         referenceTree: state.referenceTree,
-        tree: state.inputGroupData.trees[ownProps.tree? ownProps.tree.id: state.referenceTree.id],
+        tree: state.inputGroupData.trees[ownProps.tid? ownProps.tid: state.referenceTree.id],
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         pickingBranch: state.overview.pickingBranch,
@@ -214,7 +248,8 @@ function mapDispatchToProps(dispatch) {
         },
         onChangeDistanceMetric: (bid) => {
             dispatch(changeDistanceMetric('local', bid));
-        }
+        },
+        toggleComparingHighlightMonophyly: (tid, m) => {dispatch(toggleComparingHighlightMonophyly(tid, m))}
     }
 }
 

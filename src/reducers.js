@@ -16,14 +16,20 @@ let initialState = {
     },
     inspector: {
         show: false,
-        trees: [],
+        pairwiseComparison: null,
+        highlight: {
+            direction: null,    // can be 'lr' or 'rl' meaning from left to right, or right to left
+            monophyly: null,
+            entities: null
+        },
+        tids: [],
     },
     dendrogramSpec: {
         width: 500,
         height: 840,
         margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
-        labelWidth: 100,
+        labelWidth: 150,
         responsiveAreaSize: 7
     },
     referenceTree: {
@@ -77,6 +83,7 @@ let initialState = {
             granularity: 1,
             binsFunc: width => Math.floor(width / 1),
             kernel: x => Math.pow(Math.E, -50*x*x)
+            // kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
         }
     },
     attributeExplorer: {
@@ -445,37 +452,58 @@ function visphyReducer(state = initialState, action) {
             };
         case TYPE.ADD_TREE_TO_INSPECTOR:
             // Find out whether the tree is already in the inspector
-            let found = -1;
-            let oldTrees = state.inspector.trees;
-            for (let i = 0; i < oldTrees.length; i++) {
-                if (oldTrees[i].id === action.tid) {
-                    found = i; break;
-                }
-            }
+            let oldTrees = state.inspector.tids;
+            let found = oldTrees.indexOf(action.tid);
             let newTrees;
             if (found !== -1) {
                 // Bring that tree to the leftmost
                 newTrees = [oldTrees[found], ...oldTrees.slice(0, found), ...oldTrees.slice(found+1)];
             } else {
-                newTrees = [{id: action.tid, staticMode: true}, ...oldTrees];
+                newTrees = [action.tid, ...oldTrees];
             }
             return {
                 ...state,
                 inspector: {
                     ...state.inspector,
                     show: true,
-                    trees: newTrees
+                    tids: newTrees,
+                    pairwiseComparison: null
                 }
             };
         case TYPE.REMOVE_TREE_FROM_INSPECTOR:
+            let idxOfTree = state.inspector.tids.indexOf(action.tid);
             return {
                 ...state,
                 inspector: {
                     ...state.inspector,
-                    trees: state.inspector.trees.filter(t => t.id !== action.tid)
+                    pairwiseComparison: state.inspector.pairwiseComparison === idxOfTree || state.inspector.pairwiseComparison === idxOfTree + 1?
+                        null: state.inspector.pairwiseComparison,
+                    tids: state.inspector.tids.filter(t => t !== action.tid)
                 }
             };
-
+        case TYPE.TOGGLE_PAIRWISE_COMPARISON:
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    pairwiseComparison: action.p
+                }
+            };
+        case TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY:
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    highlight: {
+                        direction: state.inspector.pairwiseComparison == null || action.m == null? null:
+                            (state.inspector.tids[state.inspector.pairwiseComparison] === action.tid? 'lr': 'rl'),
+                        monophyly: action.m,
+                        entities: state.inspector.pairwiseComparison == null || action.m == null? null:
+                            (action.m === 'missing'? state.inputGroupData.trees[action.tid].missing:
+                                state.inputGroupData.trees[action.tid].branches[action.m].entities)
+                    }
+                }
+            };
 
         case TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE:
             return {
