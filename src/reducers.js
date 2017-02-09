@@ -82,8 +82,8 @@ let initialState = {
         shadedHistogram: {
             granularity: 1,
             binsFunc: width => Math.floor(width / 1),
-            kernel: x => Math.pow(Math.E, -50*x*x)
-            // kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
+            // kernel: x => Math.pow(Math.E, -50*x*x)
+            kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
         }
     },
     attributeExplorer: {
