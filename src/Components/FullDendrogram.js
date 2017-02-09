@@ -34,6 +34,29 @@ class FullDendrogram extends Component {
                                               textAnchor={alignToSide === 'right'? 'end': 'start'} key={d.entity_id}>{entities[d.entity_id].name}</text>));
         let missingBranchPos = missing? (missing.length - 1) / 2 * spec.marginOnEntity: null;
 
+        // Debounce the hovering
+        let timer;
+        let onMouseEnterBranch = (bid) => {
+            timer = setTimeout(() => {
+                if (isComparing) {
+                    this.props.toggleComparingHighlightMonophyly(tree._id, bid);
+                } else {
+                    this.props.toggleHighlightMonophyly(bid);
+                }
+            }, 500);
+        };
+        let onMouseLeaveBranch = () => {
+            if (timer) {
+                clearTimeout(timer);
+            } else {
+                if (isComparing) {
+                    this.props.toggleComparingHighlightMonophyly(null, null);
+                } else {
+                    this.props.toggleHighlightMonophyly(null);
+                }
+            }
+        };
+
         return (
             <svg width={spec.width + spec.margin.left + spec.margin.right}
                  height={spec.height + spec.margin.top + spec.margin.bottom}>
@@ -65,10 +88,8 @@ class FullDendrogram extends Component {
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
-                                  onMouseEnter={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, tree._id, d.bid):
-                                          this.props.toggleHighlightMonophyly.bind(null, d.bid))}
-                                  onMouseLeave={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, null, null):
-                                          this.props.toggleHighlightMonophyly.bind(null, null))}
+                                  onMouseEnter={() => {if (!persist) {onMouseEnterBranch(d.bid)}}}
+                                  onMouseLeave={() => {if (!persist) {onMouseLeaveBranch()}}}
                                   onClick={() => {if (this.props.pickingBranch) {
                                       if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {
@@ -95,12 +116,11 @@ class FullDendrogram extends Component {
                         </g>)}
                         {highlightMonophyly === 'missing' &&
                         <rect className="hover-box" x="0" y="-4" width={spec.width} height={missing.length * spec.marginOnEntity} />}
-                        {(!isStatic || isComparing) && <rect className="box" x="0" y={missingBranchPos - 12} width="50" height={24}
-                                            onMouseEnter={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, tree._id, 'missing'):
-                                                    this.props.toggleHighlightMonophyly.bind(null, 'missing'))}
-                                            onMouseLeave={persist? null: (isComparing? this.props.toggleComparingHighlightMonophyly.bind(null, null, null):
-                                                    this.props.toggleHighlightMonophyly.bind(null, null))}
-                                            onClick={persist? this.props.toggleHighlightMonophyly.bind(null, highlightMonophyly === 'missing'? null: 'missing'): null}
+                        {(!isStatic || isComparing) &&
+                        <rect className="box" x="0" y={missingBranchPos - 12} width="50" height={24}
+                              onMouseEnter={() => {if (!persist) {onMouseEnterBranch('missing')}}}
+                              onMouseLeave={() => {if (!persist) {onMouseLeaveBranch()}}}
+                              onClick={persist? this.props.toggleHighlightMonophyly.bind(null, highlightMonophyly === 'missing'? null: 'missing'): null}
                         />}
                     </g>
                     }

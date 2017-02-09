@@ -35,6 +35,20 @@ class AggregatedDendrogram extends Component {
         let getUncertainEntities = block =>
             isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] < num): [];
 
+        // Debounce the hovering
+        let timer;
+        let onMouseEnterBlock = (b) => {
+            timer = setTimeout(() => {
+                onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
+            }, 500);
+        };
+        let onMouseLeaveBlock = () => {
+            if (timer) {
+                clearTimeout(timer);
+            } else {
+                onToggleBlock([], []);
+            }
+        };
         return (
             <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 <g transform={`translate(${margin},${margin})`}>
@@ -65,16 +79,16 @@ class AggregatedDendrogram extends Component {
                                     {isClusterMode && b.colorBins &&
                                     b.colorBins.map((d, i) =>
                                         <line key={i} className="highlight-block fuzzy" style={{stroke: d, strokeWidth: shadedGranularity}}
-                                              x1={b.x + i * shadedGranularity} y1={b.y}
-                                              x2={b.x + i * shadedGranularity} y2={b.y+b.height}/>)}
+                                              x1={b.x + i * shadedGranularity + 1} y1={b.y}
+                                              x2={b.x + i * shadedGranularity + 1} y2={b.y+b.height}/>)}
                                     {isClusterMode && !b.colorBins && b.fillPercentage[0] > 0.001 &&
                                     <rect className="highlight-block" x={b.x} y={b.y}
                                           width={b.fillPercentage[0] * b.width} height={b.height} />}
 
                                     <rect className="respond-box"
                                           x={b.x} y={b.y} width={b.width} height={b.height}
-                                          onMouseEnter={onToggleBlock.bind(null, getCertainEntities(b), getUncertainEntities(b))}
-                                          onMouseLeave={onToggleBlock.bind(null, [], [])}
+                                          onMouseEnter={() => {onMouseEnterBlock(b)}}
+                                          onMouseLeave={onMouseLeaveBlock}
                                     />
 
                                     {!isSuperCluster && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
@@ -96,7 +110,7 @@ class AggregatedDendrogram extends Component {
                 </g>
                 <defs>
                     <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
-                        <feGaussianBlur in="StrokePaint" stdDeviation="2" />
+                        <feGaussianBlur in="StrokePaint" stdDeviation="1" />
                     </filter>
                     <filter id={`blurBranch${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
                         <feGaussianBlur in="StrokePaint" stdDeviation="0,2" />

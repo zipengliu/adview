@@ -38,8 +38,8 @@ class DendrogramContainer extends Component {
             return (
             <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={i}
                  style={{width: boxSize + 'px', height: boxSize + 'px'}}
-                 onMouseEnter={this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
-                 onMouseLeave={this.props.onToggleHighlightTree.bind(null, null, false)}
+                 onMouseEnter={true? null: this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
+                 onMouseLeave={true? null: this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
                      isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
                 <AggregatedDendrogram data={t} spec={spec} isClusterMode={isClusterMode} isSuperCluster={isSuperCluster}
@@ -64,29 +64,29 @@ class DendrogramContainer extends Component {
 
                     <div style={{marginBottom: '5px'}}>
                         <ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>
-                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
                                 <Button disabled={this.props.activeSetIndex === 0}
                                         onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
                                     <Glyphicon glyph="trash"/><span className="glyph-text">Remove set</span>
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
                                 <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, isClusterMode? activeTids: [activeTreeId], this.props.activeSetIndex)}>
                                     <Glyphicon glyph="trash"/><span className="glyph-text">Remove tree</span>
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
                                 <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, activeTreeId)}>
                                     <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
 
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="top" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
                                 <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
                                     <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger placement="top" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch expansion</Tooltip>}>
+                            <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch expansion</Tooltip>}>
                                 <Button onClick={this.props.clearSelection}>
                                     <Glyphicon glyph="refresh" /><span className="glyph-text">Reset</span>
                                 </Button>
@@ -355,7 +355,7 @@ let getClusters = createSelector(
 
         let createEmptyClusterFromTree = (t) => {
             let c = {...t, blocks: {...t.blocks}, branches: {...t.branches},
-                tid: t.tid + '-r',
+                tid: t.tid + (isSuperCluster? '-s': '-r'),
                 num: 0, trees: [], total: trees.length};
             let traverse = (bid) => {
                 // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
@@ -445,7 +445,7 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
 
                 // construct the shaded histogram
                 b.colorBins = entities.length > 0?
-                    getKDEBins(shadedHistogram.binsFunc(b.width), b.fillPercentage, shadedHistogram.kernel): null;
+                    getKDEBins(shadedHistogram.binsFunc(b.width - 2), b.fillPercentage, shadedHistogram.kernel): null;
             }
         }
     } else {
