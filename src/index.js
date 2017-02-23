@@ -14,6 +14,7 @@ import App from './Components/App';
 import About from './Components/About';
 import DatasetList from './Components/DatasetList';
 import MainView from './Components/MainView';
+import UserManual from './Components/UserManual';
 
 console.log('Welcome to VisPhy!');
 
@@ -25,9 +26,11 @@ let root = (
         <Router history={browserHistory}>
             <Route path="/" component={App}>
 
-                <IndexRoute component={About} />
+                <IndexRoute component={DatasetList} />
                 <Route path="dataset/:inputGroupId" component={MainView} />
+                <Route path="about" component={About} />
                 <Route path="dataset-list" component={DatasetList}/>
+                <Route path="user-manual" component={UserManual}/>
             </Route>
         </Router>
     </Provider>

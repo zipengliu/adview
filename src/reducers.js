@@ -62,7 +62,7 @@ let initialState = {
         isSuperCluster: false,
         spec: {
             size: 100,
-            margin: 2,
+            margin: {left: 2, top: 2, right: 16, bottom: 2},
             verticalGap: 5,
             branchLen: 8,
             leaveHeight: 4,
@@ -572,7 +572,7 @@ function visphyReducer(state = initialState, action) {
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 action.data.trees[tid] = ladderize(action.data.trees[tid]);
-                if (action.data.isASTRAL && action.data.trees[tid].type === 'gene') {
+                if (action.data.trees[tid].type === 'gene') {
                     action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.trees[action.data.defaultReferenceTree])
                 }
             }

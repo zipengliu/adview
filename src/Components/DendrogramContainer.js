@@ -20,7 +20,8 @@ class DendrogramContainer extends Component {
         let {spec, isClusterMode, isSuperCluster, dendrograms, activeTreeId, rangeSelection} = this.props;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
-        let boxSize = spec.size + 2 * spec.margin + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
+        let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
+        let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
         let activeTids;
         if (isClusterMode && activeTreeId) {
             let activeDendrogram;
@@ -37,7 +38,7 @@ class DendrogramContainer extends Component {
         let getDendroBox = (t, i) => {
             return (
             <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={i}
-                 style={{width: boxSize + 'px', height: boxSize + 'px'}}
+                 style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
                  onMouseEnter={true? null: this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
                  onMouseLeave={true? null: this.props.onToggleHighlightTree.bind(null, null, false)}
                  onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,

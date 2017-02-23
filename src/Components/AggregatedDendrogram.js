@@ -18,6 +18,21 @@ class AggregatedDendrogram extends Component {
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
 
+        let numMatches = 0;
+        let numNonMatches = 0;
+        if (isClusterMode) {
+            if (lastSelected) {
+                let s = blocks[lastSelected].similarity;
+                numMatches = s.filter(a => a === 1.0).length;
+                if (s.length > 5) {
+                    numMatches = Math.ceil(5 * numMatches / s.length);
+                }
+                numNonMatches = Math.min(s.length, 5) - numMatches;
+            }
+        } else {
+            numMatches = lastSelected && blocks[lastSelected].similarity === 1.0? 1: 0;
+        }
+
         let hasUncertainty = block => {
             if (!block) return false;
             if (isClusterMode) {
@@ -40,7 +55,7 @@ class AggregatedDendrogram extends Component {
         let onMouseEnterBlock = (b) => {
             timer = setTimeout(() => {
                 onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
-            }, 500);
+            }, 300);
         };
         let onMouseLeaveBlock = () => {
             if (timer) {
@@ -50,8 +65,8 @@ class AggregatedDendrogram extends Component {
             }
         };
         return (
-            <svg width={size + 2 * margin} height={size + 2 * margin + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
-                <g transform={`translate(${margin},${margin})`}>
+            <svg width={size + margin.left + margin.right} height={size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
+                <g transform={`translate(${margin.left},${margin.top})`}>
                     {isClusterMode &&
                     <g className="proportion" >
                         <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
@@ -106,8 +121,21 @@ class AggregatedDendrogram extends Component {
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2+2}/>
                             </g>}
                         </g>
+                        {(numMatches > 0 || numNonMatches > 0) &&
+                        <g transform={`translate(${size},0)`}>
+                            {Array(numMatches).fill(1).map((d, i) =>
+                                <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={i * 15}></use>
+                            )}
+                            {Array(numNonMatches).fill(1).map((d, i) =>
+                                <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>
+                            )}
+                        </g>}
                     </g>
                 </g>
+                <symbol id={`tick${this.props.data.tid}`}>
+                    <circle cx="8" cy="6" r="6" style={{fill: 'steelblue'}} />
+                    <text dx="4" dy="10" style={{fill: '#e37d7d', fontSize: '10px'}}>&#10003;</text>
+                </symbol>
                 <defs>
                     <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
                         <feGaussianBlur in="StrokePaint" stdDeviation="1" />

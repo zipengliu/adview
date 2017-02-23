@@ -43,3 +43,16 @@ line.last-selected-indicator {
     stroke: steelblue;
     stroke-width: 3px;
 }
+
+
+.branch-stats rect {
+    fill: black;
+    fill-opacity: .5;
+}
+.branch-stats text {
+    font-size: 12px;
+    fill: #fff;
+}
+.branch-stats .attribute-chart .bars rect.bar {
+    fill: #fff;
+}
