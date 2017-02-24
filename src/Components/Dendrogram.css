@@ -54,6 +54,10 @@
     stroke-width: 2px;
     stroke: #e41a1c;
 }
+.branch.background {
+    stroke-width: 1px;
+    stroke: black;
+}
 
 .label {
     font-size: 10px;

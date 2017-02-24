@@ -11,7 +11,8 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, isClusterMode, isSuperCluster, shadedGranularity, onToggleBlock} = this.props;
+        let {spec, mode, shadedGranularity, onToggleBlock} = this.props;
+        let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {blocks, branches, num, total, lastSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
@@ -30,7 +31,7 @@ class AggregatedDendrogram extends Component {
                 numNonMatches = Math.min(s.length, 5) - numMatches;
             }
         } else {
-            numMatches = lastSelected && blocks[lastSelected].similarity === 1.0? 1: 0;
+            numMatches = lastSelected && blocks[lastSelected] && blocks[lastSelected].similarity === 1.0? 1: 0;
         }
 
         let hasUncertainty = block => {
@@ -106,12 +107,12 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {!isSuperCluster && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
+                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
                                 </g>
                             )}
                         </g>
                         <g className="branches">
-                            {branchArr.map(b => <line className="branch" key={b.bid}
+                            {branchArr.map(b => <line className={cn('branch', {background: mode === 'fine-grained' && !b.expanded})} key={b.bid}
                                                       filter={hasUncertainty(blocks[b.bid])? `url(#blurBranch${this.props.data.tid})`: ''}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                             {branches[lastSelected] && <g filter={hasUncertainty(blocks[lastSelected])? `url(#blurBranch${this.props.data.tid})`: ''}>

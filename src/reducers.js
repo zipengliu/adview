@@ -58,13 +58,12 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0,
-        isClusterMode: true,
-        isSuperCluster: false,
+        mode: 'fine-grained',            // cluster, supercluster, remainder, fine-grained, nested
         spec: {
             size: 100,
             margin: {left: 2, top: 2, right: 16, bottom: 2},
             verticalGap: 5,
-            branchLen: 8,
+            branchLen: 4,
             leaveHeight: 4,
             leaveHighlightWidth: 16,
             proportionTopMargin: 4,
@@ -397,7 +396,7 @@ function visphyReducer(state = initialState, action) {
                 },
                 overview: {
                     ...state.overview,
-                    selectedDots: state.aggregatedDendrogram.isClusterMode? action.tids: (action.tid || [])
+                    selectedDots: state.aggregatedDendrogram.mode.indexOf('cluster') !== -1? action.tids: ([action.tid] || [])
                 }
             });
         case TYPE.SELECT_SET:
@@ -422,13 +421,12 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             };
-        case TYPE.TOGGLE_CLUSTER_MODE:
+        case TYPE.TOGGLE_AGGREGATION_MODE:
             return {
                 ...state,
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
-                    isClusterMode: action.isClusterMode === 'super'? true: action.isClusterMode,
-                    isSuperCluster: action.isClusterMode === 'super'
+                    mode: action.mode,
                 }
             };
         case TYPE.TOGGLE_HIGHLIGHT_ENTITIES:
@@ -575,6 +573,19 @@ function visphyReducer(state = initialState, action) {
                 if (action.data.trees[tid].type === 'gene') {
                     action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.trees[action.data.defaultReferenceTree])
                 }
+                // Fill in the field 'parent' on every branch
+                let branches = action.data.trees[tid].branches;
+                let dfs = (bid) => {
+                    let b = branches[bid];
+                    if (!b.isLeaf) {
+                        branches[b.left].parent = bid;
+                        branches[b.right].parent = bid;
+                        dfs(b.left);
+                        dfs(b.right);
+                    }
+                };
+                dfs(action.data.trees[tid].rootBranch);
+                branches[action.data.trees[tid].rootBranch].parent = action.data.trees[tid].rootBranch;
             }
             return Object.assign({}, state, {
                 isFetching: false,
