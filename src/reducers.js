@@ -63,7 +63,7 @@ let initialState = {
             size: 100,
             margin: {left: 2, top: 2, right: 16, bottom: 2},
             verticalGap: 5,
-            branchLen: 4,
+            branchLen: 6,
             leaveHeight: 4,
             leaveHighlightWidth: 16,
             proportionTopMargin: 4,
@@ -123,16 +123,15 @@ let mergeSets = (a, b) => {
     return c;
 };
 
-let findMissing = (geneTree, speciesTree) => {
+let findMissing = (geneTree, allEntities) => {
     let geneEntities = geneTree.branches[geneTree.rootBranch].entities;
-    let speciesEntities = speciesTree.branches[speciesTree.rootBranch].entities;
+    if (geneEntities.length === Object.keys(allEntities).length) return [];
     let m = createMappingFromArray(geneEntities);
     let missing = [];
-    for (let i = 0; i < speciesEntities.length; i++) {
-        if (!m.hasOwnProperty(speciesEntities[i])) {
-            missing.push(speciesEntities[i]);
+    for (let eid in allEntities)
+        if (allEntities.hasOwnProperty(eid) && !m.hasOwnProperty(eid)) {
+            missing.push(eid);
         }
-    }
     return missing;
 };
 
@@ -502,6 +501,21 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             };
+        case TYPE.COMPARE_WITH_REFERENCE:
+            return {
+                ...state,
+                inspector: {
+                    ...state.inspector,
+                    show: true,
+                    tids: [action.tid, state.referenceTree.id],
+                    pairwiseComparison: 0,
+                    highlight: {
+                        direction: null,
+                        monophyly: null,
+                        entities: null
+                    },
+                }
+            };
 
         case TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE:
             return {
@@ -569,23 +583,27 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
-                action.data.trees[tid] = ladderize(action.data.trees[tid]);
-                if (action.data.trees[tid].type === 'gene') {
-                    action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.trees[action.data.defaultReferenceTree])
-                }
-                // Fill in the field 'parent' on every branch
+                // Fill in the field 'parent' and 'entities' on every branch
                 let branches = action.data.trees[tid].branches;
                 let dfs = (bid) => {
                     let b = branches[bid];
-                    if (!b.isLeaf) {
+                    if (b.left) {
+                        b.isLeaf = false;
                         branches[b.left].parent = bid;
                         branches[b.right].parent = bid;
                         dfs(b.left);
                         dfs(b.right);
+                        b.entities = branches[b.left].entities.concat(branches[b.right].entities)
+                    } else {
+                        b.isLeaf = true;
+                        b.entities = [b.entities];
                     }
                 };
                 dfs(action.data.trees[tid].rootBranch);
                 branches[action.data.trees[tid].rootBranch].parent = action.data.trees[tid].rootBranch;
+
+                action.data.trees[tid] = ladderize(action.data.trees[tid]);
+                action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
             return Object.assign({}, state, {
                 isFetching: false,

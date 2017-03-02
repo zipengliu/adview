@@ -10,7 +10,8 @@ import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Toolti
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
-    addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities} from '../actions';
+    addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
+    compareWithReference} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
 import './Dendrogram.css';
 
@@ -37,18 +38,27 @@ class DendrogramContainer extends Component {
             }
         }
         let getDendroBox = (t, i) => {
-            return (
-            <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={i}
-                 style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
-                 onMouseEnter={true? null: this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
-                 onMouseLeave={true? null: this.props.onToggleHighlightTree.bind(null, null, false)}
-                 onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
-                     isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
-                <AggregatedDendrogram data={t} spec={spec} mode={mode}
-                                      onToggleBlock={this.props.onToggleBlock}
-                                      rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
-            </div>
-            )};
+            let div = (
+                <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={t.tid}
+                     style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
+                     onMouseEnter={true? null: this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
+                     onMouseLeave={true? null: this.props.onToggleHighlightTree.bind(null, null, false)}
+                     onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
+                         isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
+                    <AggregatedDendrogram data={t} spec={spec} mode={mode} isReferenceTree={t.tid === this.props.referenceTid}
+                                          onToggleBlock={this.props.onToggleBlock}
+                                          rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
+                </div>);
+            if (isClusterMode) {
+                return div;
+            } else {
+                return (
+                    <OverlayTrigger key={t.tid} rootClose placement="top" overlay={<Tooltip id={`tree-name-${t.tid}`}>{t.name}</Tooltip>}>
+                        {div}
+                    </OverlayTrigger>
+                )
+            }
+        };
         const disabledTools = activeTreeId == null;
         return (
             <div className="view" style={{height: '98%'}}>
@@ -88,6 +98,12 @@ class DendrogramContainer extends Component {
                             <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
                                 <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
                                     <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-compare">Compare tree with the reference tree in detail</Tooltip>}>
+                                <Button disabled={isClusterMode || activeTreeId === this.props.referenceTid}
+                                        onClick={this.props.onCompareWithReference.bind(null, activeTreeId)}>
+                                    <Glyphicon glyph="zoom-in" /><span className="glyph-text">Compare</span>
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch expansion</Tooltip>}>
@@ -297,7 +313,7 @@ let calcRemainderLayout = (tree, spec) => {
         blocks[rootBlockId].children.push('missing');
     }
 
-    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected};
+    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected, name: tree.name};
 };
 
 let calcNestedLayout = (tree, spec) => {
@@ -448,7 +464,7 @@ let calcFineGrainedLayout = (tree, spec) => {
     };
     traverse2(lca);
 
-    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected};
+    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected, name: tree.name};
 };
 
 let getLayouts = createSelector(
@@ -659,6 +675,7 @@ let mapStateToProps = (state) => {
     let trees = getTrees(state).slice();
     return {
         ...state.aggregatedDendrogram,
+        referenceTid: state.referenceTree.id,
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
@@ -684,6 +701,7 @@ let mapDispatchToProps = (dispatch) => ({
             dispatch(toggleInspector())
         }
     },
+    onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
     onChangeSorting: () => {dispatch(toggleSorting())},
     clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},

@@ -259,6 +259,10 @@ export function toggleComparingHighlightMonophyly(tid, m) {
     return {type: TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY, tid, m}
 }
 
+export function compareWithReference(tid) {
+    return {type: TYPE.COMPARE_WITH_REFERENCE, tid};
+}
+
 
 export function changeAttributeExplorerMode(section, scope, isContext) {
     return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, section, scope, isContext}

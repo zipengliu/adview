@@ -20,6 +20,7 @@
     border: 2px solid #e41a1c;
 }
 
+
 .block {
     fill: #fff;
     stroke-width: 1px;
@@ -32,13 +33,12 @@
 .block.fuzzy {
     stroke-width: 2px;
     stroke: #888;
-    /*stroke-dasharray: 3 3;*/
+    stroke-dasharray: 3 3;
 }
 .block.is-missing {
-    stroke-dasharray: 5 5;
+    stroke-dasharray: 6 2;
 }
 .respond-box {
-    fill: #fff;
     opacity: 0;
     stroke: none;
 }
@@ -103,7 +103,10 @@
 }
 
 .agg-dendro-box line.last-selected-indicator {
-    stroke: steelblue;
+    stroke: #1a9641;
     stroke-width: 2px;
 }
 
+text.reference-tree-indicator {
+    font-size: 12px;
+}

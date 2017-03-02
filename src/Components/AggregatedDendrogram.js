@@ -82,7 +82,7 @@ class AggregatedDendrogram extends Component {
                                     <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': hasUncertainty(b),
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
-                                          filter={hasUncertainty(b)? `url(#blur${this.props.data.tid})`: ''}
+                                          filter={b.isMissing? `url(#blur${this.props.data.tid})`: ''}
                                     />
 
                                     {!isClusterMode && b.fillPercentage > 0.001 &&
@@ -113,7 +113,6 @@ class AggregatedDendrogram extends Component {
                         </g>
                         <g className="branches">
                             {branchArr.map(b => <line className={cn('branch', {background: mode === 'fine-grained' && !b.expanded})} key={b.bid}
-                                                      filter={hasUncertainty(blocks[b.bid])? `url(#blurBranch${this.props.data.tid})`: ''}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                             {branches[lastSelected] && <g filter={hasUncertainty(blocks[lastSelected])? `url(#blurBranch${this.props.data.tid})`: ''}>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
@@ -131,18 +130,18 @@ class AggregatedDendrogram extends Component {
                                 <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>
                             )}
                         </g>}
+                        {this.props.isReferenceTree &&
+                            <text className="reference-tree-indicator" x={size} y={size} dx="2" >R</text>
+                        }
                     </g>
                 </g>
                 <symbol id={`tick${this.props.data.tid}`}>
-                    <circle cx="8" cy="6" r="6" style={{fill: 'steelblue'}} />
-                    <text dx="4" dy="10" style={{fill: '#e37d7d', fontSize: '10px'}}>&#10003;</text>
+                    <circle cx="8" cy="6" r="6" style={{fill: '#a6d96a'}} />
+                    <text dx="4" dy="10" style={{fill: '#e37d7d', fontSize: '10px', fontWeight: 'bold'}}>&#10003;</text>
                 </symbol>
                 <defs>
-                    <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
+                    <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="120%" height="120%">
                         <feGaussianBlur in="StrokePaint" stdDeviation="1" />
-                    </filter>
-                    <filter id={`blurBranch${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="150%" height="150%">
-                        <feGaussianBlur in="StrokePaint" stdDeviation="0,2" />
                     </filter>
                 </defs>
             </svg>

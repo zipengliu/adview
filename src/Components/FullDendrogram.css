@@ -40,7 +40,7 @@ circle.metric-branch-indicator {
     fill: grey;
 }
 line.last-selected-indicator {
-    stroke: steelblue;
+    stroke: #1a9641;
     stroke-width: 3px;
 }
 
