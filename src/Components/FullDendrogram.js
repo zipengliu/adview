@@ -7,7 +7,8 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {histogram, scaleLinear} from 'd3';
-import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleComparingHighlightMonophyly} from '../actions';
+import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleComparingHighlightMonophyly,
+    toggleCheckingBranch} from '../actions';
 import Histogram from './HistogramSlider';
 import {createMappingFromArray} from '../utils';
 
@@ -17,7 +18,7 @@ class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
             hoverBoxes, textSpecs, entities, rangeSelection, alignToSide, isComparing, branchStats} = this.props;
-        let {selected, persist, highlightMonophyly, highlightEntities, highlightUncertainEntities} = referenceTree;
+        let {selected, persist, highlightMonophyly, checkingBranch, highlightEntities, highlightUncertainEntities} = referenceTree;
         highlightMonophyly = isStatic? this.props.comparingMonophyly: highlightMonophyly;
         highlightEntities = isStatic? this.props.comparingEntities: highlightEntities;
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
@@ -58,16 +59,26 @@ class FullDendrogram extends Component {
             }
         };
 
+        let highlightBoxes = null;
+        if (highlightMonophyly) {
+            if (typeof highlightMonophyly === 'object') {
+                highlightBoxes = <g>
+                    {Object.keys(highlightMonophyly).map(h => <rect key={h} className="hover-box" {...hoverBoxes[h]}/>)}
+                </g>
+            } else {
+                highlightBoxes = <rect className="hover-box" {...hoverBoxes[highlightMonophyly]} />
+            }
+        }
+
         return (
             <svg width={spec.width + spec.margin.left + spec.margin.right}
                  height={spec.height + spec.margin.top + spec.margin.bottom}>
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
-                    {highlightMonophyly &&
-                    <rect className="hover-box" {...hoverBoxes[highlightMonophyly]}></rect>}
-                    {highlightMonophyly && !isComparing &&
+                    {highlightBoxes}
+                    {checkingBranch && !isComparing &&
                     <g className="branch-stats" transform={`translate(${spec.width - 200},0)`}>
                         <rect x="0" y="0" width="200" height="150" />
-                        <text dx="5" y="15">Support: {tree.branches[highlightMonophyly].support.toFixed(2)}</text>
+                        <text dx="5" y="15">Support: {tree.branches[checkingBranch].support.toFixed(2)}</text>
                         <text dx="5" y="30"># Trees have the same partition: {branchStats.numExact}</text>
                         <g transform="translate(5, 45)">
                             <Histogram foregroundBins={branchStats.distribution} backgroundBins={null} attributeName="Similarity"
@@ -100,13 +111,21 @@ class FullDendrogram extends Component {
                         {responsiveBoxes.map(d =>
                             <rect className={cn("box")}
                                   x={d.x} y={d.y} width={d.width} height={d.height}
-                                  onMouseEnter={() => {if (!persist) {onMouseEnterBranch(d.bid)}}}
-                                  onMouseLeave={() => {if (!persist) {onMouseLeaveBranch()}}}
+                                  onMouseEnter={() => {if (!persist) {
+                                      onMouseEnterBranch(d.bid);
+                                  } else {
+                                      this.props.onToggleCheckingBranch(d.bid);
+                                  }}}
+                                  onMouseLeave={() => {if (!persist) {
+                                      onMouseLeaveBranch()
+                                  } else {
+                                      this.props.onToggleCheckingBranch(null);
+                                  }}}
                                   onClick={() => {if (this.props.pickingBranch) {
                                       if (this.props.metricBranch !== d.bid) this.props.onChangeDistanceMetric(d.bid)
                                   } else {
                                       if (persist) {
-                                          this.props.toggleHighlightMonophyly(highlightMonophyly === d.bid? null: d.bid)
+                                          this.props.toggleHighlightMonophyly(d.bid, true)
                                       } else if (!isComparing) {
                                           this.props.onSelectBranch(d.bid)
                                       }
@@ -260,7 +279,7 @@ let getBinsFromArray = values => {
 };
 
 let getGlobalJaccardArray = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.highlightMonophyly],
+    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.checkingBranch],
     (trees, rid, bid) => {
         if (!bid) return [];
         let corr = trees[rid].branches[bid].correspondingBranches;
@@ -291,9 +310,10 @@ function mapStateToProps(state, ownProps) {
 
 function mapDispatchToProps(dispatch) {
     return {
-        toggleHighlightMonophyly: (bid) => {
-            dispatch(toggleHighlightMonophyly(bid));
+        toggleHighlightMonophyly: (bid, multiple=false) => {
+            dispatch(toggleHighlightMonophyly(bid, multiple));
         },
+        onToggleCheckingBranch: bid => {dispatch(toggleCheckingBranch(bid))},
         onSelectBranch: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));
         },

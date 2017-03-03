@@ -34,11 +34,12 @@ let initialState = {
     },
     referenceTree: {
         id: null,
-        highlightMonophyly: null,
-        selected: [],
+        checkingBranch: null,           // the branch that is being displayed in details
+        highlightMonophyly: null,       // entities in these monophylies would be highlighted in the aggregated dendrograms,
+        selected: [],                   // expanded branches
         isFetching: false,
         persist: false,
-        highlightEntities: [],
+        highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
     },
     sets: [],
@@ -157,12 +158,34 @@ let ladderize = (tree) => {
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
+            let newHighlight = action.bid;
+            if (action.multiple) {
+                if (!state.referenceTree.highlightMonophyly) {
+                    newHighlight = {[action.bid]: true};
+                } else {
+                    newHighlight = {...state.referenceTree.highlightMonophyly};
+                    if (newHighlight.hasOwnProperty(action.bid)) {
+                        delete newHighlight[action.bid];
+                    } else {
+                        newHighlight[action.bid] = true;
+                    }
+                }
+            }
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    highlightMonophyly: action.bid
+                    checkingBranch: action.bid,
+                    highlightMonophyly: newHighlight
                 },
             });
+        case TYPE.TOGGLE_CHECKING_BRANCH:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    checkingBranch: action.bid
+                }
+            };
         case TYPE.FETCH_TREE_REQUEST:
             return Object.assign({}, state, {
                 toast: {
@@ -241,6 +264,14 @@ function visphyReducer(state = initialState, action) {
                     ...state.referenceTree,
                     highlightMonophyly: state.referenceTree.persist? null: state.referenceTree.highlightMonophyly,
                     persist: !state.referenceTree.persist
+                }
+            };
+        case TYPE.TOGGLE_USER_SPECIFIED:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    isUserSpecified: !state.referenceTree.isUserSpecified,
                 }
             };
 

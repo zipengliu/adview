@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import {OverlayTrigger, Button, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
 import {togglePersistHighlight} from '../actions';
@@ -16,11 +16,13 @@ let ReferenceTreeContainer = props => (
                 <span>({props.tree.name})</span>
             </div>
             <div style={{marginBottom: '5px'}}>
-                <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-persist">Persist highlighting of taxa in aggregated dendrograms</Tooltip>}>
-                    <Button bsSize="xsmall" onClick={props.togglePersist} bsStyle={props.persist? 'primary': 'default'}>
-                        Persist highlight
-                    </Button>
-                </OverlayTrigger>
+                <ButtonGroup bsSize="xsmall">
+                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-persist">Persist highlighting of taxa in aggregated dendrograms</Tooltip>}>
+                        <Button onClick={props.togglePersist} bsStyle={props.persist? 'primary': 'default'}>
+                            Persist highlight
+                        </Button>
+                    </OverlayTrigger>
+                </ButtonGroup>
                 {props.tree.missing &&
                 <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
                     {props.tree.branches[props.tree.rootBranch].entities.length} out of {props.tree.branches[props.tree.rootBranch].entities.length + props.tree.missing.length} taxa are present
@@ -82,10 +84,11 @@ let ReferenceTreeContainer = props => (
 let mapStateToProps = state => ({
     tree: state.inputGroupData.trees[state.referenceTree.id],
     persist: state.referenceTree.persist,
+    isUserSpecified: state.referenceTree.isUserSpecified
 });
 
 let mapDispatchToProps = dispatch => ({
-    togglePersist: () => {dispatch(togglePersistHighlight())}
+    togglePersist: () => {dispatch(togglePersistHighlight())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

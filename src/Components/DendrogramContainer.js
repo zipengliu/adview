@@ -152,7 +152,7 @@ let getTrees = createSelector(
         let res = [];
         let ref = trees[rid];
         let sortFunc;
-        if (order.static || !bid) {
+        if (order.static || !bid || typeof bid === 'object') {
             sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
         } else {
             let corr = ref.branches[bid].correspondingBranches;
@@ -643,12 +643,24 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
     }
 };
 
+let getEntitiesFromMonophylies = (tree, mono) => {
+    if (!mono) return [];
+    if (mono === 'missing') return tree.missing;
+    if (typeof mono === 'object') {
+        let res = [];
+        for (let m in mono) if (mono.hasOwnProperty(m)) {
+            res = res.concat(tree.branches[m].entities);
+        }
+        return res;
+    } else {
+        return tree.branches[mono].entities;
+    }
+};
+
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.mode, (_, trees) => trees,
-        state => state.referenceTree.highlightMonophyly == null? []:
-            (state.referenceTree.highlightMonophyly === 'missing'? state.inputGroupData.trees[state.referenceTree.id].missing:
-                state.inputGroupData.trees[state.referenceTree.id].branches[state.referenceTree.highlightMonophyly].entities),
+        state => getEntitiesFromMonophylies(state.inputGroupData.trees[state.referenceTree.id], state.referenceTree.highlightMonophyly),
         state => state.aggregatedDendrogram.spec,
         state => state.inputGroupData.trees,
         state => state.attributeExplorer.activeSelectionId === 0? {

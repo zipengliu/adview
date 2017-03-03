@@ -51,11 +51,15 @@ function fetchInputGroupFailure(err) {
     }
 }
 
-export function toggleHighlightMonophyly(bid) {
+export function toggleHighlightMonophyly(bid, multiple=false) {
     return {
         type: TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY,
-        bid
+        bid, multiple
     }
+}
+
+export function toggleCheckingBranch(bid) {
+    return {type: TYPE.TOGGLE_CHECKING_BRANCH, bid};
 }
 
 export function selectBranchOnFullDendrogram(bid) {
@@ -103,6 +107,7 @@ export function changeReferenceTree(tid) {
 export function togglePersistHighlight() {
     return {type: TYPE.TOGGLE_PERSIST_HIGHLIGHT};
 }
+
 
 export function createNewSet() {
     return {
