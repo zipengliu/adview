@@ -7,12 +7,17 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
+import {toggleTreeListCollapse} from '../actions';
 import './TreeList.css';
 
 let TreeList = (props) => (
-    <div className="view" id="tree-list">
+    <div className="view" id="tree-list" style={{height: props.collapsed? '60px': '200px'}}>
         <div className="view-header">
-            <div className="view-title">Tree List</div>
+            <div className="view-title">Tree List
+                <span style={{marginLeft: '10px', cursor: 'pointer'}} onClick={props.onToggleCollapsed}>
+                <Glyphicon glyph={props.collapsed? 'triangle-top': 'triangle-bottom'}/>
+                </span>
+            </div>
         </div>
         <div className="view-body">
                 {props.trees.map((t, i) =>
@@ -69,7 +74,12 @@ let getTrees = createSelector(
 let mapStateToProps = state => ({
     trees: getTrees(state),
     selected: state.overview.selectedDots,
-    highlighted: state.overview.highlightDots
+    highlighted: state.overview.highlightDots,
+    ...state.treeList
 });
 
-export default connect(mapStateToProps)(TreeList);
+let mapDispatchToProps = dispatch => ({
+    onToggleCollapsed: () => {dispatch(toggleTreeListCollapse())}
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(TreeList);

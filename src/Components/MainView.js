@@ -12,6 +12,7 @@ import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
 import Inspector from './Inspector';
 import AttributeExplorer from './AttributeExplorer';
+import {getWindowHeight} from '../utils';
 
 import './MainView.css';
 
@@ -24,17 +25,17 @@ class MainView extends Component {
             <div>
                 <div className={cn('toast', {show: this.props.toast.msg != null})}>{this.props.toast.msg}</div>
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
-                <div className="mainview-container">
+                <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
                     <div className="left-column">
                         <Overview />
                         <AttributeExplorer />
                         <TreeList />
                     </div>
                     <div className="middle-column">
-                        <DendrogramContainer />
+                        <ReferenceTreeContainer></ReferenceTreeContainer>
                     </div>
                     <div className="right-column">
-                        <ReferenceTreeContainer></ReferenceTreeContainer>
+                        <DendrogramContainer />
                     </div>
                 </div>}
 

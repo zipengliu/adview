@@ -6,10 +6,9 @@ import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {histogram, scaleLinear} from 'd3';
+import {scaleLinear} from 'd3';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleComparingHighlightMonophyly,
     toggleCheckingBranch} from '../actions';
-import Histogram from './HistogramSlider';
 import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
@@ -17,8 +16,8 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {isStatic, spec, tree, referenceTree, branchSpecs, verticalLines, responsiveBoxes,
-            hoverBoxes, textSpecs, entities, rangeSelection, alignToSide, isComparing, branchStats} = this.props;
-        let {selected, persist, highlightMonophyly, checkingBranch, highlightEntities, highlightUncertainEntities} = referenceTree;
+            hoverBoxes, textSpecs, entities, rangeSelection, alignToSide, isComparing} = this.props;
+        let {selected, persist, highlightMonophyly, highlightEntities, highlightUncertainEntities} = referenceTree;
         highlightMonophyly = isStatic? this.props.comparingMonophyly: highlightMonophyly;
         highlightEntities = isStatic? this.props.comparingEntities: highlightEntities;
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
@@ -41,7 +40,7 @@ class FullDendrogram extends Component {
         let onMouseEnterBranch = (bid) => {
             timer = setTimeout(() => {
                 if (isComparing) {
-                    this.props.toggleComparingHighlightMonophyly(tree._id, bid);
+                    this.props.toggleComparingHighlightMonophyly(tree.tid, bid);
                 } else {
                     this.props.toggleHighlightMonophyly(bid);
                 }
@@ -75,19 +74,6 @@ class FullDendrogram extends Component {
                  height={spec.height + spec.margin.top + spec.margin.bottom}>
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                     {highlightBoxes}
-                    {checkingBranch && !isComparing &&
-                    <g className="branch-stats" transform={`translate(${spec.width - 200},0)`}>
-                        <rect x="0" y="0" width="200" height="150" />
-                        <text dx="5" y="15">Support: {tree.branches[checkingBranch].support.toFixed(2)}</text>
-                        <text dx="5" y="30"># Trees have the same partition: {branchStats.numExact}</text>
-                        <g transform="translate(5, 45)">
-                            <Histogram foregroundBins={branchStats.distribution} backgroundBins={null} attributeName="Similarity"
-                                       toggleMoveHandle={()=>1}
-                                       selection={null} spec={this.props.histogramSpec} />
-
-                        </g>
-                    </g>
-                    }
                     <g className="topology">
                         {branchSpecs.map((d, i) =>
                             (<g key={d.bid}>
@@ -273,19 +259,6 @@ let getDendrogramSpecs = createSelector(
     }
 );
 
-let getBinsFromArray = values => {
-    let hist = histogram().domain([0, 1]).thresholds(scaleLinear().ticks(20));
-    return hist(values);
-};
-
-let getGlobalJaccardArray = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.checkingBranch],
-    (trees, rid, bid) => {
-        if (!bid) return [];
-        let corr = trees[rid].branches[bid].correspondingBranches;
-        return Object.keys(corr).map(tid => corr[tid].jaccard);
-    }
-);
 
 function mapStateToProps(state, ownProps) {
     return {
@@ -300,11 +273,6 @@ function mapStateToProps(state, ownProps) {
                 attrName: 'support',
                 range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
             }: null,
-        branchStats: {
-            numExact: getGlobalJaccardArray(state).filter(a => a === 1.0).length,
-            distribution: getBinsFromArray(getGlobalJaccardArray(state))
-        },
-        histogramSpec: state.attributeExplorer.spec
     }
 }
 

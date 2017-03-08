@@ -128,3 +128,11 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
     return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].treeId: order[i]}))
 }
 
+
+export function getWindowHeight() {
+    let w  = window,
+        d  = w.document,
+        de = d.documentElement,
+        db = d.body || d.getElementsByTagName('body')[0];
+    return w.innerHeight|| de.clientHeight|| db.clientHeight;
+}

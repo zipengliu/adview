@@ -107,6 +107,9 @@ let initialState = {
         attributeNames: ['support'],
         selection: [{isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}],
         activeSelectionId: null,
+    },
+    treeList: {
+        collapsed: true
     }
 };
 
@@ -125,7 +128,7 @@ let mergeSets = (a, b) => {
 };
 
 let findMissing = (geneTree, allEntities) => {
-    let geneEntities = geneTree.branches[geneTree.rootBranch].entities;
+    let geneEntities = geneTree.entities;
     if (geneEntities.length === Object.keys(allEntities).length) return [];
     let m = createMappingFromArray(geneEntities);
     let missing = [];
@@ -614,10 +617,13 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
+                action.data.trees[tid].tid = tid;
                 // Fill in the field 'parent' and 'entities' on every branch
                 let branches = action.data.trees[tid].branches;
                 let dfs = (bid) => {
                     let b = branches[bid];
+                    //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
+                    b.support /= 100;
                     if (b.left) {
                         b.isLeaf = false;
                         branches[b.left].parent = bid;
@@ -627,7 +633,7 @@ function visphyReducer(state = initialState, action) {
                         b.entities = branches[b.left].entities.concat(branches[b.right].entities)
                     } else {
                         b.isLeaf = true;
-                        b.entities = [b.entities];
+                        b.entities = [b.entity];
                     }
                 };
                 dfs(action.data.trees[tid].rootBranch);
@@ -691,8 +697,17 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Error fetching dataset list: ' + action.error.toString()
                 }
             };
+        case TYPE.TOGGLE_TREE_LIST_COLLAPSE:
+            return {
+                ...state,
+                treeList: {
+                    ...state.treeList,
+                    collapsed: !state.treeList.collapsed
+                }
+            };
         default:
             return state;
+
     }
 }
 

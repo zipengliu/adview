@@ -155,8 +155,8 @@ let getTrees = createSelector(
         if (order.static || !bid || typeof bid === 'object') {
             sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
         } else {
-            let corr = ref.branches[bid].correspondingBranches;
-            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jaccard: 1.1) - (t1 in corr? corr[t1].jaccard: 1.1)
+            let corr = ref.branches[bid].cb;
+            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jac: 1.1) - (t1 in corr? corr[t1].jac: 1.1)
         }
         let sortedTids = setTids.slice().sort(sortFunc);
 
@@ -170,9 +170,9 @@ let getTrees = createSelector(
                     expansion[e] = 1;
                     if (j === 0) last = e;
                 } else {
-                    let corr = ref.branches[e]['correspondingBranches'][tid];
-                    expansion[corr.branchId] = corr.jaccard;
-                    if (j === 0) last = corr.branchId;
+                    let corr = ref.branches[e].cb[tid];
+                    expansion[corr.bid] = corr.jac;
+                    if (j === 0) last = corr.bid;
                 }
             }
             res.push({
@@ -313,7 +313,7 @@ let calcRemainderLayout = (tree, spec) => {
         blocks[rootBlockId].children.push('missing');
     }
 
-    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected, name: tree.name};
+    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
 let calcNestedLayout = (tree, spec) => {
@@ -362,7 +362,7 @@ let calcFineGrainedLayout = (tree, spec) => {
     // console.log('LCA = ', lca);
 
     // FIXME: duplicate code
-    let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, size} = spec;
+    let {branchLen, verticalGap, leaveHeight, size} = spec;
     let height = size, width = size;
 
     let blocks = {};
@@ -464,7 +464,7 @@ let calcFineGrainedLayout = (tree, spec) => {
     };
     traverse2(lca);
 
-    return {blocks, branches, rootBlockId, tid: tree._id, lastSelected: tree.lastSelected, name: tree.name};
+    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
 let getLayouts = createSelector(

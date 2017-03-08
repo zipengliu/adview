@@ -319,3 +319,8 @@ export function fetchDatasetsSuccess(data) {
 export function fetchDatasetsFailure(error) {
     return {type: TYPE.FETCH_DATASETS_FAILURE, error};
 }
+
+
+export function toggleTreeListCollapse() {
+    return {type: TYPE.TOGGLE_TREE_LIST_COLLAPSE};
+}

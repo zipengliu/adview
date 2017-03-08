@@ -15,7 +15,7 @@ import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
-        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId} = this.props;
+        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, branchDetail} = this.props;
         let attrName = this.props.attributeNames[0];
 
         let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
@@ -38,6 +38,7 @@ class AttributeExplorer extends Component {
 
         return (
             <div id="attribute-explorer" className="view">
+
                 <div className="view-header">
                     <div className="view-title">Attribute Explorer</div>
                     <FormGroup style={{textAlign: 'center'}}>
@@ -48,33 +49,13 @@ class AttributeExplorer extends Component {
                 </div>
 
                 <div className="view-body">
-                    <div className="attribute-heading">&bull; All branches</div>
-                    <ButtonGroup bsSize="xsmall">
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-all-trees">
-                            Show distribution of attributes of all branches from all trees in this dataset.</Tooltip>}>
-                            <Button active={modes.all.scope === 'all'} onClick={onChangeMode.bind(null, 'all', 'all', null)}>all trees</Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-current-set">
-                            Show distribution of attributes of all branches from trees of the current subset.</Tooltip>}>
-                            <Button active={modes.all.scope === 'set'}
-                                    onClick={onChangeMode.bind(null, 'all', 'set', null)}>cur. set</Button>
-                        </OverlayTrigger>
-                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-selected-trees">
-                            Show distribution of attributes of all branches from the selected trees (reference tree if none is selected).</Tooltip>}>
-                            <Button active={modes.all.scope === 'tree'}
-                                    onClick={onChangeMode.bind(null, 'all', 'tree', null)}>sel. trees</Button>
-                        </OverlayTrigger>
-                    </ButtonGroup>
-                    <FormGroup>
-                        <OverlayTrigger placement="right" overlay={<Tooltip id="att-in-context">
-                            Show the global distribution as background and partial one as foreground</Tooltip>}>
-                            <Radio inline disabled={modes.all.scope === 'all' || !shownAsHistogram} checked={modes.all.context}
-                                   onChange={onChangeMode.bind(null, 'all', null, !modes.all.context)}>show in context</Radio>
-                        </OverlayTrigger>
-                    </FormGroup>
+                    <OverlayTrigger placement="right" overlay={<Tooltip id="att-current-focused">details about the branch being hovered or expanded lastly</Tooltip>}>
+                        <div className="attribute-heading">&bull; Current focused branch</div>
+                    </OverlayTrigger>
+                    <div style={{fontSize: '12px'}}>support: {branchDetail? branchDetail.support: 'NA'}</div>
+                    <div style={{fontSize: '12px'}}># exact matches: {branchDetail? branchDetail.numExact: 'NA'}</div>
 
-                    {getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
-                    {renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
+                    <div className="attribute-section-divider"></div>
 
                     <OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>
                         <div className="attribute-heading">&bull; Corresponding branches</div>
@@ -103,6 +84,36 @@ class AttributeExplorer extends Component {
                     {getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}
                     {renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}
 
+                    <div className="attribute-section-divider"></div>
+
+                    <div className="attribute-heading">&bull; All branches</div>
+                    <ButtonGroup bsSize="xsmall">
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-all-trees">
+                            Show distribution of attributes of all branches from all trees in this dataset.</Tooltip>}>
+                            <Button active={modes.all.scope === 'all'} onClick={onChangeMode.bind(null, 'all', 'all', null)}>all trees</Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-current-set">
+                            Show distribution of attributes of all branches from trees of the current subset.</Tooltip>}>
+                            <Button active={modes.all.scope === 'set'}
+                                    onClick={onChangeMode.bind(null, 'all', 'set', null)}>cur. set</Button>
+                        </OverlayTrigger>
+                        <OverlayTrigger placement="top" overlay={<Tooltip id="att-selected-trees">
+                            Show distribution of attributes of all branches from the selected trees (reference tree if none is selected).</Tooltip>}>
+                            <Button active={modes.all.scope === 'tree'}
+                                    onClick={onChangeMode.bind(null, 'all', 'tree', null)}>sel. trees</Button>
+                        </OverlayTrigger>
+                    </ButtonGroup>
+                    <FormGroup>
+                        <OverlayTrigger placement="right" overlay={<Tooltip id="att-in-context">
+                            Show the global distribution as background and partial one as foreground</Tooltip>}>
+                            <Radio inline disabled={modes.all.scope === 'all' || !shownAsHistogram} checked={modes.all.context}
+                                   onChange={onChangeMode.bind(null, 'all', null, !modes.all.context)}>show in context</Radio>
+                        </OverlayTrigger>
+                    </FormGroup>
+
+                    {getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
+                    {renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
+
                 </div>
             </div>
         )
@@ -120,15 +131,15 @@ let getAttributeValues = (trees, tids, attrName, rid, highlightMonophyly) => {
     let corr, b;
     if (highlightMonophyly) {
         b = trees[rid].branches[highlightMonophyly];
-        corr = b.correspondingBranches;
+        corr = b.cb;
         // values.push(b[attrName]);
     }
     for (let i = 0; i < tids.length; i++) {
         let tid = tids[i];
         let t = trees[tid];
         if (corr) {
-            if (corr.hasOwnProperty(tid) && corr[tid].branchId) {
-                values.push(trees[tid].branches[corr[tid].branchId][attrName]);
+            if (corr.hasOwnProperty(tid) && corr[tid].bid) {
+                values.push(trees[tid].branches[corr[tid].bid][attrName]);
             }
         } else {
             for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
@@ -155,37 +166,41 @@ let getSetWiseValues = createSelector(
 let getTreeWiseValues = createSelector(
     [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
         (_, attrName) => attrName],
-    (tree, attrName) => getAttributeValues({[tree._id]: tree}, [tree._id], attrName)
+    (tree, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName)
+);
+
+let getCurrentFocusedBranch = state => (
+    state.referenceTree.checkingBranch || state.referenceTree.selected[0]
 );
 
 let getCorrGlobalValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
-        state => state.referenceTree.id, state => state.referenceTree.selected[0]],
-    (trees, attrName, rid, highlightMonophyly) => getAttributeValues(trees, Object.keys(trees), attrName, rid, highlightMonophyly)
+        state => state.referenceTree.id, getCurrentFocusedBranch],
+    (trees, attrName, rid, bid) => getAttributeValues(trees, Object.keys(trees), attrName, rid, bid)
 );
 
 let getCorrSetWiseValues = createSelector(
     [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
-        state => state.referenceTree.id, state => state.referenceTree.selected[0],
+        state => state.referenceTree.id, getCurrentFocusedBranch,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, rid, highlightMonophyly, set) => getAttributeValues(trees, set.tids, attrName, rid, highlightMonophyly)
+    (trees, attrName, rid, bid, set) => getAttributeValues(trees, set.tids, attrName, rid, bid)
 );
 
 let getGlobalJaccardArray = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.selected[0]],
+    [state => state.inputGroupData.trees, state => state.referenceTree.id, getCurrentFocusedBranch],
     (trees, rid, bid) => {
         if (!bid) return null;
-        let corr = trees[rid].branches[bid].correspondingBranches;
-        return Object.keys(corr).map(tid => corr[tid].jaccard);
+        let corr = trees[rid].branches[bid].cb;
+        return Object.keys(corr).map(tid => corr[tid].jac);
     }
 );
 let getSetWiseJaccardArray = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id, state => state.referenceTree.selected[0],
+    [state => state.inputGroupData.trees, state => state.referenceTree.id, getCurrentFocusedBranch,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
     (trees, rid, bid, set) => {
         if (!bid) return null;
-        let corr = trees[rid].branches[bid].correspondingBranches;
-        return Object.keys(corr).filter(tid => set.tids.indexOf(tid) !== -1).map(tid => corr[tid].jaccard);
+        let corr = trees[rid].branches[bid].cb;
+        return Object.keys(corr).filter(tid => set.tids.indexOf(tid) !== -1).map(tid => corr[tid].jac);
     }
 );
 
@@ -217,8 +232,9 @@ let mapStateToProps = state => {
     }
 
     // corr section
-    let {selected} = state.referenceTree;
-    if (selected.length > 0) {
+    let branchDetail = null;
+    let focusedBranch = getCurrentFocusedBranch(state);
+    if (focusedBranch) {
         if (modes.corr.scope === 'all') {
             data.corr[attrName].fg = getCorrGlobalValues(state, attrName);
             data.corr.similarity.fg = getGlobalJaccardArray(state);
@@ -230,6 +246,10 @@ let mapStateToProps = state => {
                 data.corr[attrName].bg = getCorrGlobalValues(state, attrName);
                 data.corr.similarity.bg = getGlobalJaccardArray(state);
             }
+        }
+        branchDetail = {
+            support: state.inputGroupData.trees[state.referenceTree.id].branches[focusedBranch].support,
+            numExact: data.corr.similarity.fg.filter(s => s === 1.0).length
         }
     }
 
@@ -245,6 +265,7 @@ let mapStateToProps = state => {
 
     return {
         ...state.attributeExplorer,
+        branchDetail,
         data,
     };
 };
