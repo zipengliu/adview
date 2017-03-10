@@ -68,7 +68,8 @@ class DendrogramContainer extends Component {
                         <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
                             <span style={{marginRight: '5px'}}>(as</span>
                             <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>supercluster</Radio>
-                            <Radio inline checked={mode === 'cluster'} onChange={this.props.onToggleMode.bind(null, 'cluster')}>cluster</Radio>
+                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>topo-cluster</Radio>
+                            <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>taxa-cluster</Radio>
                             <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>remainder</Radio>
                             <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>fine-grained</Radio>
                             <Radio inline checked={mode === 'nested'} onChange={this.props.onToggleMode.bind(null, 'nested')}>nested</Radio>
@@ -473,14 +474,18 @@ let getLayouts = createSelector(
         (mode === 'fine-grained'? t => calcFineGrainedLayout(t, spec): t => calcRemainderLayout(t, spec)) )
 );
 
-let getHash = (blocks, rootBlockId, isNumAccountable) => {
+let getHash = (blocks, rootBlockId, mode) => {
+    let getBlockRep = b => {
+        if (mode === 'supercluster') return b.n === 0? '0': 'x'; // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
+        if (mode === 'topo-cluster') return b.n.toString();
+        if (mode === 'taxa-cluster') return Object.keys(b.entities).sort().join();
+    };
     let traverse = (bid) => {
         let b = blocks[bid];
         if (b.children.length > 0) {
-            return '(' + b.children.map(c => traverse(c)).join(',') + ')'
-                + (isNumAccountable? b.n: (b.n === 0? '0': '')); // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
+            return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
         } else {
-            return isNumAccountable? b.n.toString(): 'x';
+            return getBlockRep(b);
         }
     };
     return traverse(rootBlockId);
@@ -492,12 +497,12 @@ let getHash = (blocks, rootBlockId, isNumAccountable) => {
 // Return an array of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let getClusters = createSelector(
-    [trees => trees, (_, isSuperCluster) => isSuperCluster],
-    (trees, isSuperCluster) => {
-        console.log('Clustering trees... isSuperCluster?', isSuperCluster);
+    [trees => trees, (_, mode) => mode],
+    (trees, mode) => {
+        console.log('Clustering trees... mode: ', mode);
         // Get the tree hashes
         for (let i = 0; i < trees.length; i++) {
-            trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, !isSuperCluster);
+            trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, mode);
         }
 
         // Sort the trees according to their hashes
@@ -506,6 +511,7 @@ let getClusters = createSelector(
             if (a.hash < b.hash) return -1;
             return 0;
         });
+        console.log(trees.map(t => t.hash));
 
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
             let traverse = (clusterBid, addingBid) => {
@@ -529,7 +535,7 @@ let getClusters = createSelector(
 
         let createEmptyClusterFromTree = (t) => {
             let c = {...t, blocks: {...t.blocks}, branches: {...t.branches},
-                tid: t.tid + (isSuperCluster? '-s': '-r'),
+                tid: t.tid + '-c',
                 num: 0, trees: [], total: trees.length};
             let traverse = (bid) => {
                 // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
@@ -671,7 +677,7 @@ let getDendrograms = createSelector(
     (mode, trees, highlightEntities, spec, rawTrees, rangeSelection, shadedHistogram) => {
         let dendros = getLayouts(trees, spec, mode);
         let isClusterMode = mode.indexOf('cluster') !== -1;
-        let clusters = isClusterMode? getClusters(dendros, mode === 'supercluster').slice(): [];
+        let clusters = isClusterMode? getClusters(dendros, mode).slice(): [];
         dendros = dendros.slice();
         let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {
