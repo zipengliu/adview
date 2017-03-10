@@ -96,7 +96,7 @@ class DendrogramContainer extends Component {
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
-                                <Button disabled={isClusterMode} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
+                                <Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
                                     <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
                                 </Button>
                             </OverlayTrigger>

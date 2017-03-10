@@ -6,7 +6,7 @@ import React from 'react';
 import {OverlayTrigger, ButtonGroup, Button, Tooltip} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
-import {togglePersistHighlight} from '../actions';
+import {togglePersistHighlight, compareWithReference} from '../actions';
 
 let ReferenceTreeContainer = props => (
     <div className="view" style={{height: '98%'}}>
@@ -14,6 +14,8 @@ let ReferenceTreeContainer = props => (
             <div style={{textAlign: 'center'}}>
                 <span className="view-title">Reference Tree </span>
                 <span>({props.tree.name})</span>
+                {props.comparingTree &&
+                <span> vs. {props.comparingTree.name}</span>}
             </div>
             <div style={{marginBottom: '5px'}}>
                 <ButtonGroup bsSize="xsmall">
@@ -22,10 +24,24 @@ let ReferenceTreeContainer = props => (
                             Persist highlight
                         </Button>
                     </OverlayTrigger>
+                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
+                        <Button disabled>
+                            Import
+                        </Button>
+                    </OverlayTrigger>
                 </ButtonGroup>
+
+                {props.comparingTree &&
+                <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-cancel-compare">Exit pairwise comparison</Tooltip>}>
+                    <Button bsSize="xsmall" onClick={props.cancelCompare}>
+                        End pairwise comparison
+                    </Button>
+                </OverlayTrigger>
+                }
                 {props.tree.missing &&
                 <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
-                    {props.tree.branches[props.tree.rootBranch].entities.length} out of {props.tree.branches[props.tree.rootBranch].entities.length + props.tree.missing.length} taxa are present
+                    {props.tree.entities.length} {props.comparingTree? `(vs. ${props.comparingTree.entities.length}) `: ''}
+                    / {props.tree.entities.length + props.tree.missing.length} taxa are present
                 </div>
                 }
             </div>
@@ -33,8 +49,8 @@ let ReferenceTreeContainer = props => (
         <div className="view-body">
             <FullDendrogram />
         </div>
-        <div className="view-footer legends">
-            <svg width="500" height="40">
+        <div className="view-footer legends" style={{height: '40px'}}>
+            <svg width="0" height="40">
                 <g transform="translate(2, 10)">
                     <g>
                         <line className="branch-line selected" x1="0" y1="0" x2="20" y2="0"/>
@@ -84,11 +100,13 @@ let ReferenceTreeContainer = props => (
 let mapStateToProps = state => ({
     tree: state.inputGroupData.trees[state.referenceTree.id],
     persist: state.referenceTree.persist,
-    isUserSpecified: state.referenceTree.isUserSpecified
+    isUserSpecified: state.referenceTree.isUserSpecified,
+    comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null
 });
 
 let mapDispatchToProps = dispatch => ({
     togglePersist: () => {dispatch(togglePersistHighlight())},
+    cancelCompare: () => {dispatch(compareWithReference(null))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

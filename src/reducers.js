@@ -25,12 +25,16 @@ let initialState = {
         tids: [],
     },
     dendrogramSpec: {
-        width: 500,
+        // width: 500,
+        defaultTopologyWidth: 300,
         height: 840,
         margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
-        labelWidth: 150,
-        responsiveAreaSize: 7
+        labelUnitCharWidth: 4.5,          // an estimate of the width of a character in the label
+        labelWidth: 150,                // default max width for the label
+        responsiveAreaSize: 7,          // height of a transparent box over a branch to trigger interaction
+        unitBranchLength: 10,            // When using a unit length for branch in regardless of the length of the branch in the original dataset
+                                        //      used in pairwise comparison to save space
     },
     referenceTree: {
         id: null,
@@ -41,6 +45,15 @@ let initialState = {
         persist: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
+    },
+    pairwiseComparison: {
+        tid: null,
+        highlight: {
+            limit: 5,
+            colors: scaleOrdinal(schemeCategory10),
+            bids: {},               // highlight monophyly
+            eids: {}                // highlight entities
+        }
     },
     sets: [],
     overview: {
@@ -59,7 +72,7 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0,
-        mode: 'fine-grained',            // cluster, supercluster, remainder, fine-grained, nested
+        mode: 'remainder',            // cluster, supercluster, remainder, fine-grained, nested
         spec: {
             size: 100,
             margin: {left: 2, top: 2, right: 16, bottom: 2},
@@ -538,16 +551,14 @@ function visphyReducer(state = initialState, action) {
         case TYPE.COMPARE_WITH_REFERENCE:
             return {
                 ...state,
-                inspector: {
-                    ...state.inspector,
-                    show: true,
-                    tids: [action.tid, state.referenceTree.id],
-                    pairwiseComparison: 0,
+                pairwiseComparison: {
+                    ...state.pairwiseComparison,
+                    tid: action.tid,
                     highlight: {
-                        direction: null,
-                        monophyly: null,
-                        entities: null
-                    },
+                        ...state.pairwiseComparison.highlight,
+                        bids: {},
+                        eids: {}
+                    }
                 }
             };
 

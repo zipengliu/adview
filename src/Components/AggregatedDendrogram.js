@@ -52,10 +52,11 @@ class AggregatedDendrogram extends Component {
             isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] < num): [];
 
         // Debounce the hovering
-        let timer;
+        let timer = null;
         let onMouseEnterBlock = (b) => {
             timer = setTimeout(() => {
                 onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
+                timer = null;
             }, 300);
         };
         let onMouseLeaveBlock = () => {
