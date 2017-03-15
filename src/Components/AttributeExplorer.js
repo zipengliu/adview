@@ -50,7 +50,7 @@ class AttributeExplorer extends Component {
 
                 <div className="view-body">
                     <OverlayTrigger placement="right" overlay={<Tooltip id="att-current-focused">details about the branch being hovered or expanded lastly</Tooltip>}>
-                        <div className="attribute-heading">&bull; Current focused branch</div>
+                        <div className="attribute-heading">&bull; Current focal branch</div>
                     </OverlayTrigger>
                     <div style={{fontSize: '12px'}}>support: {branchDetail? branchDetail.support: 'NA'}</div>
                     <div style={{fontSize: '12px'}}># exact matches: {branchDetail? branchDetail.numExact: 'NA'}</div>
@@ -126,12 +126,12 @@ let getBinsFromArray = values => {
     return hist(values);
 };
 
-let getAttributeValues = (trees, tids, attrName, rid, highlightMonophyly) => {
+let getAttributeValues = (trees, tids, attrName, cb, rid, highlightMonophyly) => {
     let values = [];
     let corr, b;
     if (highlightMonophyly) {
         b = trees[rid].branches[highlightMonophyly];
-        corr = b.cb;
+        corr = b[cb];
         // values.push(b[attrName]);
     }
     for (let i = 0; i < tids.length; i++) {
@@ -153,20 +153,21 @@ let getAttributeValues = (trees, tids, attrName, rid, highlightMonophyly) => {
 };
 
 let getGlobalValues = createSelector(
-    [state => state.inputGroupData.trees, (_, attrName) => attrName],
-    (trees, attrName) => getAttributeValues(trees, Object.keys(trees), attrName)
+    [state => state.inputGroupData.trees, state => state.cb, (_, attrName) => attrName],
+    (trees, cb, attrName) => getAttributeValues(trees, Object.keys(trees), attrName, cb)
 );
 
 let getSetWiseValues = createSelector(
-    [state => state.inputGroupData.trees, (_, attrName) => attrName,
+    [state => state.inputGroupData.trees, state => state.cb, (_, attrName) => attrName,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, set) => getAttributeValues(trees, set.tids, attrName)
+    (trees, cb, attrName, set) => getAttributeValues(trees, set.tids, attrName, cb)
 );
 
 let getTreeWiseValues = createSelector(
     [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
+        state => state.cb,
         (_, attrName) => attrName],
-    (tree, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName)
+    (tree, cb, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName, cb)
 );
 
 let getCurrentFocusedBranch = state => (
@@ -174,32 +175,32 @@ let getCurrentFocusedBranch = state => (
 );
 
 let getCorrGlobalValues = createSelector(
-    [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
+    [state => state.inputGroupData.trees, state => state.cb, (_, attrNames) => attrNames,
         state => state.referenceTree.id, getCurrentFocusedBranch],
-    (trees, attrName, rid, bid) => getAttributeValues(trees, Object.keys(trees), attrName, rid, bid)
+    (trees, cb, attrName, rid, bid) => getAttributeValues(trees, Object.keys(trees), attrName, cb, rid, bid)
 );
 
 let getCorrSetWiseValues = createSelector(
-    [state => state.inputGroupData.trees, (_, attrNames) => attrNames,
+    [state => state.inputGroupData.trees, state => state.cb, (_, attrNames) => attrNames,
         state => state.referenceTree.id, getCurrentFocusedBranch,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, attrName, rid, bid, set) => getAttributeValues(trees, set.tids, attrName, rid, bid)
+    (trees, cb, attrName, rid, bid, set) => getAttributeValues(trees, set.tids, attrName, cb, rid, bid)
 );
 
 let getGlobalJaccardArray = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id, getCurrentFocusedBranch],
-    (trees, rid, bid) => {
+    [state => state.inputGroupData.trees, state => state.referenceTree.id, getCurrentFocusedBranch, state => state.cb],
+    (trees, rid, bid, cb) => {
         if (!bid) return null;
-        let corr = trees[rid].branches[bid].cb;
+        let corr = trees[rid].branches[bid][cb];
         return Object.keys(corr).map(tid => corr[tid].jac);
     }
 );
 let getSetWiseJaccardArray = createSelector(
     [state => state.inputGroupData.trees, state => state.referenceTree.id, getCurrentFocusedBranch,
-        state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, rid, bid, set) => {
+        state => state.sets[state.aggregatedDendrogram.activeSetIndex], state => state.cb],
+    (trees, rid, bid, set, cb) => {
         if (!bid) return null;
-        let corr = trees[rid].branches[bid].cb;
+        let corr = trees[rid].branches[bid][cb];
         return Object.keys(corr).filter(tid => set.tids.indexOf(tid) !== -1).map(tid => corr[tid].jac);
     }
 );

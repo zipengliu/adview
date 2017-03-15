@@ -11,14 +11,14 @@ import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
     addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
-    compareWithReference} from '../actions';
+    compareWithReference, toggleJaccardMissing} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
 import './Dendrogram.css';
 
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, mode, dendrograms, activeTreeId, rangeSelection} = this.props;
+        let {spec, cb, mode, dendrograms, activeTreeId, rangeSelection} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
@@ -91,7 +91,7 @@ class DendrogramContainer extends Component {
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
-                                <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, activeTreeId)}>
+                                <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, this.props.inputGroupId, activeTreeId)}>
                                     <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
 
                                 </Button>
@@ -114,7 +114,7 @@ class DendrogramContainer extends Component {
                             </OverlayTrigger>
                         </ButtonGroup>
 
-                        <div style={{fontSize: '12px', display: 'inline-block'}}>
+                        <div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>
                             <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
                             {isClusterMode? <span>proportion of clusters</span>:
                                 <ButtonGroup bsSize="xsmall">
@@ -122,8 +122,20 @@ class DendrogramContainer extends Component {
                                     <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
                                 </ButtonGroup>
                             }
-                            <span style={{marginLeft: '2px'}}> of the ref. tree</span>
+                            <span style={{marginLeft: '2px'}}> of the ref. tree, measured </span>
+                            <ButtonGroup bsSize="xsmall">
+                                <Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>
+                                <Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>
+                            </ButtonGroup>
+                            <span> missing taxa.</span>
                         </div>
+
+
+                        {mode === 'taxa-cluster' &&
+                        <div className="partition-distribution">
+                            {dendrograms.map((d, i) => <div key={i} style={{width: (d.num / d.total * 100) + '%'}}></div>)}
+                        </div>
+                        }
                     </div>
 
                     <div className="view-body">
@@ -147,8 +159,9 @@ let getTrees = createSelector(
     [state => state.inputGroupData.trees, state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
         state => state.aggregatedDendrogram.treeOrder,
         state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
-        state => state.referenceTree.id, state => state.referenceTree.selected],
-    (trees, setTids, order, bid, rid, selected) => {
+        state => state.referenceTree.id, state => state.referenceTree.selected,
+        state => state.cb],
+    (trees, setTids, order, bid, rid, selected, cb) => {
         console.log('Getting new trees in the dendrogram container');
         let res = [];
         let ref = trees[rid];
@@ -156,7 +169,7 @@ let getTrees = createSelector(
         if (order.static || !bid || typeof bid === 'object') {
             sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
         } else {
-            let corr = ref.branches[bid].cb;
+            let corr = ref.branches[bid][cb];
             sortFunc = (t1, t2) => (t2 in corr? corr[t2].jac: 1.1) - (t1 in corr? corr[t1].jac: 1.1)
         }
         let sortedTids = setTids.slice().sort(sortFunc);
@@ -171,7 +184,7 @@ let getTrees = createSelector(
                     expansion[e] = 1;
                     if (j === 0) last = e;
                 } else {
-                    let corr = ref.branches[e].cb[tid];
+                    let corr = ref.branches[e][cb][tid];
                     expansion[corr.bid] = corr.jac;
                     if (j === 0) last = corr.bid;
                 }
@@ -511,7 +524,6 @@ let getClusters = createSelector(
             if (a.hash < b.hash) return -1;
             return 0;
         });
-        console.log(trees.map(t => t.hash));
 
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
             let traverse = (clusterBid, addingBid) => {
@@ -690,9 +702,11 @@ let getDendrograms = createSelector(
 
 
 let mapStateToProps = (state) => {
-    let trees = getTrees(state).slice();
+    let trees = getTrees(state);
     return {
         ...state.aggregatedDendrogram,
+        inputGroupId: state.inputGroupData.inputGroupId,
+        cb: state.cb,
         referenceTid: state.referenceTree.id,
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
@@ -710,7 +724,7 @@ let mapDispatchToProps = (dispatch) => ({
     onClick: (tid, tids) => {dispatch(toggleSelectAggDendro(tid, tids))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onRemove: (tid, setIndex) => {dispatch(removeFromSet(tid, setIndex))},
-    onChangeReferenceTree: tid => {dispatch(changeReferenceTree(tid))},
+    onChangeReferenceTree: (iid, tid) => {dispatch(changeReferenceTree(iid, tid))},
     onRemoveSet: setIndex => {dispatch(removeSet(setIndex))},
     onAddTreeToInspector: (tid) => {
         if (tid != null) {
@@ -723,7 +737,8 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSorting: () => {dispatch(toggleSorting())},
     clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
-    onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))}
+    onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))},
+    onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

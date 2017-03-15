@@ -110,3 +110,19 @@
 text.reference-tree-indicator {
     font-size: 12px;
 }
+
+
+.partition-distribution {
+    width: 100%;
+    height: 20px;
+    border: 1px solid black;
+}
+
+.partition-distribution div {
+    height: 100%;
+    float: left;
+    border-right: 1px solid grey;
+}
+.partition-distribution div:last-child {
+    border: none;
+}

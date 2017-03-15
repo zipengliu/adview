@@ -85,10 +85,10 @@ export function fetchTreeFailure(error) {
     return {type: TYPE.FETCH_TREE_FAILURE, error}
 }
 
-export function changeReferenceTree(tid) {
+export function changeReferenceTree(inputGroupId, tid) {
     return function (dispatch) {
         dispatch(fetchTreeRequest(tid));
-        return fetch(baseUrl + '/trees/' + tid + '/branches').then(function(response) {
+        return fetch(baseUrl + '/dataset/' + inputGroupId + '/trees/' + tid + '/branches').then(function(response) {
             if (response.status >= 400) {
                 console.log("Bad response from server");
                 dispatch(fetchTreeFailure(response.statusText))
@@ -260,8 +260,8 @@ export function togglePairwiseComparison(p) {
     return {type: TYPE.TOGGLE_PAIRWISE_COMPARISON, p};
 }
 
-export function toggleComparingHighlightMonophyly(tid, m) {
-    return {type: TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY, tid, m}
+export function toggleComparingHighlightMonophyly(tid, bid) {
+    return {type: TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY, tid, bid}
 }
 
 export function compareWithReference(tid) {
@@ -323,4 +323,9 @@ export function fetchDatasetsFailure(error) {
 
 export function toggleTreeListCollapse() {
     return {type: TYPE.TOGGLE_TREE_LIST_COLLAPSE};
+}
+
+
+export function toggleJaccardMissing(cb) {
+    return {type: TYPE.TOGGLE_JACCARD_MISSING, cb};
 }

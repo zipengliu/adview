@@ -55,8 +55,8 @@ class AggregatedDendrogram extends Component {
         let timer = null;
         let onMouseEnterBlock = (b) => {
             timer = setTimeout(() => {
-                onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
                 timer = null;
+                onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
             }, 300);
         };
         let onMouseLeaveBlock = () => {
@@ -127,9 +127,9 @@ class AggregatedDendrogram extends Component {
                             {Array(numMatches).fill(1).map((d, i) =>
                                 <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={i * 15}></use>
                             )}
-                            {Array(numNonMatches).fill(1).map((d, i) =>
-                                <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>
-                            )}
+                            {/*{Array(numNonMatches).fill(1).map((d, i) =>*/}
+                                {/*<use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>*/}
+                            {/*)}*/}
                         </g>}
                         {this.props.isReferenceTree &&
                             <text className="reference-tree-indicator" x={size} y={size} dx="2" >R</text>

@@ -14,6 +14,7 @@ let initialState = {
     toast: {
         msg: null,
     },
+    cb: 'cb',
     inspector: {
         show: false,
         pairwiseComparison: null,
@@ -50,9 +51,9 @@ let initialState = {
         tid: null,
         highlight: {
             limit: 5,
+            pointer: 0,
             colors: scaleOrdinal(schemeCategory10),
-            bids: {},               // highlight monophyly
-            eids: {}                // highlight entities
+            bids: [],
         }
     },
     sets: [],
@@ -152,12 +153,48 @@ let findMissing = (geneTree, allEntities) => {
     return missing;
 };
 
-let ladderize = (tree) => {
+let findEntities = (entities, tree) => {
+    let entitiesMapping = createMappingFromArray(entities);
+    let bids = [];
+    let covered = {};
+    // Traverse bottom-up
+    let traverse = (bid) => {
+        let b = tree.branches[bid];
+        if (b.left) {
+            traverse(b.left);
+            traverse(b.right);
+            if (covered[b.left] && covered[b.right]) {
+                covered[bid] = true
+            } else if (covered[b.left]) {
+                bids.push(b.left);
+            } else if (covered[b.right]) {
+                bids.push(b.right);
+            }
+        } else {
+            if (entitiesMapping.hasOwnProperty(b.entity)) {
+                covered[bid] = true;
+            }
+        }
+    };
+    traverse(tree.rootBranch);
+    // See if there is anything matched to the missing taxa
+    let {missing} = tree;
+    if (missing && missing.length) {
+        for (let i = 0; i < missing.length; i++) {
+            if (entitiesMapping.hasOwnProperty(missing[i])) {
+                bids.push('m-' + missing[i]);
+            }
+        }
+    }
+    return bids;
+};
+
+let ladderize = (branches, rootBranch) => {
    let traverse = bid => {
-       let b = tree.branches[bid];
+       let b = branches[bid];
        if (!b.isLeaf) {
-           let left = tree.branches[b.left];
-           let right = tree.branches[b.right];
+           let left = branches[b.left];
+           let right = branches[b.right];
            if (left.entities.length > right.entities.length) {
                let tmp = b.left;
                b.left = b.right;
@@ -167,8 +204,32 @@ let ladderize = (tree) => {
            traverse(b.right);
        }
    };
-   traverse(tree.rootBranch);
-   return tree;
+   traverse(rootBranch);
+   return branches;
+};
+
+// Fill in the field 'parent' and 'entities' on every branch
+let prepareBranches = (branches, rootBranch) => {
+    let dfs = (bid) => {
+        let b = branches[bid];
+        //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
+        b.support /= 100;
+        if (b.left) {
+            b.isLeaf = false;
+            branches[b.left].parent = bid;
+            branches[b.right].parent = bid;
+            dfs(b.left);
+            dfs(b.right);
+            b.entities = branches[b.left].entities.concat(branches[b.right].entities)
+        } else {
+            b.isLeaf = true;
+            b.entities = [b.entity];
+        }
+    };
+    dfs(rootBranch);
+    branches[rootBranch].parent = rootBranch;
+
+    return branches;
 };
 
 function visphyReducer(state = initialState, action) {
@@ -232,7 +293,8 @@ function visphyReducer(state = initialState, action) {
                         ...state.inputGroupData.trees,
                         [action.tid]: {
                             ...state.inputGroupData.trees[action.tid],
-                            branches: ladderize({branches: action.data, rootBranch: state.inputGroupData.trees[action.tid].rootBranch}).branches
+                            branches: ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
+                                state.inputGroupData.trees[action.tid].rootBranch)
                         }
                     }
                 },
@@ -534,30 +596,52 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY:
+            let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
+            let oldBidsArr = state.pairwiseComparison.highlight.bids;
+            // Find out where are the highlighted entities in the other tree
+            // The list of branches returned contains exactly all the highlighted entities
+            let tgtEntities;
+            if (action.bid ===  'missing_taxa') {
+                tgtEntities = state.inputGroupData.trees[action.tid].missing;
+            } else if (action.bid.startsWith('m-')) {
+                tgtEntities = [action.bid.substr(2)];
+            } else {
+                tgtEntities = state.inputGroupData.trees[action.tid].branches[action.bid].entities;
+            }
+            let bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
+            let newBid = {src: action.tid, [action.tid]: [action.bid], [otherTid]: bids};
+            let newBidsArr;
+            let newPointer = state.pairwiseComparison.highlight.pointer;
+            if (oldBidsArr.length + 1 > state.pairwiseComparison.highlight.limit) {
+                newBidsArr = oldBidsArr.map((d, i) => (i === newPointer? newBid: d));
+                newPointer += 1;
+            } else {
+                newBidsArr = oldBidsArr.concat([newBid]);
+            }
             return {
                 ...state,
-                inspector: {
-                    ...state.inspector,
+                pairwiseComparison: {
+                    ...state.pairwiseComparison,
                     highlight: {
-                        direction: state.inspector.pairwiseComparison == null || action.m == null? null:
-                            (state.inspector.tids[state.inspector.pairwiseComparison] === action.tid? 'lr': 'rl'),
-                        monophyly: action.m,
-                        entities: state.inspector.pairwiseComparison == null || action.m == null? null:
-                            (action.m === 'missing'? state.inputGroupData.trees[action.tid].missing:
-                                state.inputGroupData.trees[action.tid].branches[action.m].entities)
+                        ...state.pairwiseComparison.highlight,
+                        bids: newBidsArr,
+                        pointer: newPointer
                     }
                 }
             };
         case TYPE.COMPARE_WITH_REFERENCE:
             return {
                 ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    persist: !!action.tid,
+                },
                 pairwiseComparison: {
                     ...state.pairwiseComparison,
                     tid: action.tid,
                     highlight: {
                         ...state.pairwiseComparison.highlight,
-                        bids: {},
-                        eids: {}
+                        bids: []
                     }
                 }
             };
@@ -629,28 +713,7 @@ function visphyReducer(state = initialState, action) {
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 action.data.trees[tid].tid = tid;
-                // Fill in the field 'parent' and 'entities' on every branch
-                let branches = action.data.trees[tid].branches;
-                let dfs = (bid) => {
-                    let b = branches[bid];
-                    //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
-                    b.support /= 100;
-                    if (b.left) {
-                        b.isLeaf = false;
-                        branches[b.left].parent = bid;
-                        branches[b.right].parent = bid;
-                        dfs(b.left);
-                        dfs(b.right);
-                        b.entities = branches[b.left].entities.concat(branches[b.right].entities)
-                    } else {
-                        b.isLeaf = true;
-                        b.entities = [b.entity];
-                    }
-                };
-                dfs(action.data.trees[tid].rootBranch);
-                branches[action.data.trees[tid].rootBranch].parent = action.data.trees[tid].rootBranch;
-
-                action.data.trees[tid] = ladderize(action.data.trees[tid]);
+                action.data.trees[tid].branches = ladderize(prepareBranches(action.data.trees[tid].branches, action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
                 action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
             return Object.assign({}, state, {
@@ -715,6 +778,11 @@ function visphyReducer(state = initialState, action) {
                     ...state.treeList,
                     collapsed: !state.treeList.collapsed
                 }
+            };
+        case TYPE.TOGGLE_JACCARD_MISSING:
+            return {
+                ...state,
+                cb: action.cb
             };
         default:
             return state;
