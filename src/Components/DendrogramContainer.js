@@ -360,6 +360,7 @@ let calcFrondLayout = (tree, spec) => {
         blocks.missing = {
             id: 'missing',
             isMissing: true,
+            context: true,
             height: missingHeight,
             width, x: 0, y: height - missingHeight,
             n: tree.missing.length,          // the number of entities this block represents
@@ -544,6 +545,7 @@ let calcFineGrainedLayout = (tree, spec) => {
             width, x: 0, y: height - missingHeight,
             n: tree.missing.length,          // the number of entities this block represents
             branches: {},
+            context: true,
             entities: createMappingFromArray(tree.missing)
         };
     }
@@ -560,6 +562,7 @@ let calcFineGrainedLayout = (tree, spec) => {
         height: nonMissingHeight, width: rootBlockWidth,
         x: 0, y: 0,
         n: allEntities.length - lcaEntities.length,
+        context: true,
         branches: subtractMapping(createMappingFromArray(Object.keys(tree.branches)), getBranchesInSubtree(tree, lca)),
         entities: subtractMapping(createMappingFromArray(allEntities), createMappingFromArray(lcaEntities))
     };
@@ -594,7 +597,9 @@ let calcFineGrainedLayout = (tree, spec) => {
                 blocks[bid] = {
                     id: bid,
                     width: 20, x: curX + branchLen,
-                    similarity: 1,          // FIXME: disable all blurry effect
+                    matched: tree.expand[bid],
+                    context: !tree.expand[bid],
+                    lastExpanded: bid === tree.lastSelected,
                     branches: getBranchesInSubtree(tree, bid),
                     isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)
                 }
