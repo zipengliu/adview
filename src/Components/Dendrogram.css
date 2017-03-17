@@ -31,12 +31,19 @@
     stroke: #984ea3;
 }
 .block.fuzzy {
-    stroke-width: 2px;
+    stroke-width: 1px;
     stroke: #888;
     stroke-dasharray: 3 3;
 }
 .block.is-missing {
     stroke-dasharray: 6 2;
+}
+.block.expanded {
+    stroke: #e41a1c;
+}
+.block.last-expanded {
+    stroke: #1a9641;
+    stroke-width: 2px;
 }
 .respond-box {
     opacity: 0;

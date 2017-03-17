@@ -243,11 +243,12 @@ let calcRemainderLayout = (tree, spec) => {
     // Create a seudo root with id rootBranchId + "-a"
     let rootBlockId = tree.rootBranch + '-a';
     blocks[rootBlockId] = {
-            id: rootBlockId, children: [], level: 1,
-            height: missingHeight? height - missingHeight - verticalGap: height, width: 0, x: 0, y: 0,
-            n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
-            branches: createMappingFromArray(Object.keys(tree.branches)),
-            entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)
+        id: rootBlockId, children: [], level: 1,
+        height: missingHeight? height - missingHeight - verticalGap: height, width: 0, x: 0, y: 0,
+        n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
+        branches: createMappingFromArray(Object.keys(tree.branches)),
+        context: true,
+        entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)
     };
 
     let splitBlock = function (blockId, curBid) {
@@ -256,13 +257,24 @@ let calcRemainderLayout = (tree, spec) => {
         if (tree.expand.hasOwnProperty(curBid)) {
             // split block
             blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
-                similarity: tree.expand[curBid].jac,
+                // similarity: tree.expand[curBid].in? tree.expand[curBid].jac: null,
+                lastExpanded: curBid === tree.lastSelected && tree.expand[curBid].in,
+                matched: tree.expand[curBid].jac === 1 && tree.expand[curBid].in,
+                context: !tree.expand[curBid].in,
                 branches: getBranchesInSubtree(tree, curBid),
-                isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
+                isLeaf: !!b.isLeaf,
+                n: b.entities.length,
+                entities: createMappingFromArray(b.entities)};
             blocks[blockId].n -= b.entities.length;
             blocks[blockId].entities = subtractMapping(blocks[blockId].entities, blocks[curBid].entities);
             blocks[blockId].branches = subtractMapping(blocks[blockId].branches, blocks[curBid].branches);
             blocks[blockId].children.push(curBid);
+            blocks[blockId].lastExpanded = !tree.expand[curBid].in && curBid === tree.lastSelected;
+            if (!tree.expand[curBid].in) {
+                blocks[blockId].matched = tree.expand[curBid].jac === 1;
+                blocks[blockId].context = false;
+                // blocks[blockId].similarity = tree.expand[curBid].jac;
+            }
             newBlockId = curBid;
         }
         // otherwise recursively go down the children
@@ -342,7 +354,6 @@ let calcFrondLayout = (tree, spec) => {
     let height = size, width = size;
 
     let blocks = {};
-    let branches = {};
     let missingHeight = 0;
     if (tree.missing) {
         missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
@@ -386,7 +397,9 @@ let calcFrondLayout = (tree, spec) => {
                     n: tree.entities.length - tree.branches[e].entities.length,
                     entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
                     branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
-                    matched: tree.expand[e].jac === 1
+                    matched: tree.expand[e].jac === 1,
+                    context: false,
+                    lastExpanded: e === tree.lastSelected,
                 };
             } else {
                 // unexpected behaviour
@@ -403,7 +416,9 @@ let calcFrondLayout = (tree, spec) => {
                     n: tree.branches[e].entities.length,
                     entities: createMappingFromArray(tree.branches[e].entities),
                     branches: getBranchesInSubtree(tree, e),
-                    matched: tree.expand[e].jac === 1
+                    matched: tree.expand[e].jac === 1,
+                    lastExpanded: tree.lastSelected === e,
+                    context: false,
                 };
             } else {
                 // fall back to remainder
@@ -422,6 +437,7 @@ let calcFrondLayout = (tree, spec) => {
             n: tree.entities.length - tree.branches[lca].entities.length,
             entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[lca].entities)),
             branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, lca)),
+            context: true
         };
         maxN = Math.max(maxN, blocks['out-' + lca].n);
     }
@@ -432,7 +448,7 @@ let calcFrondLayout = (tree, spec) => {
         blocks[bid].width = xScale(blocks[bid].n);
     }
 
-    branches = {
+    let branches = {
         [lca + (hasOutgroup? '-in':'')]: {
             bid: lca + (hasOutgroup? '-in':''),
             x1: 0, x2: branchLen,
@@ -667,7 +683,7 @@ let getClusters = createSelector(
             let traverse = (clusterBid, addingBid) => {
                 let b = clusterBlocks[clusterBid];
                 b.represent[addingTreeId] = addingBid;
-                b.similarity.push(addingBlocks[addingBid].similarity);
+                b.matched = b.matched && addingBlocks[addingBid].matched;
                 for (let e in addingBlocks[addingBid].entities) if (addingBlocks[addingBid].entities.hasOwnProperty(e)) {
                     if (!b.entities.hasOwnProperty(e)) {
                         b.entities[e] = 0;
@@ -693,7 +709,7 @@ let getClusters = createSelector(
                     ...c.blocks[bid],
                     represent: {},
                     entities: {},
-                    similarity: [],
+                    matched: true,
                 };
                 for (let i = 0; i < t.blocks[bid].children.length; i++) {
                     traverse(t.blocks[bid].children[i]);

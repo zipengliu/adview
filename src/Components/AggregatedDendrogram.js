@@ -21,28 +21,28 @@ class AggregatedDendrogram extends Component {
 
         let numMatches = 0;
         let numNonMatches = 0;
-        if (isClusterMode) {
-            if (lastSelected) {
-                let s = blocks[lastSelected].similarity;
-                numMatches = s.filter(a => a === 1.0).length;
-                if (s.length > 5) {
-                    numMatches = Math.ceil(5 * numMatches / s.length);
-                }
-                numNonMatches = Math.min(s.length, 5) - numMatches;
-            }
-        } else {
-            numMatches = lastSelected && blocks[lastSelected] && blocks[lastSelected].similarity === 1.0? 1: 0;
-        }
+        // if (isClusterMode) {
+        //     if (lastSelected) {
+        //         let s = blocks[lastSelected].similarity;
+        //         numMatches = s.filter(a => a === 1.0).length;
+        //         if (s.length > 5) {
+        //             numMatches = Math.ceil(5 * numMatches / s.length);
+        //         }
+        //         numNonMatches = Math.min(s.length, 5) - numMatches;
+        //     }
+        // } else {
+        //     numMatches = lastSelected && blocks[lastSelected] && blocks[lastSelected].similarity === 1.0? 1: 0;
+        // }
 
         let hasUncertainty = block => {
             if (!block) return false;
             if (isClusterMode) {
                 for (let i = 0; i < block.similarity.length; i++) {
-                    if (block.similarity[i] < 1.0) return true;
+                    if (block.matched === false) return true;
                 }
                 return false;
             } else {
-                return block.similarity < 1.0;
+                return block.matched ===  false;
             }
         };
 
@@ -80,7 +80,9 @@ class AggregatedDendrogram extends Component {
                        <g className="blocks" >
                             {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
-                                    <rect className={cn('block', {'range-selected': b.rangeSelected > 0, 'fuzzy': hasUncertainty(b),
+                                    <rect className={cn('block', {'range-selected': b.rangeSelected > 0,
+                                        'last-expanded': b.lastExpanded,
+                                        expanded: !b.context, fuzzy: !b.context && !b.matched,
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                           filter={b.isMissing? `url(#blur${this.props.data.tid})`: ''}
@@ -115,14 +117,14 @@ class AggregatedDendrogram extends Component {
                         <g className="branches">
                             {branchArr.map(b => <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded})} key={b.bid}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
-                            {branches[lastSelected] && <g filter={hasUncertainty(blocks[lastSelected])? `url(#blurBranch${this.props.data.tid})`: ''}>
+                            {branches[lastSelected] && <g>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2-2}/>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1+2}
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2+2}/>
                             </g>}
                         </g>
-                        {(numMatches > 0 || numNonMatches > 0) &&
+                        {(numMatches > 0 || numNonMatches > 0) && false &&
                         <g transform={`translate(${size},0)`}>
                             {Array(numMatches).fill(1).map((d, i) =>
                                 <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={i * 15}></use>
