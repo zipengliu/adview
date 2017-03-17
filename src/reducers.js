@@ -73,7 +73,7 @@ let initialState = {
     aggregatedDendrogram: {
         activeTreeId: null,
         activeSetIndex: 0,
-        mode: 'remainder',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, nested
+        mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
             size: 100,
             margin: {left: 2, top: 2, right: 16, bottom: 2},

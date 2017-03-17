@@ -5,7 +5,7 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {scaleLinear, hsl, extent} from 'd3';
+import {scaleLinear, hsl, extent, scaleLog} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
@@ -72,7 +72,7 @@ class DendrogramContainer extends Component {
                             <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>taxa-cluster</Radio>
                             <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>remainder</Radio>
                             <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>fine-grained</Radio>
-                            <Radio inline checked={mode === 'nested'} onChange={this.props.onToggleMode.bind(null, 'nested')}>nested</Radio>
+                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>frond</Radio>
                             )
                         </FormGroup>
                     </div>
@@ -181,12 +181,14 @@ let getTrees = createSelector(
             for (let j = 0; j < selected.length; j++) {
                 let e = selected[j];
                 if (tid === rid) {
-                    expansion[e] = 1;
+                    expansion[e] = {jac: 1, in: true};
                     if (j === 0) last = e;
                 } else {
                     let corr = ref.branches[e][cb][tid];
-                    expansion[corr.bid] = corr.jac;
-                    if (j === 0) last = corr.bid;
+                    if (corr && corr.bid) {
+                        expansion[corr.bid] = {jac: corr.jac, in: corr.in};
+                        if (j === 0) last = corr.bid;
+                    }
                 }
             }
             res.push({
@@ -254,7 +256,7 @@ let calcRemainderLayout = (tree, spec) => {
         if (tree.expand.hasOwnProperty(curBid)) {
             // split block
             blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
-                similarity: tree.expand[curBid],
+                similarity: tree.expand[curBid].jac,
                 branches: getBranchesInSubtree(tree, curBid),
                 isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)};
             blocks[blockId].n -= b.entities.length;
@@ -330,17 +332,150 @@ let calcRemainderLayout = (tree, spec) => {
     return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
-let calcNestedLayout = (tree, spec) => {
+let calcFrondLayout = (tree, spec) => {
+    let expansion = Object.keys(tree.expand);
+    if (expansion.length !== 2) return calcRemainderLayout(tree, spec);
+
+    let {lca, distanceToLCA} = getLCA(tree);
+
+    let {branchLen, verticalGap, leaveHeight, size} = spec;
+    let height = size, width = size;
+
+    let blocks = {};
+    let branches = {};
+    let missingHeight = 0;
+    if (tree.missing) {
+        missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
+        blocks.missing = {
+            id: 'missing',
+            isMissing: true,
+            height: missingHeight,
+            width, x: 0, y: height - missingHeight,
+            n: tree.missing.length,          // the number of entities this block represents
+            branches: {},
+            entities: createMappingFromArray(tree.missing)
+        };
+    }
+    let nonMissingHeight = missingHeight? height - missingHeight - verticalGap: height;
+    let blockHeight = (nonMissingHeight - 2 * verticalGap) / 3;
+
+    let isLeftOfLCA = bid => {
+        if (bid === lca) return false;
+        let b = tree.branches[bid];
+        while (b.parent !== lca) {
+            bid = b.parent;
+            b = tree.branches[bid];
+        }
+        return tree.branches[lca].left === bid;
+    };
+
+    let hasOutgroup = false;
+    let maxN = 0;
+    for (let e in tree.expand) if (tree.expand.hasOwnProperty(e)) {
+        if (!tree.branches.hasOwnProperty(e)) {
+            console.error(e, ' is not found');
+        }
+        if (e === lca) {
+            // usually, this corresponding branches points out its out-group
+            if (!tree.expand[e].in) {
+                hasOutgroup = true;
+                blocks[e] = {
+                    id: e,
+                    x: branchLen, y: 0,
+                    height: blockHeight, width: 50,
+                    n: tree.entities.length - tree.branches[e].entities.length,
+                    entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
+                    branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
+                    matched: tree.expand[e].jac === 1
+                };
+            } else {
+                // unexpected behaviour
+                // there is a nested relationships between the expansion
+                return calcRemainderLayout(tree, spec);
+            }
+        } else {
+            // usually, expansion are all in-groups if no one is the lca
+            if (tree.expand[e].in) {
+                blocks[e] = {
+                    id: e,
+                    x: 2 * branchLen, y: isLeftOfLCA(e)? blockHeight + verticalGap: 2 * (blockHeight + verticalGap),
+                    height: blockHeight, width: 50,
+                    n: tree.branches[e].entities.length,
+                    entities: createMappingFromArray(tree.branches[e].entities),
+                    branches: getBranchesInSubtree(tree, e),
+                    matched: tree.expand[e].jac === 1
+                };
+            } else {
+                // fall back to remainder
+                return calcRemainderLayout(tree, spec);
+            }
+
+        }
+        maxN = Math.max(maxN, blocks[e].n);
+    }
+
+    if (!hasOutgroup) {
+        blocks['out-' + lca] = {
+            id: 'out-' + lca,
+            x: branchLen, y: 0,
+            height: blockHeight, width: 50,
+            n: tree.entities.length - tree.branches[lca].entities.length,
+            entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[lca].entities)),
+            branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, lca)),
+        };
+        maxN = Math.max(maxN, blocks['out-' + lca].n);
+    }
+
+    // Fill in thw width
+    let xScale = scaleLog().domain([1, maxN]).range([0, width - 2 * branchLen]);
+    for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
+        blocks[bid].width = xScale(blocks[bid].n);
+    }
+
+    branches = {
+        [lca + (hasOutgroup? '-in':'')]: {
+            bid: lca + (hasOutgroup? '-in':''),
+            x1: 0, x2: branchLen,
+            y1: 2 * blockHeight + 1.5 * verticalGap,
+            y2: 2 * blockHeight + 1.5 * verticalGap,
+        },
+        [lca + '-left']: {
+            bid: lca + '-left',
+            x1: branchLen, x2: 2 * branchLen,
+            y1: 2 * blockHeight + 1.5 * verticalGap,
+            y2: 1.5 * blockHeight + verticalGap,
+        },
+        [lca + '-right']: {
+            bid: lca + '-right',
+            x1: branchLen, x2: 2 * branchLen,
+            y1: 2 * blockHeight + 1.5 * verticalGap,
+            y2: 2.5 * blockHeight + 2 * verticalGap,
+        },
+        [lca + (hasOutgroup? '': '-out')]: {
+            bid: lca + (hasOutgroup? '': '-out'),
+            x1: 0, x2: branchLen,
+            y1: blockHeight / 2, y2: blockHeight / 2
+        },
+        [lca + '-con']: {
+            bid: lca + '-con',
+            x1: 0, x2: 0,
+            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
+        }
+    };
+
+    return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
 let getLCA = tree => {
     let l = [];
-    let anc = [];
+    let anc = {};
+    let eitherOne = null;
     let getAncestorList = (bid) => {
         let b = tree.branches[bid];
         l.push(bid);
         if (tree.expand.hasOwnProperty(bid)) {
-            anc.push(l.slice());
+            if (!eitherOne) eitherOne = bid;
+            anc[bid] = l.slice();
         }
         if (!b.isLeaf) {
             getAncestorList(b.left);
@@ -352,10 +487,10 @@ let getLCA = tree => {
 
     // If they share a common ancestor at the same index, return true, otherwise false
     let compare = idx => {
-        if (idx >= anc[0].length) return false;
-        for (let j = 1; j < anc.length; j++) {
+        if (idx >= anc[eitherOne].length) return false;
+        for (let j in anc) if (anc.hasOwnProperty(j)) {
             if (idx >= anc[j].length) return false;
-            if (anc[j][idx] !== anc[0][idx]) return false;
+            if (anc[j][idx] !== anc[eitherOne][idx]) return false;
         }
         return true;
     };
@@ -364,15 +499,18 @@ let getLCA = tree => {
     while (compare(i)) {
         i += 1;
     }
-    return anc[0][i - 1];
+    let distanceToLCA = {};
+    for (let j in anc) if (anc.hasOwnProperty(j)) {
+        distanceToLCA[j] = anc[j].length - i - 1;
+    }
+    return {lca: anc[eitherOne][i - 1], distanceToLCA};
 };
 
 let calcFineGrainedLayout = (tree, spec) => {
     let expansion = Object.keys(tree.expand);
     if (expansion.length === 0) return calcRemainderLayout(tree, spec);
 
-    let lca;
-    lca = getLCA(tree);
+    let {lca} = getLCA(tree);
     // console.log('LCA = ', lca);
 
     // FIXME: duplicate code
@@ -483,7 +621,7 @@ let calcFineGrainedLayout = (tree, spec) => {
 
 let getLayouts = createSelector(
     [trees => trees, (_, spec) => spec, (_, spec, mode) => mode],
-    (trees, spec, mode) => trees.map(mode === 'nested'? t => calcNestedLayout(t, spec):
+    (trees, spec, mode) => trees.map(mode === 'frond'? t => calcFrondLayout(t, spec):
         (mode === 'fine-grained'? t => calcFineGrainedLayout(t, spec): t => calcRemainderLayout(t, spec)) )
 );
 

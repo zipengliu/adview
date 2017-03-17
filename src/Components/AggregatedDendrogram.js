@@ -113,7 +113,7 @@ class AggregatedDendrogram extends Component {
                             )}
                         </g>
                         <g className="branches">
-                            {branchArr.map(b => <line className={cn('branch', {background: mode === 'fine-grained' && !b.expanded})} key={b.bid}
+                            {branchArr.map(b => <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded})} key={b.bid}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                             {branches[lastSelected] && <g filter={hasUncertainty(blocks[lastSelected])? `url(#blurBranch${this.props.data.tid})`: ''}>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
