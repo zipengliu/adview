@@ -112,7 +112,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={5} dy={10}>{b.n}</text>}
+                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={2} dy={10}>{b.n}</text>}
                                 </g>
                             )}
                         </g>

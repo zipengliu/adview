@@ -84,7 +84,9 @@ let initialState = {
             proportionTopMargin: 4,
             proportionBarHeight: 10,
             frondLeafGap: 5,
+            frondLeafAngle: Math.PI / 4,
             frondBaseLength: 12,
+            nestMargin: 4,
         },
         // treeOrder: 'static',        // either 'static' or 'dynamic'
         //                             // static means sort by similarity to reference tree

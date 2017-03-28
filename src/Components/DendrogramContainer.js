@@ -215,6 +215,48 @@ let getBranchesInSubtree = (tree, bid) => {
     return res;
 };
 
+// Compute LCA of all expanded branches (ndoes) in a tree
+// as well as the pre-order of each expanded node
+let getLCA = tree => {
+    let l = [];
+    let anc = {};
+    let eitherOne = null;
+    let getAncestorList = (bid) => {
+        let b = tree.branches[bid];
+        l.push(bid);
+        if (tree.expand.hasOwnProperty(bid)) {
+            if (!eitherOne) eitherOne = bid;
+            anc[bid] = l.slice();
+        }
+        if (!b.isLeaf) {
+            getAncestorList(b.left);
+            getAncestorList(b.right);
+        }
+        l.pop();
+    };
+    getAncestorList(tree.rootBranch);
+
+    // If they share a common ancestor at the same index, return true, otherwise false
+    let compare = idx => {
+        if (idx >= anc[eitherOne].length) return false;
+        for (let j in anc) if (anc.hasOwnProperty(j)) {
+            if (idx >= anc[j].length) return false;
+            if (anc[j][idx] !== anc[eitherOne][idx]) return false;
+        }
+        return true;
+    };
+
+    let i = 0;
+    while (compare(i)) {
+        i += 1;
+    }
+    let distanceToLCA = {};
+    for (let j in anc) if (anc.hasOwnProperty(j)) {
+        distanceToLCA[j] = anc[j].length - i - 1;
+    }
+    return {lca: anc[eitherOne][i - 1], distanceToLCA};
+};
+
 // Calculating the blocks of the aggregaated dendrogram
 // given a tree (tree document from DB) (tree),
 // a dictionary of branches to be expanded (tree.expand),
@@ -350,10 +392,10 @@ let calcFrondLayout = (tree, spec) => {
 
     let {lca, distanceToLCA} = getLCA(tree);
 
-    let {branchLen, verticalGap, size, frondLeafGap, frondBaseLength} = spec;
+    let {branchLen, verticalGap, size, frondLeafGap, frondLeafAngle, frondBaseLength, nestMargin} = spec;
     let height = size, width = size;
 
-    let blocks = {}, branches = {};
+    let blocks = {};
     let missingHeight = 0;
     if (tree.missing) {
         missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
@@ -371,185 +413,218 @@ let calcFrondLayout = (tree, spec) => {
     let nonMissingHeight = missingHeight? height - missingHeight - verticalGap: height;
     let blockHeight = (nonMissingHeight - 2 * verticalGap) / 3;
 
+
     // determine if LCA's outgroup is on top or bottom
     // FIXME
-    let outgroupOnTop = lca !== tree.rootBranch && tree.branches[tree.branches[lca].parent].left === lca;
+    //let outgroupOnTop = lca !== tree.rootBranch && tree.branches[tree.branches[lca].parent].left === lca;
+    let branches = {
+        [lca + '-vertical']: {
+            bid: lca + '-vertical',
+            x1: 0, x2: 0,
+            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
+        },
+        [lca + '-in'] :{
+            bid: lca + '-in',
+            x1: 0, x2: branchLen,
+            y1: 2 * blockHeight + 1.5 * verticalGap,
+            y2: 2 * blockHeight + 1.5 * verticalGap,
+        },
+        [lca + '-out']: {
+            bid: lca + '-out',
+            x1: 0, x2: branchLen,
+            y1: blockHeight / 2, y2: blockHeight / 2
+        },
+    };
 
+
+    // Determine how many "frondified" leaves on a branch by its distance to the LCA
     let getNumFrond = dist => {
         return Math.floor(Math.log2(dist + 1));
     };
 
-    let hasOutgroup = false;
-    let maxN = 0;
-    let branchXMax = branchLen;
-    for (let e in tree.expand) if (tree.expand.hasOwnProperty(e)) {
+    // These two variables are used to determine the scale of the block width
+    let maxN = 0;           // The max number of taxa in each block
+    let branchXMax = branchLen;     // the largest x coordinate of all branches
+
+    let addFrondifyLeaves = (e, frondLevel) => {
+        let b = branches[e];
+        let isHorizontal = b.y1 === b.y2;
+        let isGoingUp = b.y1 > b.y2;
+        for (let i = 0; i < frondLevel; i++) {
+            let t = .4 + i * 0.5 / frondLevel;
+            // Find the point to "grow" two leaves on both sides
+            let x = (1 - t) * branches[e].x1 + t * branches[e].x2;
+            let y = (1 - t) * branches[e].y1 + t * branches[e].y2;
+            branches[e + '-frond-' + i] = {
+                bid: e + '-frond-' + i,
+                x1: x, x2: x + 5,
+                y1: y, y2: isHorizontal? y - 5: y
+            };
+            branches[e + '-frond-' + i + '-v'] = {
+                bid: e + '-frond-' + i + '-v',
+                x1: x, x2: isHorizontal? x + 5: x, y1: y, y2: isHorizontal? y + 5: (y + 5 * (isGoingUp? -1: 1))
+            };
+        }
+
+    };
+
+    let addInGroupBlockAndBranches = e => {
+        let frondLevel = getNumFrond(distanceToLCA[e]);
+        let isLeft = tree.branches[e].order < tree.branches[lca].order;
+        let bl = e === lca || tree.branches[e].parent === lca? branchLen: frondBaseLength + (frondLevel - 1) * frondLeafGap;
+        blocks[e] = {
+            id: e,
+            x: branchLen + bl, y: isLeft? blockHeight + verticalGap: 2 * (blockHeight + verticalGap),
+            height: blockHeight, width: 50,
+            n: tree.branches[e].entities.length,
+            entities: createMappingFromArray(tree.branches[e].entities),
+            branches: getBranchesInSubtree(tree, e),
+            matched: tree.expand[e].jac === 1,
+            lastExpanded: tree.lastSelected === e,
+            context: false,
+        };
+        branchXMax = Math.max(branchXMax, blocks[e].x);
+        maxN = Math.max(maxN, blocks[e].n);
         if (e === lca) {
-            // usually, this corresponding branch refers to its out-group
-            if (!tree.expand[e].in) {
-                hasOutgroup = true;
-                blocks[e] = {
-                    id: e,
-                    x: branchLen, y: 0,
-                    height: blockHeight, width: 50,
-                    n: tree.entities.length - tree.branches[e].entities.length,
-                    entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
-                    branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
-                    matched: tree.expand[e].jac === 1,
-                    context: false,
-                    lastExpanded: e === tree.lastSelected,
-                };
-            } else {
-                // unexpected behaviour
-                // there is a nested relationships between the expansion
-                return calcRemainderLayout(tree, spec);
+        } else if (tree.branches[e].parent === lca) { // do not frondify
+            branches[e + '-vertical'] = {
+                bid: e + '-vertical',
+                x1: branchLen, x2: branchLen,
+                // y1: blocks[e].y + blocks[e].height + verticalGap / 2,
+                y1: 2 * blockHeight + 1.5 * verticalGap,
+                y2: blocks[e].y + blocks[e].height / 2
+            };
+            branches[e] = {
+                bid: e,
+                x1: branchLen, x2: blocks[e].x,
+                y1: branches[e + '-vertical'].y2,
+                y2: branches[e + '-vertical'].y2,
             }
         } else {
-            // usually, expansion are all in-groups if no one is the lca
-            if (tree.expand[e].in) {
-                let frondLevel = getNumFrond(distanceToLCA[e]);
-                let isLeft = tree.branches[e].order < tree.branches[lca].order;
-                let bl = tree.branches[e].parent === lca? branchLen: frondBaseLength + (frondLevel - 1) * frondLeafGap;
-                branchXMax = Math.max(branchXMax, branchLen + bl);
-                blocks[e] = {
-                    id: e,
-                    x: branchLen + bl, y: isLeft? blockHeight + verticalGap: 2 * (blockHeight + verticalGap),
-                    height: blockHeight, width: 50,
-                    n: tree.branches[e].entities.length,
-                    entities: createMappingFromArray(tree.branches[e].entities),
-                    branches: getBranchesInSubtree(tree, e),
-                    matched: tree.expand[e].jac === 1,
-                    lastExpanded: tree.lastSelected === e,
-                    context: false,
-                };
-                if (tree.branches[e].parent === lca) {
-                    // do not frondify
-                    branches[e + '-vertical'] = {
-                        bid: e + '-vertical',
-                        x1: branchLen, x2: branchLen,
-                        // y1: blocks[e].y + blocks[e].height + verticalGap / 2,
-                        y1: 2 * blockHeight + 1.5 * verticalGap,
-                        y2: blocks[e].y + blocks[e].height / 2
-                    };
-                    branches[e] = {
-                        bid: e,
-                        x1: branchLen, x2: blocks[e].x,
-                        y1: branches[e + '-vertical'].y2,
-                        y2: branches[e + '-vertical'].y2,
-                    }
-                } else {
-                    branches[e] = {
-                        bid: e,
-                        x1: branchLen, x2: blocks[e].x,
-                        y1: 2 * blockHeight + 1.5 * verticalGap,
-                        y2: blocks[e].y + blocks[e].height / 2
-                    };
-                    // "frondified" leaves
-                    for (let i = 0; i < frondLevel; i++) {
-                        let t = .4 + i * 0.5 / frondLevel;
-                        let x = (1 - t) * branches[e].x1 + t * branches[e].x2;
-                        let y = (1 - t) * branches[e].y1 + t * branches[e].y2;
-                        branches[e + '-frond-' + i] = {
-                            bid: e + '-frond-' + i,
-                            x1: x, x2: x + 5, y1: y, y2: y
-                        };
-                        branches[e + '-frond-' + i + '-v'] = {
-                            bid: e + '-frond-' + i + '-v',
-                            x1: x, x2: x, y1: y, y2: y + 5 * (isLeft? -1: 1)
-                        };
-                    }
-                }
-            } else {
-                // fall back to remainder
-                return calcRemainderLayout(tree, spec);
-            }
-
+            branches[e] = {
+                bid: e,
+                x1: branchLen, x2: blocks[e].x,
+                y1: 2 * blockHeight + 1.5 * verticalGap,
+                y2: blocks[e].y + blocks[e].height / 2
+            };
+            addFrondifyLeaves(e, frondLevel, frondLeafAngle);
         }
-        maxN = Math.max(maxN, blocks[e].n);
-    }
+    };
 
-    if (!hasOutgroup) {
-        blocks['out-' + lca] = {
-            id: 'out-' + lca,
+    let addOutgroupBlock = (e, isContext=true) => {
+        let bid = e + (isContext? '-out': '');
+        blocks[bid] = {
+            id: bid,
             x: branchLen, y: 0,
             height: blockHeight, width: 50,
-            n: tree.entities.length - tree.branches[lca].entities.length,
-            entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[lca].entities)),
-            branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, lca)),
-            context: true
+            n: tree.entities.length - tree.branches[e].entities.length,
+            entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
+            branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
+            matched: tree.expand.hasOwnProperty(e) && tree.expand[e].jac === 1,
+            context: isContext,
+            lastExpanded: e === tree.lastSelected,
         };
-        maxN = Math.max(maxN, blocks['out-' + lca].n);
+        maxN = Math.max(maxN, blocks[bid].n);
+    };
+
+    let addNestedBlock = (e, nestedTo, isIngroup) => {
+        let nestBlock = blocks[nestedTo];
+        console.log(nestedTo, nestBlock);
+        let frondLevel = getNumFrond(distanceToLCA[e]);
+        let bl = e === lca || tree.branches[e].parent === lca? 15: frondBaseLength + (frondLevel - 1) * frondLeafGap;
+        blocks[e] = {
+            id: e,
+            x: nestBlock.x + bl, y: nestBlock.y + nestMargin,
+            height: nestBlock.height - 2 * nestMargin,
+            n: isIngroup? tree.branches[e].entities.length: tree.entities.length - tree.branches[e].entities.length,
+            entities: isIngroup? createMappingFromArray(tree.branches[e].entities):
+                subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
+            branches: isIngroup? getBranchesInSubtree(tree, e):
+                subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
+            matched: tree.expand[e].jac === 1,
+            lastExpanded: tree.lastSelected === e,
+            context: false,
+            nestedTo,
+        };
+        branchXMax = Math.max(branchXMax, blocks[e].x);
+        maxN = Math.max(maxN, blocks[e].n);
+        if ((isIngroup && tree.branches[e].parent === nestedTo) || (!isIngroup && tree.branches[nestedTo] === e)) {
+            branches[e] = {
+                bid: e,
+                x1: nestBlock.x, y1: nestBlock.y + nestBlock.height / 2,
+                x2: nestBlock.x + bl, y2: nestBlock.y + nestBlock.height / 2
+            };
+        } else {
+            branches[e] = {
+                bid: e,
+                x1: nestBlock.x, x2: nestBlock.x + bl,
+                y1: nestBlock.y + nestBlock.height / 2,
+                y2: nestBlock.y + nestBlock.height / 2
+            };
+            addFrondifyLeaves(e, frondLevel);
+        }
+    };
+
+
+    if (tree.expand.hasOwnProperty(lca)) {
+        // the two expanded nodes has nesting relation
+        let expB = lca === expansion[0]? expansion[1]: expansion[0];
+        if (tree.expand[lca].in && tree.expand[expB].in) {
+            // nesting: (expA-in, expB-in)   expA-in contains expB-in
+            console.log('nesting in in ', lca, expB);
+            addInGroupBlockAndBranches(lca);
+            addNestedBlock(expB, lca, true);
+            addOutgroupBlock(lca);
+        } else if (!tree.expand[lca].in && !tree.expand[expB].in) {
+            // nesting: (expA-out, expB-out)  expB-out contains expA-out
+            console.log('nesting out out', expB, lca);
+            addOutgroupBlock(expB, false);
+            addNestedBlock(lca, expB, false);
+            addInGroupBlockAndBranches(expB);
+        } else if (!tree.expand[lca].in && tree.expand[expB].in){
+            // (lca-out, expB-in)
+            addOutgroupBlock(lca, false);
+            addInGroupBlockAndBranches(expB);
+        } else {
+            // (lca-in, expB-out)       TODO: partial overlap
+            return calcRemainderLayout(tree, spec);
+        }
+    } else {
+        // The two expanded node is parallel
+        let expA = expansion[0], expB = expansion[1];
+        if (tree.expand[expA].in && tree.expand[expB].in) {
+            // (A-in, B-in)
+            addInGroupBlockAndBranches(expA);
+            addInGroupBlockAndBranches(expB);
+            addOutgroupBlock(lca, true);
+        } else if (!tree.expand[expA].in && tree.expand[expB].in) {
+            // (A-out, B-in)
+            addInGroupBlockAndBranches(expA);
+            addOutgroupBlock(expB, true);
+        } else if (tree.expand[expA].in && !tree.expand[expB].in) {
+            // (A-in, B-out)
+            addInGroupBlockAndBranches(expB);
+            addOutgroupBlock(expA, true);
+        } else {
+            // (A-out, B-out)
+            return calcRemainderLayout(tree, spec)
+        }
     }
 
     // Fill in thw width
     let xScale = scaleLog().domain([1, maxN]).range([0, width - branchXMax]);
     for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
         blocks[bid].width = xScale(blocks[bid].n);
+        if (blocks[bid].nestedTo) {
+            // cap the width so that the block is truly contained
+            let nestBlock = blocks[blocks[bid].nestedTo];
+            blocks[bid].width = Math.min(blocks[bid].width, nestBlock.width - (blocks[bid].x - nestBlock.x) - nestMargin);
+        }
     }
-
-    branches = {
-        ...branches,
-        [lca + '-vertical']: {
-            bid: lca + '-vertical',
-            x1: 0, x2: 0,
-            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
-        },
-        [lca + (hasOutgroup? '-in':'')]: {
-            bid: lca + (hasOutgroup? '-in':''),
-            x1: 0, x2: branchLen,
-            y1: 2 * blockHeight + 1.5 * verticalGap,
-            y2: 2 * blockHeight + 1.5 * verticalGap,
-        },
-        [lca + (hasOutgroup? '': '-out')]: {
-            bid: lca + (hasOutgroup? '': '-out'),
-            x1: 0, x2: branchLen,
-            y1: blockHeight / 2, y2: blockHeight / 2
-        },
-    };
 
     return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
-// Compute LCA of all expanded branches (ndoes) in a tree
-// as well as the pre-order of each expanded node
-let getLCA = tree => {
-    let l = [];
-    let anc = {};
-    let eitherOne = null;
-    let getAncestorList = (bid) => {
-        let b = tree.branches[bid];
-        l.push(bid);
-        if (tree.expand.hasOwnProperty(bid)) {
-            if (!eitherOne) eitherOne = bid;
-            anc[bid] = l.slice();
-        }
-        if (!b.isLeaf) {
-            getAncestorList(b.left);
-            getAncestorList(b.right);
-        }
-        l.pop();
-    };
-    getAncestorList(tree.rootBranch);
-
-    // If they share a common ancestor at the same index, return true, otherwise false
-    let compare = idx => {
-        if (idx >= anc[eitherOne].length) return false;
-        for (let j in anc) if (anc.hasOwnProperty(j)) {
-            if (idx >= anc[j].length) return false;
-            if (anc[j][idx] !== anc[eitherOne][idx]) return false;
-        }
-        return true;
-    };
-
-    let i = 0;
-    while (compare(i)) {
-        i += 1;
-    }
-    let distanceToLCA = {};
-    for (let j in anc) if (anc.hasOwnProperty(j)) {
-        distanceToLCA[j] = anc[j].length - i - 1;
-    }
-    return {lca: anc[eitherOne][i - 1], distanceToLCA};
-};
 
 let calcFineGrainedLayout = (tree, spec) => {
     let expansion = Object.keys(tree.expand);
