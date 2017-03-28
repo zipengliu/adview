@@ -114,8 +114,9 @@
     stroke-width: 2px;
 }
 
-text.reference-tree-indicator {
-    font-size: 12px;
+rect.reference-tree-indicator {
+    fill: #ccc;
+    fill-opacity: .8;
 }
 
 

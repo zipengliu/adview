@@ -350,10 +350,10 @@ let calcFrondLayout = (tree, spec) => {
 
     let {lca, distanceToLCA} = getLCA(tree);
 
-    let {branchLen, verticalGap, leaveHeight, size} = spec;
+    let {branchLen, verticalGap, size, frondLeafGap, frondBaseLength} = spec;
     let height = size, width = size;
 
-    let blocks = {};
+    let blocks = {}, branches = {};
     let missingHeight = 0;
     if (tree.missing) {
         missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
@@ -371,24 +371,20 @@ let calcFrondLayout = (tree, spec) => {
     let nonMissingHeight = missingHeight? height - missingHeight - verticalGap: height;
     let blockHeight = (nonMissingHeight - 2 * verticalGap) / 3;
 
-    let isLeftOfLCA = bid => {
-        if (bid === lca) return false;
-        let b = tree.branches[bid];
-        while (b.parent !== lca) {
-            bid = b.parent;
-            b = tree.branches[bid];
-        }
-        return tree.branches[lca].left === bid;
+    // determine if LCA's outgroup is on top or bottom
+    // FIXME
+    let outgroupOnTop = lca !== tree.rootBranch && tree.branches[tree.branches[lca].parent].left === lca;
+
+    let getNumFrond = dist => {
+        return Math.floor(Math.log2(dist + 1));
     };
 
     let hasOutgroup = false;
     let maxN = 0;
+    let branchXMax = branchLen;
     for (let e in tree.expand) if (tree.expand.hasOwnProperty(e)) {
-        if (!tree.branches.hasOwnProperty(e)) {
-            console.error(e, ' is not found');
-        }
         if (e === lca) {
-            // usually, this corresponding branches points out its out-group
+            // usually, this corresponding branch refers to its out-group
             if (!tree.expand[e].in) {
                 hasOutgroup = true;
                 blocks[e] = {
@@ -410,9 +406,13 @@ let calcFrondLayout = (tree, spec) => {
         } else {
             // usually, expansion are all in-groups if no one is the lca
             if (tree.expand[e].in) {
+                let frondLevel = getNumFrond(distanceToLCA[e]);
+                let isLeft = tree.branches[e].order < tree.branches[lca].order;
+                let bl = tree.branches[e].parent === lca? branchLen: frondBaseLength + (frondLevel - 1) * frondLeafGap;
+                branchXMax = Math.max(branchXMax, branchLen + bl);
                 blocks[e] = {
                     id: e,
-                    x: 2 * branchLen, y: isLeftOfLCA(e)? blockHeight + verticalGap: 2 * (blockHeight + verticalGap),
+                    x: branchLen + bl, y: isLeft? blockHeight + verticalGap: 2 * (blockHeight + verticalGap),
                     height: blockHeight, width: 50,
                     n: tree.branches[e].entities.length,
                     entities: createMappingFromArray(tree.branches[e].entities),
@@ -421,6 +421,43 @@ let calcFrondLayout = (tree, spec) => {
                     lastExpanded: tree.lastSelected === e,
                     context: false,
                 };
+                if (tree.branches[e].parent === lca) {
+                    // do not frondify
+                    branches[e + '-vertical'] = {
+                        bid: e + '-vertical',
+                        x1: branchLen, x2: branchLen,
+                        // y1: blocks[e].y + blocks[e].height + verticalGap / 2,
+                        y1: 2 * blockHeight + 1.5 * verticalGap,
+                        y2: blocks[e].y + blocks[e].height / 2
+                    };
+                    branches[e] = {
+                        bid: e,
+                        x1: branchLen, x2: blocks[e].x,
+                        y1: branches[e + '-vertical'].y2,
+                        y2: branches[e + '-vertical'].y2,
+                    }
+                } else {
+                    branches[e] = {
+                        bid: e,
+                        x1: branchLen, x2: blocks[e].x,
+                        y1: 2 * blockHeight + 1.5 * verticalGap,
+                        y2: blocks[e].y + blocks[e].height / 2
+                    };
+                    // "frondified" leaves
+                    for (let i = 0; i < frondLevel; i++) {
+                        let t = .4 + i * 0.5 / frondLevel;
+                        let x = (1 - t) * branches[e].x1 + t * branches[e].x2;
+                        let y = (1 - t) * branches[e].y1 + t * branches[e].y2;
+                        branches[e + '-frond-' + i] = {
+                            bid: e + '-frond-' + i,
+                            x1: x, x2: x + 5, y1: y, y2: y
+                        };
+                        branches[e + '-frond-' + i + '-v'] = {
+                            bid: e + '-frond-' + i + '-v',
+                            x1: x, x2: x, y1: y, y2: y + 5 * (isLeft? -1: 1)
+                        };
+                    }
+                }
             } else {
                 // fall back to remainder
                 return calcRemainderLayout(tree, spec);
@@ -444,45 +481,36 @@ let calcFrondLayout = (tree, spec) => {
     }
 
     // Fill in thw width
-    let xScale = scaleLog().domain([1, maxN]).range([0, width - 2 * branchLen]);
+    let xScale = scaleLog().domain([1, maxN]).range([0, width - branchXMax]);
     for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
         blocks[bid].width = xScale(blocks[bid].n);
     }
 
-    let branches = {
+    branches = {
+        ...branches,
+        [lca + '-vertical']: {
+            bid: lca + '-vertical',
+            x1: 0, x2: 0,
+            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
+        },
         [lca + (hasOutgroup? '-in':'')]: {
             bid: lca + (hasOutgroup? '-in':''),
             x1: 0, x2: branchLen,
             y1: 2 * blockHeight + 1.5 * verticalGap,
             y2: 2 * blockHeight + 1.5 * verticalGap,
         },
-        [lca + '-left']: {
-            bid: lca + '-left',
-            x1: branchLen, x2: 2 * branchLen,
-            y1: 2 * blockHeight + 1.5 * verticalGap,
-            y2: 1.5 * blockHeight + verticalGap,
-        },
-        [lca + '-right']: {
-            bid: lca + '-right',
-            x1: branchLen, x2: 2 * branchLen,
-            y1: 2 * blockHeight + 1.5 * verticalGap,
-            y2: 2.5 * blockHeight + 2 * verticalGap,
-        },
         [lca + (hasOutgroup? '': '-out')]: {
             bid: lca + (hasOutgroup? '': '-out'),
             x1: 0, x2: branchLen,
             y1: blockHeight / 2, y2: blockHeight / 2
         },
-        [lca + '-con']: {
-            bid: lca + '-con',
-            x1: 0, x2: 0,
-            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
-        }
     };
 
     return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
 };
 
+// Compute LCA of all expanded branches (ndoes) in a tree
+// as well as the pre-order of each expanded node
 let getLCA = tree => {
     let l = [];
     let anc = {};
@@ -566,6 +594,7 @@ let calcFineGrainedLayout = (tree, spec) => {
         branches: subtractMapping(createMappingFromArray(Object.keys(tree.branches)), getBranchesInSubtree(tree, lca)),
         entities: subtractMapping(createMappingFromArray(allEntities), createMappingFromArray(lcaEntities))
     };
+    let maxN = blocks[rootBlockId].n;
 
     let tmpExp = {};
     for (let i = 0; i < expansion.length; i++) {
@@ -602,13 +631,19 @@ let calcFineGrainedLayout = (tree, spec) => {
                     lastExpanded: bid === tree.lastSelected,
                     branches: getBranchesInSubtree(tree, bid),
                     isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)
-                }
+                };
+                maxN = Math.max(maxN, blocks[bid].n);
             }
         } else {
             numLeaves += 1;
         }
     };
     traverse(lca, rootBlockWidth);
+
+    // let xScale = scaleLog().domain([1, maxN + 1]).range([0, width / 2]);
+    // for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
+    //     blocks[bid].width = xScale(blocks[bid].n + 1);
+    // }
 
     let blockHeight = (nonMissingHeight - verticalGap * (numBlocks - 1) - numLeaves * leaveHeight) / numBlocks;
     let noBlocks = 0, noLeaves = 0;

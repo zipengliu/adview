@@ -68,6 +68,8 @@ class AggregatedDendrogram extends Component {
         };
         return (
             <svg width={size + margin.left + margin.right} height={size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
+                {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0"
+                                                     width={size + margin.left + margin.right} height={size + margin.top + margin.bottom}/>}
                 <g transform={`translate(${margin.left},${margin.top})`}>
                     {isClusterMode &&
                     <g className="proportion" >
@@ -117,7 +119,7 @@ class AggregatedDendrogram extends Component {
                         <g className="branches">
                             {branchArr.map(b => <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded})} key={b.bid}
                                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
-                            {branches[lastSelected] && <g>
+                            {branches[lastSelected] && false && <g>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1-2}
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2-2}/>
                                 <line className="last-selected-indicator" x1={branches[lastSelected].x1} y1={branches[lastSelected].y1+2}
@@ -133,9 +135,6 @@ class AggregatedDendrogram extends Component {
                                 {/*<use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>*/}
                             {/*)}*/}
                         </g>}
-                        {this.props.isReferenceTree &&
-                            <text className="reference-tree-indicator" x={size} y={size} dx="2" >R</text>
-                        }
                     </g>
                 </g>
                 <symbol id={`tick${this.props.data.tid}`}>

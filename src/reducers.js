@@ -76,13 +76,15 @@ let initialState = {
         mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
             size: 100,
-            margin: {left: 2, top: 2, right: 16, bottom: 2},
+            margin: {left: 2, top: 2, right: 2, bottom: 2},
             verticalGap: 5,
             branchLen: 6,
             leaveHeight: 4,
             leaveHighlightWidth: 16,
             proportionTopMargin: 4,
-            proportionBarHeight: 10
+            proportionBarHeight: 10,
+            frondLeafGap: 5,
+            frondBaseLength: 12,
         },
         // treeOrder: 'static',        // either 'static' or 'dynamic'
         //                             // static means sort by similarity to reference tree
@@ -232,6 +234,24 @@ let prepareBranches = (branches, rootBranch) => {
     return branches;
 };
 
+let getOrder = (branches, rootBranch) => {
+    let order = 0;
+    let dfs = (bid) => {
+        let b = branches[bid];
+        if (b.left) {
+            dfs(b.left);
+            b.order = order;
+            order += 1;
+            dfs(b.right);
+        } else {
+            b.order = order;
+            order += 1;
+        }
+    };
+    dfs(rootBranch);
+    return branches;
+};
+
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
@@ -293,8 +313,8 @@ function visphyReducer(state = initialState, action) {
                         ...state.inputGroupData.trees,
                         [action.tid]: {
                             ...state.inputGroupData.trees[action.tid],
-                            branches: ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
-                                state.inputGroupData.trees[action.tid].rootBranch)
+                            branches: getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
+                                state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch)
                         }
                     }
                 },
@@ -713,7 +733,8 @@ function visphyReducer(state = initialState, action) {
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 action.data.trees[tid].tid = tid;
-                action.data.trees[tid].branches = ladderize(prepareBranches(action.data.trees[tid].branches, action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
+                action.data.trees[tid].branches = getOrder(ladderize(prepareBranches(action.data.trees[tid].branches,
+                    action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
                 action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
             return Object.assign({}, state, {
