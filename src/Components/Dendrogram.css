@@ -27,7 +27,7 @@
     stroke: black;
 }
 .block.range-selected {
-    stroke-width: 2px;
+    stroke-width: 3px;
     stroke: #984ea3;
 }
 .block.fuzzy {
@@ -58,13 +58,15 @@
 }
 
 .branch {
-    stroke-width: 2px;
-    stroke: #e41a1c;
-}
-.branch.background {
+    /*stroke-width: 2px;*/
+    /*stroke: #e41a1c;*/
     stroke-width: 1px;
     stroke: black;
 }
+/*.branch.background {*/
+    /*stroke-width: 1px;*/
+    /*stroke: black;*/
+/*}*/
 
 .label {
     font-size: 10px;

@@ -81,7 +81,7 @@ export function getJaccardIndex(x, y) {
     return  c / (x.length + y.length - c);
 }
 
-export function getCoordinates(trees, isGlobal, rid, bid) {
+export function getCoordinates(trees, cb, isGlobal, rid, bid) {
     // Concat all rf_dist in trees to a distance matrix
     // First, decide an order of trees for the matrix
 
@@ -91,9 +91,9 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
         // Local distance matrix
         console.log('Calculating local coordinates in Overview...');
         order = [];
-        let corr = trees[rid].branches[bid].correspondingBranches;
+        let corr = trees[rid].branches[bid][cb];
         for (let tid in corr) if (corr.hasOwnProperty(tid)) {
-            order.push({treeId: tid, branchId: corr[tid].branchId});
+            order.push({tid, bid: corr[tid].bid});
         }
     } else {
         console.log('Calculating global coordinates in Overview...');
@@ -107,8 +107,8 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
             if (j > i) {
                 if (!isGlobal) {
                     // TODO: can make it faster by caching the entities first
-                    cur.push(1.0 - getJaccardIndex(trees[order[i].treeId].branches[order[i].branchId].entities,
-                            trees[order[j].treeId].branches[order[j].branchId].entities));
+                    cur.push(1.0 - getJaccardIndex(trees[order[i].tid].branches[order[i].bid].entities,
+                            trees[order[j].tid].branches[order[j].bid].entities));
                 } else {
                     cur.push(trees[order[i]].rfDistance[order[j]]);
                 }
@@ -125,7 +125,7 @@ export function getCoordinates(trees, isGlobal, rid, bid) {
     // Second run t-SNE
     let coords = runTSNE(dist);
 
-    return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].treeId: order[i]}))
+    return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].tid: order[i]}))
 }
 
 

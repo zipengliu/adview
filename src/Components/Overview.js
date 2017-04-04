@@ -42,15 +42,15 @@ let Overview = props => (
                         <Button active={props.metricMode === 'local'}
                                 onClick={props.metricMode === 'local'? null: props.onChangeMetricMode.bind(null, 'local', props.metricBranch)}>subtree</Button>
                     </OverlayTrigger>
-                    <OverlayTrigger placement="top"
-                                    overlay={<Tooltip id="tooltip-pick-branch">Pick a partition on the reference tree as the
-                                        scope of the local distance metric</Tooltip>}>
-                        <Button bsSize="xsmall" style={{marginLeft: '5px'}} disabled={props.metricMode !== 'local'}
-                                active={props.pickingBranch}
-                                onClick={props.onTogglePicking}>
-                            <Glyphicon glyph="screenshot"/>
-                        </Button>
-                    </OverlayTrigger>
+                    {/*<OverlayTrigger placement="top"*/}
+                                    {/*overlay={<Tooltip id="tooltip-pick-branch">Pick a partition on the reference tree as the*/}
+                                        {/*scope of the local distance metric</Tooltip>}>*/}
+                        {/*<Button bsSize="xsmall" style={{marginLeft: '5px'}} disabled={props.metricMode !== 'local'}*/}
+                                {/*active={props.pickingBranch}*/}
+                                {/*onClick={props.onTogglePicking}>*/}
+                            {/*<Glyphicon glyph="screenshot"/>*/}
+                        {/*</Button>*/}
+                    {/*</OverlayTrigger>*/}
                 </ButtonGroup>
             </div>
         </div>

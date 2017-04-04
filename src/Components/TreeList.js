@@ -5,7 +5,7 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Glyphicon} from 'react-bootstrap';
+import {Glyphicon, Badge} from 'react-bootstrap';
 import cn from 'classnames';
 import {toggleTreeListCollapse} from '../actions';
 import './TreeList.css';
@@ -14,6 +14,7 @@ let TreeList = (props) => (
     <div className="view" id="tree-list" style={{height: props.collapsed? '60px': '200px'}}>
         <div className="view-header">
             <div className="view-title">Tree List
+                <Badge style={{marginLeft: '5px'}}>{props.trees.length}</Badge>
                 <span style={{marginLeft: '10px', cursor: 'pointer'}} onClick={props.onToggleCollapsed}>
                 <Glyphicon glyph={props.collapsed? 'triangle-top': 'triangle-bottom'}/>
                 </span>

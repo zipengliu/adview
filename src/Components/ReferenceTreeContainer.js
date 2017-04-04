@@ -6,7 +6,7 @@ import React from 'react';
 import {OverlayTrigger, ButtonGroup, Button, Tooltip} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
-import {togglePersistHighlight, compareWithReference} from '../actions';
+import {compareWithReference} from '../actions';
 
 let ReferenceTreeContainer = props => (
     <div className="view" style={{height: '98%'}}>
@@ -19,11 +19,6 @@ let ReferenceTreeContainer = props => (
             </div>
             <div style={{marginBottom: '5px'}}>
                 <ButtonGroup bsSize="xsmall">
-                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-persist">Persist highlighting of taxa in aggregated dendrograms</Tooltip>}>
-                        <Button onClick={props.togglePersist} bsStyle={props.persist? 'primary': 'default'}>
-                            Persist highlight
-                        </Button>
-                    </OverlayTrigger>
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
                         <Button disabled>
                             Import
@@ -99,13 +94,11 @@ let ReferenceTreeContainer = props => (
 
 let mapStateToProps = state => ({
     tree: state.inputGroupData.trees[state.referenceTree.id],
-    persist: state.referenceTree.persist,
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null
 });
 
 let mapDispatchToProps = dispatch => ({
-    togglePersist: () => {dispatch(togglePersistHighlight())},
     cancelCompare: () => {dispatch(compareWithReference(null))}
 });
 

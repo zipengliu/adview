@@ -172,14 +172,14 @@ export function changeDistanceMetric(mode, bid) {
 
         // calculate coordinates
         if (mode === 'local' && bid == null) {
-            dispatch(changeDIstanceMetricFailure('Should pick a branch to get local distance metric'))
+            dispatch(changeDistanceMetricFailure('Should pick a branch to get local distance metric using CTRL + ALT + Click Branch'))
         } else if (mode === 'global'  && !state.overview.metricBranch) {
             // Previously its actually the global overview being shown, and now it does not change the coordinates
             dispatch(changeDistanceMetricSuccess(state.overview.coordinates));
         } else {
             setTimeout(() => {
                 dispatch(changeDistanceMetricSuccess(
-                    getCoordinates(state.inputGroupData.trees, mode === 'global' || bid == null, state.referenceTree.id, bid)));
+                    getCoordinates(state.inputGroupData.trees, state.cb, mode === 'global' || bid == null, state.referenceTree.id, bid)));
             }, 100);
         }
     }
@@ -194,7 +194,7 @@ function changeDistanceMetricSuccess(coordinates) {
     return {type: TYPE.CHANGE_DISTANCE_METRIC_SUCCESS, coordinates};
 }
 
-function changeDIstanceMetricFailure(error) {
+function changeDistanceMetricFailure(error) {
     return {type: TYPE.CHANGE_DISTANCE_METRIC_FAILURE, error}
 }
 

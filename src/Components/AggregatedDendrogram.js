@@ -84,7 +84,7 @@ class AggregatedDendrogram extends Component {
                                 <g key={b.id}>
                                     <rect className={cn('block', {'range-selected': b.rangeSelected > 0,
                                         'last-expanded': b.lastExpanded,
-                                        expanded: !b.context, fuzzy: !b.context && !b.matched,
+                                        expanded: !b.context && b.id !== 'missing', fuzzy: !b.context && !b.matched,
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                           filter={b.isMissing? `url(#blur${this.props.data.tid})`: ''}
@@ -112,7 +112,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={2} dy={10}>{b.n}</text>}
+                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>}
                                 </g>
                             )}
                         </g>

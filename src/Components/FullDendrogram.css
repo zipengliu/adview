@@ -3,7 +3,7 @@
     stroke: black;
 }
 .branch-line.range-selected {
-    stroke-width: 3;
+    stroke-width: 5px;
     stroke: #984ea3;
 }
 .branch-line.selected {

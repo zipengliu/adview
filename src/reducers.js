@@ -43,7 +43,6 @@ let initialState = {
         highlightMonophyly: null,       // entities in these monophylies would be highlighted in the aggregated dendrograms,
         selected: [],                   // expanded branches
         isFetching: false,
-        persist: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
     },
@@ -60,7 +59,6 @@ let initialState = {
     overview: {
         coordinates: [],
         metricMode: 'global',
-        pickingBranch: false,
         metricBranch: null,
         createWindow: false,
         currentTitle: '',
@@ -85,7 +83,7 @@ let initialState = {
             proportionBarHeight: 10,
             frondLeafGap: 5,
             frondLeafAngle: Math.PI / 4,
-            frondBaseLength: 12,
+            frondBaseLength: 14,
             nestMargin: 4,
         },
         // treeOrder: 'static',        // either 'static' or 'dynamic'
@@ -322,10 +320,9 @@ function visphyReducer(state = initialState, action) {
                 },
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.trees, true, null, null),
+                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, null, null),
                     metricMode: 'global',
                     metricBranch: null,
-                    pickingBranch: false
                 }
             });
 
@@ -357,15 +354,6 @@ function visphyReducer(state = initialState, action) {
                     selected: []
                 }
             });
-        case TYPE.TOGGLE_PERSIST_HIGHLIGHT:
-            return {
-                ...state,
-                referenceTree: {
-                    ...state.referenceTree,
-                    highlightMonophyly: state.referenceTree.persist? null: state.referenceTree.highlightMonophyly,
-                    persist: !state.referenceTree.persist
-                }
-            };
         case TYPE.TOGGLE_USER_SPECIFIED:
             return {
                 ...state,
@@ -454,25 +442,6 @@ function visphyReducer(state = initialState, action) {
                     selectionArea: {...state.overview.selectionArea, x2: action.x, y2: action.y }
                 }
             });
-        case TYPE.TOGGLE_PICKING_METRIC_BRANCH:
-            return {
-                ...state,
-                overview: {
-                    ...state.overview,
-                    pickingBranch: !state.overview.pickingBranch,
-                },
-            };
-        // case TYPE.CHANGE_DISTANCE_METRIC:
-        //     return {
-        //         ...state,
-        //         overview: {
-        //             ...state.overview,
-        //             metricMode: action.mode,
-        //             pickingBranch: false
-        //         },
-        //         toast: action.mode == 'local' && state.overview.metricBranch == null?
-        //             {msg: ''}: state.toast
-        //     };
         case TYPE.CHANGE_DISTANCE_METRIC_REQUEST:
             return {
                 ...state,
@@ -480,7 +449,6 @@ function visphyReducer(state = initialState, action) {
                     ...state.overview,
                     metricMode: action.mode,
                     metricBranch: action.mode === 'local'? action.bid: state.overview.metricBranch,
-                    pickingBranch: false
                 },
                 toast: {
                     ...state.toast,
@@ -493,7 +461,6 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: action.coordinates,
-                    pickingBranch: false
                 },
                 toast: {...state.toast, msg: null}
             };
@@ -502,7 +469,6 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 overview: {
                     ...state.overview,
-                    pickingBranch: true,
                 },
                 toast: {
                     ...state.toast,
@@ -656,7 +622,6 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
-                    persist: !!action.tid,
                 },
                 pairwiseComparison: {
                     ...state.pairwiseComparison,
@@ -757,7 +722,7 @@ function visphyReducer(state = initialState, action) {
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(action.data.trees, true, null, null)
+                    coordinates: getCoordinates(action.data.trees, state.cb, true, null, null)
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
@@ -805,7 +770,13 @@ function visphyReducer(state = initialState, action) {
         case TYPE.TOGGLE_JACCARD_MISSING:
             return {
                 ...state,
-                cb: action.cb
+                cb: action.cb,
+                overview: {
+                    ...state.overview,
+                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb,
+                        state.overview.metricMode === 'global' || state.overview.metricBranch == null,
+                        state.referenceTree.id, state.overview.metricBranch)
+                }
             };
         default:
             return state;
