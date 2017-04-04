@@ -27,8 +27,8 @@
     stroke: black;
 }
 .block.range-selected {
-    stroke-width: 3px;
-    stroke: #984ea3;
+    stroke-width: 2px;
+    stroke: #984ea3 !important;
 }
 .block.fuzzy {
     stroke-width: 1px;
@@ -39,10 +39,11 @@
     stroke-dasharray: 6 2;
 }
 .block.expanded {
+    stroke-width: 1px;
     stroke: #e41a1c;
 }
 .block.last-expanded {
-    stroke: #1a9641;
+    stroke: #AEAE39;
     stroke-width: 2px;
 }
 .respond-box {

@@ -96,9 +96,11 @@ class FullDendrogram extends Component {
                                <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
                                {expandedBranches.length && expandedBranches[0] === d.bid &&
                                <g>
-                                   <line className="last-selected-indicator" x1={d.x1} y1={d.y1-3} x2={d.x2} y2={d.y2-3} />
-                                   <line className="last-selected-indicator" x1={d.x1} y1={d.y1+3} x2={d.x2} y2={d.y2+3} />
-                               </g>}
+                                   <use xlinkHref="#icon-triangle-up" x={d.x1 + 4} y={d.y1 + 2} width="10" height="10" style={{fill: '#e41a1c'}} />
+                                   {/*<line className="last-selected-indicator" x1={d.x1} y1={d.y1-3} x2={d.x2} y2={d.y2-3} />*/}
+                                   {/*<line className="last-selected-indicator" x1={d.x1} y1={d.y1+3} x2={d.x2} y2={d.y2+3} />*/}
+                               </g>
+                               }
                            </g>))}
                        {verticalLines.map((d, i) =>
                            <line className="branch-line" key={i} x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
@@ -160,6 +162,10 @@ class FullDendrogram extends Component {
                         renderDendrogram(tree, dendrogram, 'right', selected)
                     }
                 </g>
+                <symbol id="icon-triangle-up" viewBox="0 0 12 16">
+                    <title>triangle-up</title>
+                    <path d="M5.996 4l-5.996 5.996h11.992l-5.996-5.996z"></path>
+                </symbol>
             </svg>
         )
     }

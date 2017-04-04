@@ -4,7 +4,7 @@
 
 import React, { Component } from 'react';
 import cn from 'classnames';
-import {scaleLog} from 'd3';
+import {scaleLog, path as d3Path} from 'd3';
 import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -66,6 +66,17 @@ class AggregatedDendrogram extends Component {
                 onToggleBlock([], []);
             }
         };
+
+        let getLastExpandedGlyph = (blk) => {
+            let w = Math.min(8, Math.max(blk.height, blk.width));
+            let p = d3Path();
+            p.moveTo(blk.x, blk.y + blk.height);
+            p.lineTo(blk.x + w, blk.y + blk.height);
+            p.lineTo(blk.x, blk.y + blk.height - w);
+            p.closePath();
+            return <path d={p.toString()} style={{stroke: 'none', fill: '#e41a1c'}}></path>;
+        };
+
         return (
             <svg width={size + margin.left + margin.right} height={size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0"
@@ -83,12 +94,12 @@ class AggregatedDendrogram extends Component {
                             {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
                                     <rect className={cn('block', {'range-selected': b.rangeSelected > 0,
-                                        'last-expanded': b.lastExpanded,
                                         expanded: !b.context && b.id !== 'missing', fuzzy: !b.context && !b.matched,
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                           filter={b.isMissing? `url(#blur${this.props.data.tid})`: ''}
                                     />
+                                    {!b.context && b.lastExpanded && b.n > 0 && getLastExpandedGlyph(b)}
 
                                     {!isClusterMode && b.fillPercentage > 0.001 &&
                                     <rect className="highlight-block" x={b.x} y={b.y}
@@ -126,26 +137,8 @@ class AggregatedDendrogram extends Component {
                                       x2={branches[lastSelected].x2} y2={branches[lastSelected].y2+2}/>
                             </g>}
                         </g>
-                        {(numMatches > 0 || numNonMatches > 0) && false &&
-                        <g transform={`translate(${size},0)`}>
-                            {Array(numMatches).fill(1).map((d, i) =>
-                                <use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={i * 15}></use>
-                            )}
-                            {/*{Array(numNonMatches).fill(1).map((d, i) =>*/}
-                                {/*<use key={i} xlinkHref={`#tick${this.props.data.tid}`} y={(numMatches + i) * 15} style={{fillOpacity: .3}}></use>*/}
-                            {/*)}*/}
-                        </g>}
                     </g>
                 </g>
-                <symbol id={`tick${this.props.data.tid}`}>
-                    <circle cx="8" cy="6" r="6" style={{fill: '#a6d96a'}} />
-                    <text dx="4" dy="10" style={{fill: '#e37d7d', fontSize: '10px', fontWeight: 'bold'}}>&#10003;</text>
-                </symbol>
-                <defs>
-                    <filter id={`blur${this.props.data.tid}`} filterUnits="userSpaceOnUse" x="-20%" y="-20%" width="120%" height="120%">
-                        <feGaussianBlur in="StrokePaint" stdDeviation="1" />
-                    </filter>
-                </defs>
             </svg>
         )
     }
