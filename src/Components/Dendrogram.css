@@ -64,6 +64,10 @@
     stroke-width: 1px;
     stroke: black;
 }
+.branch.range-selected {
+    stroke-width: 5px;
+    stroke: #984ea3 !important;
+}
 /*.branch.background {*/
     /*stroke-width: 1px;*/
     /*stroke: black;*/
@@ -126,14 +130,17 @@ rect.reference-tree-indicator {
 .partition-distribution {
     width: 100%;
     height: 20px;
-    border: 1px solid black;
+    /*border: 1px solid black;*/
+    border: none;
 }
 
 .partition-distribution div {
     height: 100%;
     float: left;
-    border-right: 1px solid grey;
+    border: 1px solid grey;
+    border-right: none;
+    cursor: pointer;
 }
 .partition-distribution div:last-child {
-    border: none;
+    border-right: 1px solid grey;
 }

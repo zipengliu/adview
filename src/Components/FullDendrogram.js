@@ -45,7 +45,7 @@ class FullDendrogram extends Component {
         let renderDendrogram = (tree, dendrogram, side='right', expandedBranches=[]) => {
             let {branchSpecs, verticalLines, responsiveBoxes,hoverBoxes, textSpecs} = dendrogram;
             let {missing, branches} = tree;
-            let inRange = d => rangeSelection && !d.isLeaf && branches.hasOwnProperty(d.bid) &&
+            let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf && branches.hasOwnProperty(d.bid) &&
             range[0] <= branches[d.bid][attrName] && branches[d.bid][attrName] <= range[1];
 
             let highlightBoxes = [];

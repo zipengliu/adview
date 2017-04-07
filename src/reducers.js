@@ -107,7 +107,7 @@ let initialState = {
     attributeExplorer: {
         modes: {
             all: {
-                scope: 'all',           // could be 'all', 'set', 'tree'
+                scope: 'tree',           // could be 'all', 'set', 'tree'
                 context: false,
             },
             corr: {
@@ -123,7 +123,10 @@ let initialState = {
             margin: {left: 25, right: 8, top: 14, bottom: 2}
         },
         attributeNames: ['support'],
-        selection: [{isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}, {isMoving: false, range: [0.2, 0.6]}],
+        selection: [
+            {isMoving: false, range: [0.2, 0.6], cb: false, attribute: 'support'},      // for the support in the all branches section
+            {isMoving: false, range: [0.2, 0.6], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
+            {isMoving: false, range: [0.2, 0.6], cb: true, attribute: 'similarity'}],   // for the similarity in the cb section
         activeSelectionId: null,
     },
     treeList: {
@@ -446,13 +449,20 @@ function visphyReducer(state = initialState, action) {
             });
 
         case TYPE.SELECT_BRANCH:
+            let newSelected = state.referenceTree.selected.indexOf(action.bid) !== -1?
+                        state.referenceTree.selected.filter(bid => bid !== action.bid):
+                        [action.bid, ...state.referenceTree.selected];
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: state.referenceTree.selected.indexOf(action.bid) !== -1?
-                        state.referenceTree.selected.filter(bid => bid !== action.bid):
-                        [action.bid, ...state.referenceTree.selected]
-                }
+                    selected: newSelected
+                },
+                attributeExplorer: newSelected.length === 0 && state.attributeExplorer.activeSelectionId !== null &&
+                state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb?
+                    {   // if there is no selection and cb range selection is activated, deactivate it
+                        ...state.attributeExplorer,
+                        activeSelectionId: null
+                    }: state.attributeExplorer
             });
         case TYPE.CLEAR_BRANCH_SELECTION:
             return Object.assign({}, state, {

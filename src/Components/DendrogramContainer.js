@@ -134,7 +134,13 @@ class DendrogramContainer extends Component {
 
                         {isClusterMode &&
                         <div className="partition-distribution">
-                            {dendrograms.map((d, i) => <div key={i} style={{width: (d.num / d.total * 100) + '%'}}></div>)}
+                            {dendrograms.map((d, i) =>
+                                <OverlayTrigger key={i} placement="bottom" overlay={<Tooltip id={`dist-${i}`}># trees in this cluster: {d.num}</Tooltip>}>
+                                    <div style={{width: (d.num / d.total * 100) + '%'}}
+                                         onClick={this.props.onClick.bind(null, activeTreeId === d.tid? null: d.tid,
+                                             isClusterMode && activeTreeId !== d.tid? d.trees: [])} />
+                                </OverlayTrigger>
+                            )}
                         </div>
                         }
                     </div>
@@ -940,8 +946,7 @@ let getKDEBins = (n, values, kernel) => {
 // Get the highlight portion of each block
 // Also determine whether there is branch that falls into the range selection
 // FIXME: bottleneck!
-let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, rangeSelection, trees, shadedHistogram) => {
-    let {attrName, range} = rangeSelection || {};
+let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, trees, shadedHistogram) => {
     if (isClusterMode) {
         // TODO
         // let h = createMappingFromArray(highlightGroups[0].entities);
@@ -1007,14 +1012,55 @@ let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, rangeSel
                     curEnd += i === j? proportion: 0;
                 }
 
-                b.rangeSelected = 0;
-                if (rangeSelection) {
-                    for (let bid1 in b.branches)
-                        if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
-                            && trees[tid].branches[bid1][attrName] <= range[1]) {
-                            b.rangeSelected += 1;
-                            break;
-                        }
+            }
+        }
+    }
+};
+
+let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) => {
+    let {attribute, range} = rangeSelection || {};
+    let r, correspondingBranches;
+    if (rangeSelection && rangeSelection.cb) {
+        // only check the cb for the last expanded branch of the reference tree
+        r = trees[referenceTree.id];
+        correspondingBranches = r.branches[referenceTree.selected[0]][cb];
+        console.log('rid=', referenceTree.id);
+    }
+    for (let tid in dendros) if (dendros.hasOwnProperty(tid)) {
+        let t = dendros[tid];
+        for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+            let b = t.blocks[bid];
+            // Check if this block has any branches falls into an active range
+            b.rangeSelected = 0;
+            if (rangeSelection && !rangeSelection.cb) {
+                for (let bid1 in b.branches)
+                    if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attribute]
+                        && trees[tid].branches[bid1][attribute] <= range[1]) {
+                        b.rangeSelected += 1;
+                        break;
+                    }
+            }
+        }
+        for (let bid in t.branches) if (t.branches.hasOwnProperty(bid)) {
+            let b = t.branches[bid];
+            // Check if any branch in the aggregated dendrogram falls into this range
+            b.rangeSelected = false;
+            if (rangeSelection && !rangeSelection.cb) {
+                if (trees[tid].branches.hasOwnProperty(bid)) {
+                    let v = trees[tid].branches[bid][attribute];
+                    if (range[0] <= v && v <= range[1]) {
+                        b.rangeSelected = true;
+                    }
+                }
+            }
+        }
+        if (r) {
+            // if range selection is for cb, check cb's value
+            let corr = correspondingBranches[tid];
+            if (corr && t.branches.hasOwnProperty(corr.bid)) {
+                let v = attribute === 'similarity'? corr.jac: trees[tid].branches[corr.bid][attribute];
+                if (range[0] <= v && v <= range[1]) {
+                    t.branches[corr.bid].rangeSelected = true;
                 }
             }
         }
@@ -1023,16 +1069,18 @@ let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, rangeSel
 
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
-    [state => state.aggregatedDendrogram.mode, (_, trees) => trees,
+    [state => state.aggregatedDendrogram.mode,
+        (_, trees) => trees,
         state => state.highlight,
         state => state.aggregatedDendrogram.spec,
         state => state.inputGroupData.trees,
-        state => state.attributeExplorer.activeSelectionId === 0? {
-                attrName: 'support',
-                range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
-            }: null,
+        state => state.attributeExplorer.activeSelectionId !== null?
+            state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId]: null,
+        state => state.attributeExplorer.activeSelectionId !== null &&
+        state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb? state.referenceTree: null,
+        state => state.cb,
         state => state.aggregatedDendrogram.shadedHistogram],
-    (mode, trees, highlight, spec, rawTrees, rangeSelection, shadedHistogram) => {
+    (mode, trees, highlight, spec, rawTrees, rangeSelection, refTree, cb, shadedHistogram) => {
         let dendros = getLayouts(trees, spec, mode);
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let clusters = isClusterMode? getClusters(dendros, mode).slice(): [];
@@ -1041,9 +1089,9 @@ let getDendrograms = createSelector(
         for (let i = 0; i < dendros.length; i++) {
             dendroMapping[dendros[i].tid] = dendros[i];
         }
-        if (highlight.bids.length) {
-            getFill(dendroMapping, clusters, isClusterMode, highlight, rangeSelection, rawTrees, shadedHistogram);
-        }
+
+        getFill(dendroMapping, clusters, isClusterMode, highlight, rawTrees, shadedHistogram);
+        checkRangeSelection(dendroMapping, rangeSelection, refTree, rawTrees, cb);
         return isClusterMode? clusters: dendros;
     }
 );

@@ -31,7 +31,7 @@ class AttributeExplorer extends Component {
                         spec={this.props.spec} />);
 
         let getSelectionButton = (id, disabled) =>
-            <Button bsSize="xsmall" disabled={disabled || id !== 0}
+            <Button bsSize="xsmall" disabled={disabled}
                     onClick={this.props.onChangeActiveRangeSelection.bind(null, activeSelectionId === id? null: id)}>
                 {activeSelectionId === id? 'deactivate range selection': 'activate range selection'}
             </Button>;
