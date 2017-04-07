@@ -51,10 +51,10 @@ function fetchInputGroupFailure(err) {
     }
 }
 
-export function toggleHighlightMonophyly(bid, multiple=false) {
+export function toggleHighlightMonophyly(tid, bid, addictive=false) {
     return {
         type: TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY,
-        bid, multiple
+        tid, bid, addictive
     }
 }
 
@@ -260,10 +260,6 @@ export function togglePairwiseComparison(p) {
     return {type: TYPE.TOGGLE_PAIRWISE_COMPARISON, p};
 }
 
-export function toggleComparingHighlightMonophyly(tid, bid) {
-    return {type: TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY, tid, bid}
-}
-
 export function compareWithReference(tid) {
     return {type: TYPE.COMPARE_WITH_REFERENCE, tid};
 }
@@ -328,4 +324,9 @@ export function toggleTreeListCollapse() {
 
 export function toggleJaccardMissing(cb) {
     return {type: TYPE.TOGGLE_JACCARD_MISSING, cb};
+}
+
+
+export function closeToast() {
+    return {type: TYPE.CLOSE_TOAST};
 }

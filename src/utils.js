@@ -74,6 +74,16 @@ export function getIntersection(a, b) {
     return r;
 }
 
+export function getIntersectionSet(a, b) {
+    let r = {};
+    for (let k in a) {
+        if (b.hasOwnProperty(k)) {
+            r[k] = true;
+        }
+    }
+    return r;
+}
+
 export function getJaccardIndex(x, y) {
     let a = createMappingFromArray(x);
     let b = createMappingFromArray(y);

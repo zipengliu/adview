@@ -97,23 +97,25 @@ class AggregatedDendrogram extends Component {
                                         expanded: !b.context && b.id !== 'missing', fuzzy: !b.context && !b.matched,
                                         'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
-                                          filter={b.isMissing? `url(#blur${this.props.data.tid})`: ''}
                                     />
                                     {!b.context && b.lastExpanded && b.n > 0 && getLastExpandedGlyph(b)}
 
-                                    {!isClusterMode && b.fillPercentage > 0.001 &&
-                                    <rect className="highlight-block" x={b.x} y={b.y}
-                                          width={b.fillPercentage * b.width} height={b.height} />}
-                                    {!isClusterMode && b.fillPercentage > 0.5 && b.isLeaf &&
+                                    {!isClusterMode && b.fill &&
+                                        b.fill.map((f, i) => <rect key={i} className="highlight-block"
+                                                                   style={{fill: f.color}}
+                                                                   x={b.x + f.start * b.width} y={b.y} width={f.width * b.width} height={b.height} />) }
+
+                                    {/*TODO*/}
+                                    {!isClusterMode && b.fill && b.isLeaf && false &&
                                     <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
                                           width={b.highlightWidth} height={b.height} />}
 
-                                    {isClusterMode && b.colorBins &&
+                                    {false && isClusterMode && b.colorBins &&
                                     b.colorBins.map((d, i) =>
                                         <line key={i} className="highlight-block fuzzy" style={{stroke: d, strokeWidth: shadedGranularity}}
                                               x1={b.x + i * shadedGranularity + 1} y1={b.y}
                                               x2={b.x + i * shadedGranularity + 1} y2={b.y+b.height}/>)}
-                                    {isClusterMode && !b.colorBins && b.fillPercentage[0] > 0.001 &&
+                                    {false && isClusterMode && !b.colorBins && b.fillPercentage[0] > 0.001 &&
                                     <rect className="highlight-block" x={b.x} y={b.y}
                                           width={b.fillPercentage[0] * b.width} height={b.height} />}
 

@@ -4,7 +4,8 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import {fetchInputGroup} from '../actions';
+import {Glyphicon} from 'react-bootstrap';
+import {fetchInputGroup, closeToast} from '../actions';
 import cn from 'classnames';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
@@ -23,7 +24,12 @@ class MainView extends Component {
     render() {
         return (
             <div>
-                <div className={cn('toast', {show: this.props.toast.msg != null})}>{this.props.toast.msg}</div>
+                <div className={cn('toast', {show: this.props.toast.msg != null})}>
+                    <p>{this.props.toast.msg}</p>
+                    <div style={{position: 'absolute', top: 5, right: 5, cursor: 'pointer'}} onClick={this.props.onCloseToast}>
+                        <Glyphicon glyph="remove"/>
+                    </div>
+                </div>
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
                 <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
                     <div className="left-column">
@@ -51,6 +57,7 @@ function mapStateToProps(state) {
 
 let mapDispatchToProps = dispatch => ({
     onRequestInputGroup: (id) => {dispatch(fetchInputGroup(id))},
+    onCloseToast: () => {dispatch(closeToast())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainView);

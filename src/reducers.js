@@ -31,6 +31,8 @@ let initialState = {
         height: 840,
         margin: {left: 5, right: 5, top: 10, bottom: 0},
         marginOnEntity: 8,
+        boundingBoxSideMargin: 5,
+        minLabelWidth: 40,
         labelUnitCharWidth: 4.5,          // an estimate of the width of a character in the label
         labelWidth: 150,                // default max width for the label
         responsiveAreaSize: 7,          // height of a transparent box over a branch to trigger interaction
@@ -40,20 +42,20 @@ let initialState = {
     referenceTree: {
         id: null,
         checkingBranch: null,           // the branch that is being displayed in details
-        highlightMonophyly: null,       // entities in these monophylies would be highlighted in the aggregated dendrograms,
         selected: [],                   // expanded branches
         isFetching: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
     },
+    highlight: {
+        colorScheme: scaleOrdinal(schemeCategory10),
+        limit: 5,
+        currentColor: 0,
+        bids: [],
+        colors: (new Array(5)).fill(false),
+    },
     pairwiseComparison: {
         tid: null,
-        highlight: {
-            limit: 5,
-            pointer: 0,
-            colors: scaleOrdinal(schemeCategory10),
-            bids: [],
-        }
     },
     sets: [],
     overview: {
@@ -155,6 +157,7 @@ let findMissing = (geneTree, allEntities) => {
     return missing;
 };
 
+// Find entities in tree.  Return a list of highest bids that can cover all the entities
 let findEntities = (entities, tree) => {
     let entitiesMapping = createMappingFromArray(entities);
     let bids = [];
@@ -189,6 +192,16 @@ let findEntities = (entities, tree) => {
         }
     }
     return bids;
+};
+
+let getEntitiesByBid = (tree, bid) => {
+    if (bid ===  'missing_taxa') {
+        return tree.missing;
+    } else if (bid.startsWith('m-')) {
+        return [bid.substr(2)];
+    } else {
+        return tree.branches[bid].entities;
+    }
 };
 
 let ladderize = (branches, rootBranch) => {
@@ -252,29 +265,124 @@ let getOrder = (branches, rootBranch) => {
     return branches;
 };
 
+let findHighlight = (bids, tid, bid) => {
+    for (let i = 0; i < bids.length; i++) {
+        let h = bids[i];
+        if ((h.src === tid && h[tid][0] === bid) || (h.tgt === tid && h[tid].length === 1 && h[tid][0] === bid)) {
+            return i;
+        }
+        if (h.tgt === tid) {
+            if (h[tid].length === 1 && h[tid][0] === bid) {
+                return i;
+            }
+            if (h[tid].indexOf(bid) !== -1) {
+                return -2;
+            }
+        }
+    }
+    return -1;
+};
+
+// Determine is a is a subset of b.  a and b are both arrays.
+let isSubset = (a, b) => {
+    for (let i = 0; i < a.length; i++) {
+        if (b.indexOf(a[i]) === -1) return false;
+    }
+    return true;
+};
+
+let getNextColor = (colors) => {
+    for (let i = 0; i < colors.length; i++) {
+        if (!colors[i]) return i;
+    }
+    return -1;
+};
+
 function visphyReducer(state = initialState, action) {
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
-            let newHighlight = action.bid;
-            if (action.multiple) {
-                if (!state.referenceTree.highlightMonophyly) {
-                    newHighlight = {[action.bid]: true};
+            // Check if this branch is already highlighted
+            let idx = findHighlight(state.highlight.bids, action.tid, action.bid);
+            if (idx === -2) {
+                // do not cancel or add, signal to the user
+                return {
+                    ...state,
+                    toast: {
+                        msg: 'This monophyly is already highlighted.  If you want to undo the highlight, ' +
+                        'please click the monophyly that triggers this highlight (the one with silhouette)'
+                    }
+                }
+            } else if (idx !== -1) {
+                // cancel highlight
+                return {
+                    ...state,
+                    highlight: {
+                        ...state.highlight,
+                        colors: state.highlight.colors.map((c, i) => i === state.highlight.bids[idx].color? false: c),
+                        bids: state.highlight.bids.filter((_, i) => i !== idx),
+                    }
+                }
+            } else {
+                let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
+                let tgtEntities = getEntitiesByBid(state.inputGroupData.trees[action.tid], action.bid);
+                let bids;
+
+                if (otherTid) {
+                    bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
+                }
+                if (action.addictive && state.highlight.bids.length) {
+                    // Add to the current (last) highlight group
+                    // let mergingGroup = state.highlight.bids[state.highlight.bids.length - 1];
+                    //
+                    // if (isSubset(bids, mergingGroup)) {
+                    //     return {
+                    //         ...state,
+                    //         toast: {
+                    //             msg: 'This monophyly is already highlighted.'
+                    //         }
+                    //     }
+                    // }
+                    //
+                    // // Merge the bids into highlight group
+                    // let mergedGroup = {
+                    //     ...mergingGroup,
+                    //     // TODO what if user select a bid of the tgt tree?
+                    // }
                 } else {
-                    newHighlight = {...state.referenceTree.highlightMonophyly};
-                    if (newHighlight.hasOwnProperty(action.bid)) {
-                        delete newHighlight[action.bid];
+                    // create a new highlight group
+                    let newHighlightGroup = {
+                        src: action.tid, tgt: otherTid, [action.tid]: [action.bid], entities: tgtEntities,
+                    };
+                    if (otherTid) {
+                        newHighlightGroup[otherTid] = bids;
+                    }
+                    let nextColor;
+                    if (state.highlight.bids.length < state.highlight.limit) {
+                        nextColor = getNextColor(state.highlight.colors);
+                        newHighlightGroup.color = nextColor;
+                        return {
+                            ...state,
+                            highlight: {
+                                ...state.highlight,
+                                bids: [...state.highlight.bids, newHighlightGroup],
+                                colors: state.highlight.colors.map((c, i) => i === nextColor? true: c)
+                            }
+                        }
                     } else {
-                        newHighlight[action.bid] = true;
+                        nextColor = state.highlight.bids[0].color;
+                        newHighlightGroup.color = nextColor;
+                        return {
+                            ...state,
+                            highlight: {
+                                ...state.highlight,
+                                // remove the last recent added group
+                                bids: [...state.highlight.bids.slice(1), newHighlightGroup],
+                            }
+                        }
                     }
                 }
             }
-            return Object.assign({}, state, {
-                referenceTree: {
-                    ...state.referenceTree,
-                    checkingBranch: action.bid,
-                    highlightMonophyly: newHighlight
-                },
-            });
+            return state;
         case TYPE.TOGGLE_CHECKING_BRANCH:
             return {
                 ...state,
@@ -291,7 +399,6 @@ function visphyReducer(state = initialState, action) {
                 },
                 referenceTree: {
                     ...state.referenceTree,
-                    highlightMonophyly: null,
                     selected: [],
                     isFetching: true,
                 }
@@ -352,6 +459,11 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     selected: []
+                },
+                highlight: {
+                    ...state.highlight,
+                    bids: [],
+                    colors: (new Array(state.highlight.limit)).fill(false)
                 }
             });
         case TYPE.TOGGLE_USER_SPECIFIED:
@@ -583,53 +695,71 @@ function visphyReducer(state = initialState, action) {
                     pairwiseComparison: action.p
                 }
             };
-        case TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY:
-            let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
-            let oldBidsArr = state.pairwiseComparison.highlight.bids;
-            // Find out where are the highlighted entities in the other tree
-            // The list of branches returned contains exactly all the highlighted entities
-            let tgtEntities;
-            if (action.bid ===  'missing_taxa') {
-                tgtEntities = state.inputGroupData.trees[action.tid].missing;
-            } else if (action.bid.startsWith('m-')) {
-                tgtEntities = [action.bid.substr(2)];
-            } else {
-                tgtEntities = state.inputGroupData.trees[action.tid].branches[action.bid].entities;
-            }
-            let bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
-            let newBid = {src: action.tid, [action.tid]: [action.bid], [otherTid]: bids};
-            let newBidsArr;
-            let newPointer = state.pairwiseComparison.highlight.pointer;
-            if (oldBidsArr.length + 1 > state.pairwiseComparison.highlight.limit) {
-                newBidsArr = oldBidsArr.map((d, i) => (i === newPointer? newBid: d));
-                newPointer += 1;
-            } else {
-                newBidsArr = oldBidsArr.concat([newBid]);
-            }
-            return {
-                ...state,
-                pairwiseComparison: {
-                    ...state.pairwiseComparison,
-                    highlight: {
-                        ...state.pairwiseComparison.highlight,
-                        bids: newBidsArr,
-                        pointer: newPointer
-                    }
-                }
-            };
+        // case TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY:
+        //     let oldBidsArr = state.pairwiseComparison.highlight.bids;
+        //     // Find out where are the highlighted entities in the other tree
+        //     // The list of branches returned contains exactly all the highlighted entities
+        //     let tgtEntities;
+        //     if (action.bid ===  'missing_taxa') {
+        //         tgtEntities = state.inputGroupData.trees[action.tid].missing;
+        //     } else if (action.bid.startsWith('m-')) {
+        //         tgtEntities = [action.bid.substr(2)];
+        //     } else {
+        //         tgtEntities = state.inputGroupData.trees[action.tid].branches[action.bid].entities;
+        //     }
+        //     let bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
+        //     let newBid = {src: action.tid, [action.tid]: [action.bid], [otherTid]: bids};
+        //     let newBidsArr;
+        //     let newPointer = state.pairwiseComparison.highlight.pointer;
+        //     if (oldBidsArr.length + 1 > state.pairwiseComparison.highlight.limit) {
+        //         newBidsArr = oldBidsArr.map((d, i) => (i === newPointer? newBid: d));
+        //         newPointer += 1;
+        //     } else {
+        //         newBidsArr = oldBidsArr.concat([newBid]);
+        //     }
+        //     return {
+        //         ...state,
+        //         pairwiseComparison: {
+        //             ...state.pairwiseComparison,
+        //             highlight: {
+        //                 ...state.pairwiseComparison.highlight,
+        //                 bids: newBidsArr,
+        //                 pointer: newPointer
+        //             }
+        //         }
+        //     };
         case TYPE.COMPARE_WITH_REFERENCE:
+            let newBids, newColors;
+            if (action.tid) {
+                // Entering pairwise comparison mode
+                newBids = state.highlight.bids.map(h => (
+                    {...h, tgt: action.tid,
+                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
+                            state.inputGroupData.trees[action.tid])}
+                ));
+                newColors = state.highlight.colors;
+            } else {
+                // Exiting
+                // Remove highlight groups who do not trigger that highlight
+                newColors = state.highlight.colors.slice();
+                newBids = state.highlight.bids.filter(h => {
+                    if (h.src !== state.referenceTree.id) {
+                        newColors[h.color] = false;     // If this group is to be removed, recycle the color
+                        return false;
+                    }
+                    return true;
+                });
+            }
             return {
                 ...state,
-                referenceTree: {
-                    ...state.referenceTree,
-                },
                 pairwiseComparison: {
                     ...state.pairwiseComparison,
                     tid: action.tid,
-                    highlight: {
-                        ...state.pairwiseComparison.highlight,
-                        bids: []
-                    }
+                },
+                highlight: {
+                    ...state.highlight,
+                    bids: newBids,
+                    colors: newColors
                 }
             };
 
@@ -776,6 +906,14 @@ function visphyReducer(state = initialState, action) {
                     coordinates: getCoordinates(state.inputGroupData.trees, state.cb,
                         state.overview.metricMode === 'global' || state.overview.metricBranch == null,
                         state.referenceTree.id, state.overview.metricBranch)
+                }
+            };
+        case TYPE.CLOSE_TOAST:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: null
                 }
             };
         default:

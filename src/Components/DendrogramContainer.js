@@ -12,7 +12,7 @@ import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
     addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
     compareWithReference, toggleJaccardMissing} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersection} from '../utils';
+import {createMappingFromArray, subtractMapping, getIntersection, getIntersectionSet} from '../utils';
 import './Dendrogram.css';
 
 
@@ -940,42 +940,72 @@ let getKDEBins = (n, values, kernel) => {
 // Get the highlight portion of each block
 // Also determine whether there is branch that falls into the range selection
 // FIXME: bottleneck!
-let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection, trees, shadedHistogram) => {
-    let h = createMappingFromArray(entities);
+let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, rangeSelection, trees, shadedHistogram) => {
     let {attrName, range} = rangeSelection || {};
     if (isClusterMode) {
-        for (let i = 0; i < clusters.length; i++) {
-            let t = clusters[i];
-            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-                let b = t.blocks[bid];
-                b.fillPercentage = [];
-                b.rangeSelected = 0;
-                for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
-                    let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
-                    b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
-
-                    if (rangeSelection && b.rangeSelected === 0) {
-                        let checkingBlock = dendroMapping[tid].blocks[b.represent[tid]];
-                        for (let bid1 in checkingBlock.branches)
-                            if (checkingBlock.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
-                                && trees[tid].branches[bid1][attrName] <= range[1]) {
-                                b.rangeSelected += 1;
-                                break;
-                            }
-                    }
-                }
-
-                // construct the shaded histogram
-                b.colorBins = entities.length > 0?
-                    getKDEBins(shadedHistogram.binsFunc(b.width - 2), b.fillPercentage, shadedHistogram.kernel): null;
-            }
-        }
+        // TODO
+        // let h = createMappingFromArray(highlightGroups[0].entities);
+        // for (let i = 0; i < clusters.length; i++) {
+        //     let t = clusters[i];
+        //     for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+        //         let b = t.blocks[bid];
+        //         b.fillPercentage = [];
+        //         b.rangeSelected = 0;
+        //         for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
+        //             let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
+        //             b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
+        //
+        //             if (rangeSelection && b.rangeSelected === 0) {
+        //                 let checkingBlock = dendroMapping[tid].blocks[b.represent[tid]];
+        //                 for (let bid1 in checkingBlock.branches)
+        //                     if (checkingBlock.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
+        //                         && trees[tid].branches[bid1][attrName] <= range[1]) {
+        //                         b.rangeSelected += 1;
+        //                         break;
+        //                     }
+        //             }
+        //         }
+        //
+        //         // construct the shaded histogram
+        //         // b.colorBins = entities.length > 0?
+        //         //     getKDEBins(shadedHistogram.binsFunc(b.width - 2), b.fillPercentage, shadedHistogram.kernel): null;
+        //     }
+        // }
     } else {
+        let highlightEntities = highlightGroups.bids.map(h => createMappingFromArray(h.entities));
+
+        // Check if a is a subset of b.  a and b are both objects
+        let isSubset = (a, b) => {
+            for (let x in a) {
+                if (!b.hasOwnProperty(x)) return false;
+            }
+            return true;
+        };
+
         for (let tid in dendroMapping) if (dendroMapping.hasOwnProperty(tid)) {
             let t = dendroMapping[tid];
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
                 let b = t.blocks[bid];
-                b.fillPercentage = getIntersection(b.entities, h) / Object.keys(b.entities).length;
+                let intersections = highlightEntities
+                    .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlightGroups.colorScheme(highlightGroups.bids[i].color)}))
+                    .filter(a => Object.keys(a.entities).length > 0)
+                    .sort((a, b) => Object.keys(b.entities).length - Object.keys(a.entities).length);
+                // Check for overlap.  For now, subset relationship is the only possible overlap relation
+                b.fill = [];
+                let curEnd = 0;
+                for (let i = 0; i < intersections.length; i++) {
+                    let j;
+                    for (j = 0; j < i; j++) {
+                        if (isSubset(intersections[i].entities, intersections[j].entities)) break;
+                    }
+                    let proportion = Object.keys(intersections[i].entities).length / Object.keys(b.entities).length;
+                    b.fill.push({
+                        start: i === j? curEnd: b.fill[j].start,
+                        width: proportion,
+                        color: intersections[i].color
+                    });
+                    curEnd += i === j? proportion: 0;
+                }
 
                 b.rangeSelected = 0;
                 if (rangeSelection) {
@@ -991,24 +1021,10 @@ let getFill = (dendroMapping, clusters, isClusterMode, entities, rangeSelection,
     }
 };
 
-let getEntitiesFromMonophylies = (tree, mono) => {
-    if (!mono) return [];
-    if (mono === 'missing') return tree.missing;
-    if (typeof mono === 'object') {
-        let res = [];
-        for (let m in mono) if (mono.hasOwnProperty(m)) {
-            res = res.concat(tree.branches[m].entities);
-        }
-        return res;
-    } else {
-        return tree.branches[mono].entities;
-    }
-};
-
 // the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
 let getDendrograms = createSelector(
     [state => state.aggregatedDendrogram.mode, (_, trees) => trees,
-        state => getEntitiesFromMonophylies(state.inputGroupData.trees[state.referenceTree.id], state.referenceTree.highlightMonophyly),
+        state => state.highlight,
         state => state.aggregatedDendrogram.spec,
         state => state.inputGroupData.trees,
         state => state.attributeExplorer.activeSelectionId === 0? {
@@ -1016,7 +1032,7 @@ let getDendrograms = createSelector(
                 range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
             }: null,
         state => state.aggregatedDendrogram.shadedHistogram],
-    (mode, trees, highlightEntities, spec, rawTrees, rangeSelection, shadedHistogram) => {
+    (mode, trees, highlight, spec, rawTrees, rangeSelection, shadedHistogram) => {
         let dendros = getLayouts(trees, spec, mode);
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let clusters = isClusterMode? getClusters(dendros, mode).slice(): [];
@@ -1025,7 +1041,9 @@ let getDendrograms = createSelector(
         for (let i = 0; i < dendros.length; i++) {
             dendroMapping[dendros[i].tid] = dendros[i];
         }
-        getFill(dendroMapping, clusters, isClusterMode, highlightEntities, rangeSelection, rawTrees, shadedHistogram);
+        if (highlight.bids.length) {
+            getFill(dendroMapping, clusters, isClusterMode, highlight, rangeSelection, rawTrees, shadedHistogram);
+        }
         return isClusterMode? clusters: dendros;
     }
 );

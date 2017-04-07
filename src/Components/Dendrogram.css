@@ -52,7 +52,7 @@
 }
 .highlight-block {
     fill: steelblue;
-    fill-opacity: .6;
+    fill-opacity: .3;
 }
 .highlight-block.fuzzy {
     fill: none;

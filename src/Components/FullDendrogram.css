@@ -31,9 +31,16 @@
     fill-opacity: .5;
 }
 
-.hover-box {
-    fill: steelblue;
+.highlight-box {
+    /*fill: steelblue;*/
+}
+.highlight-box.highlight-src {
+    stroke-width: 2px;
     fill-opacity: .3;
+}
+.highlight-box.highlight-tgt {
+    stroke: none;
+    fill-opacity: .2;
 }
 
 circle.metric-branch-indicator {
