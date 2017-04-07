@@ -828,6 +828,14 @@ function visphyReducer(state = initialState, action) {
                     activeSelectionId: action.id,
                 }
             };
+        case TYPE.CHANGE_SELECTION_RANGE:
+            return {
+                ...state,
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId? {...s, range: [action.l, action.r]}: s),
+                }
+            };
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {

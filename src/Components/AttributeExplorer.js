@@ -7,7 +7,8 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {ButtonGroup, Button, FormGroup, Radio, OverlayTrigger, Tooltip} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
-import {toggleMoveHandle, moveControlHandle, toggleHistogramOrCDF, changeAttributeExplorerMode, changeActiveRangeSelection} from '../actions';
+import {toggleMoveHandle, moveControlHandle, toggleHistogramOrCDF, changeAttributeExplorerMode,
+changeActiveRangeSelection, changeSelectionRange} from '../actions';
 import Histogram from './HistogramSlider';
 import LineChart from './LineChart';
 
@@ -23,6 +24,7 @@ class AttributeExplorer extends Component {
                         selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
+                        changeSelectionRange={activeSelectionId === id? this.props.onChangeSelectionRange: null}
                         spec={this.props.spec} />):
             (<LineChart data={fgData} attributeName={att}
                         selection={id === activeSelectionId? this.props.selection[id]: null}
@@ -276,7 +278,8 @@ let mapDispatchToProps = dispatch => ({
     toggleMoveHandle: (h) => {dispatch(toggleMoveHandle(h))},
     moveControlHandle: (v) => {dispatch(moveControlHandle(v))},
     toggleHistogram: (a) => {dispatch(toggleHistogramOrCDF(a))},
-    onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))}
+    onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))},
+    onChangeSelectionRange: (l, r) => {dispatch(changeSelectionRange(l, r))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(AttributeExplorer);

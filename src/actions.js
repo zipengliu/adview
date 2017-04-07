@@ -284,6 +284,9 @@ export function changeActiveRangeSelection(id) {
     return {type: TYPE.CHANGE_ACTIVE_RANGE_SELECTION, id};
 }
 
+export function changeSelectionRange(l, r) {
+    return {type: TYPE.CHANGE_SELECTION_RANGE, l, r};
+}
 
 export function fetchDatasets() {
     return function (dispatch) {
