@@ -3,10 +3,10 @@
  */
 
 import React from 'react';
-import {OverlayTrigger, ButtonGroup, Button, Tooltip} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip, Glyphicon} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
-import {compareWithReference} from '../actions';
+import {compareWithReference, toggleUniversalBranchLength} from '../actions';
 
 let ReferenceTreeContainer = props => (
     <div className="view" style={{height: '98%'}}>
@@ -19,6 +19,12 @@ let ReferenceTreeContainer = props => (
             </div>
             <div style={{marginBottom: '5px'}}>
                 <ButtonGroup bsSize="xsmall">
+                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
+                        {props.universalBranchLen? 'Encode branch length': 'Use universal branch length'} </Tooltip>}>
+                        <Button disabled={!!props.comparingTree} onClick={props.toggleBranchLen}>
+                            <Glyphicon glyph={props.universalBranchLen? 'align-right': 'align-justify'} />
+                        </Button>
+                    </OverlayTrigger>
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
                         <Button disabled>
                             Import
@@ -95,11 +101,13 @@ let ReferenceTreeContainer = props => (
 let mapStateToProps = state => ({
     tree: state.inputGroupData.trees[state.referenceTree.id],
     isUserSpecified: state.referenceTree.isUserSpecified,
-    comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null
+    comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
+    universalBranchLen: state.referenceTree.universalBranchLen
 });
 
 let mapDispatchToProps = dispatch => ({
-    cancelCompare: () => {dispatch(compareWithReference(null))}
+    cancelCompare: () => {dispatch(compareWithReference(null))},
+    toggleBranchLen: () => {dispatch(toggleUniversalBranchLength())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

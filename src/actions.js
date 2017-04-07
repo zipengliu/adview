@@ -62,6 +62,10 @@ export function toggleCheckingBranch(bid) {
     return {type: TYPE.TOGGLE_CHECKING_BRANCH, bid};
 }
 
+export function toggleUniversalBranchLength() {
+    return {type: TYPE.TOGGLE_UNIVERSAL_BRANCH_LENGTH};
+}
+
 export function selectBranchOnFullDendrogram(bid) {
     return {
         type: TYPE.SELECT_BRANCH,

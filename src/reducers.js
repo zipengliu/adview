@@ -46,6 +46,7 @@ let initialState = {
         isFetching: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
+        universalBranchLen: false,
     },
     highlight: {
         colorScheme: scaleOrdinal(schemeCategory10),
@@ -394,6 +395,15 @@ function visphyReducer(state = initialState, action) {
                     checkingBranch: action.bid
                 }
             };
+        case TYPE.TOGGLE_UNIVERSAL_BRANCH_LENGTH:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    universalBranchLen: !state.referenceTree.universalBranchLen
+                }
+            };
+
         case TYPE.FETCH_TREE_REQUEST:
             return Object.assign({}, state, {
                 toast: {

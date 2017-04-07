@@ -309,7 +309,7 @@ function mapStateToProps(state, ownProps) {
         let tree = state.inputGroupData.trees[state.referenceTree.id];
         compExp = state.referenceTree.selected.map(s => tree.branches[s][state.cb][c.tid].bid);
     } else {
-        den = getDendrogramSpecs(state, null, null, false);
+        den = getDendrogramSpecs(state, null, null, state.referenceTree.universalBranchLen);
     }
     return {
         dendrogram: c.tid? [den1, den2]: den,
