@@ -85,10 +85,16 @@ export function getIntersectionSet(a, b) {
 }
 
 export function getJaccardIndex(x, y) {
-    let a = createMappingFromArray(x);
-    let b = createMappingFromArray(y);
+    let a = isArray(x)? createMappingFromArray(x): x;
+    let la = isArray(x)? x.length: Object.keys(x).length;
+    let b = isArray(y)? createMappingFromArray(y): y;
+    let lb = isArray(y)? y.length: Object.keys(y).length;
     let c = getIntersection(a, b);
-    return  c / (x.length + y.length - c);
+    return  c / (la + lb - c);
+}
+
+function isArray(obj){
+    return !!obj && obj.constructor === Array;
 }
 
 export function getCoordinates(trees, cb, isGlobal, rid, bid) {
@@ -103,7 +109,11 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
         order = [];
         let corr = trees[rid].branches[bid][cb];
         for (let tid in corr) if (corr.hasOwnProperty(tid)) {
-            order.push({tid, bid: corr[tid].bid});
+            let e = trees[tid].branches[corr[tid].bid].entities;
+            order.push({tid,
+                bid: corr[tid].bid,
+                entities: corr[tid].in? e: subtractMapping(createMappingFromArray(trees[tid].entities), createMappingFromArray(e))
+            });
         }
     } else {
         console.log('Calculating global coordinates in Overview...');
@@ -117,8 +127,7 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
             if (j > i) {
                 if (!isGlobal) {
                     // TODO: can make it faster by caching the entities first
-                    cur.push(1.0 - getJaccardIndex(trees[order[i].tid].branches[order[i].bid].entities,
-                            trees[order[j].tid].branches[order[j].bid].entities));
+                    cur.push(1.0 - getJaccardIndex(order[i].entities, order[j].entities));
                 } else {
                     cur.push(trees[order[i]].rfDistance[order[j]]);
                 }
