@@ -1,5 +1,5 @@
 .dot {
-    fill: grey
+    fill:black;
 }
 
 .dot.selected {
@@ -15,4 +15,10 @@
 .selecting-box {
     fill: steelblue;
     fill-opacity: .3;
+}
+
+.dot.reference-tree-indicator {
+    fill: #aaa !important;
+    stroke: #aaa;
+    stroke-width: 4px;
 }

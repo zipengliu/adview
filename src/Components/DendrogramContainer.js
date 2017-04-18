@@ -156,7 +156,9 @@ class DendrogramContainer extends Component {
                                          <div>
                                              <div className="color-block" style={{backgroundColor: s.color}}></div>
                                              {s.title}
+                                             {i === this.props.activeSetIndex &&
                                              <Badge style={{marginLeft: '5px'}}>{dendrograms.length}</Badge>
+                                             }
                                          </div>
                                      </OverlayTrigger>
                                  } >
@@ -1024,7 +1026,6 @@ let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) =>
         // only check the cb for the last expanded branch of the reference tree
         r = trees[referenceTree.id];
         correspondingBranches = r.branches[referenceTree.selected[0]][cb];
-        console.log('rid=', referenceTree.id);
     }
     for (let tid in dendros) if (dendros.hasOwnProperty(tid)) {
         let t = dendros[tid];
@@ -1054,13 +1055,15 @@ let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) =>
                 }
             }
         }
+        t.isCBinRange = false;
         if (r) {
             // if range selection is for cb, check cb's value
             let corr = correspondingBranches[tid];
             if (corr && t.branches.hasOwnProperty(corr.bid)) {
                 let v = attribute === 'similarity'? corr.jac: trees[tid].branches[corr.bid][attribute];
                 if (range[0] <= v && v <= range[1]) {
-                    t.branches[corr.bid].rangeSelected = true;
+                    // t.branches[corr.bid].rangeSelected = true;
+                    t.isCBinRange = true;
                 }
             }
         }

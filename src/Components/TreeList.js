@@ -25,6 +25,7 @@ let TreeList = (props) => (
                     <div className="list-item" key={t.tid}>
                         {i === 0 && <Glyphicon glyph="tree-conifer" style={{display: 'inline'}} />}
                         <span className={cn('tree-name', {'current-set': t.isCurrentSet,
+                            'reference-tree-indicator': i === 0,
                             'selected': props.highlighted.length? props.highlighted.indexOf(t.tid) !== -1:
                                 props.selected.indexOf(t.tid) !== -1})}>{t.name}</span>
                     </div>)}

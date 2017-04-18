@@ -18,6 +18,9 @@
 }
 
 .tree-name.current-set {
+    /*background: #ddd;*/
+}
+.tree-name.reference-tree-indicator {
     background: #ddd;
 }
 

@@ -63,6 +63,11 @@
     margin-bottom: 20px;
 }
 
+#taxa-list {
+    flex: 0 0 auto;
+    margin-bottom: 15px;
+}
+
 #tree-list {
     flex: 0 0 auto;
     height: 60px;

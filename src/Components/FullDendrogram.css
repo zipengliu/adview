@@ -6,6 +6,10 @@
     stroke-width: 5px;
     stroke: #984ea3;
 }
+.branch-line.checking {
+    stroke-width: 5px;
+    stroke: yellow;
+}
 .branch-line.selected {
     stroke-width: 3;
     stroke: #e41a1c;
@@ -62,4 +66,15 @@ line.last-selected-indicator {
 }
 .branch-stats .attribute-chart .bars rect.bar {
     fill: #fff;
+}
+
+rect.comparing-tree-indicator {
+    fill: none;
+    stroke: red;
+    stroke-width: 1px;
+}
+
+rect.reference-tree-indicator {
+    fill: grey;
+    fill-opacity: .15;
 }

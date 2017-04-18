@@ -288,8 +288,8 @@ export function changeActiveRangeSelection(id) {
     return {type: TYPE.CHANGE_ACTIVE_RANGE_SELECTION, id};
 }
 
-export function changeSelectionRange(l, r) {
-    return {type: TYPE.CHANGE_SELECTION_RANGE, l, r};
+export function changeSelectionRange(l, r, sid) {
+    return {type: TYPE.CHANGE_SELECTION_RANGE, l, r, sid};
 }
 
 export function fetchDatasets() {
@@ -336,4 +336,12 @@ export function toggleJaccardMissing(cb) {
 
 export function closeToast() {
     return {type: TYPE.CLOSE_TOAST};
+}
+
+export function toggleTaxaListCollapse() {
+    return {type: TYPE.TOGGLE_TAXA_LIST_COLLAPSE}
+}
+
+export function toggleSelectTaxa(e) {
+    return {type: TYPE.TOGGLE_SELECT_TAXA, e};
 }

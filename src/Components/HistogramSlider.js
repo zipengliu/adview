@@ -7,7 +7,7 @@ import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 let HistogramSlider = props => {
-    let {foregroundBins, backgroundBins, spec, attributeName, selection, changeSelectionRange} = props;
+    let {foregroundBins, backgroundBins, spec, attributeName, selection, changeSelectionRange, selectionId} = props;
     let hasData = !!foregroundBins || !!backgroundBins;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
     // The x domain is always [0, 1]
@@ -57,7 +57,7 @@ let HistogramSlider = props => {
                         <OverlayTrigger key={i} placement="top" overlay={<Tooltip id={`foreground-bar-${i}`}>{b.length}</Tooltip>}>
                             <rect className="bar foreground" x={xScale(b.x0)} y={spec.chartHeight - yScale(b.length + 1)}
                                   width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)}
-                                  onClick={changeSelectionRange? changeSelectionRange.bind(null, b.x0, b.x1): null}
+                                  onClick={changeSelectionRange? changeSelectionRange.bind(null, b.x0, b.x1, selectionId): null}
                             />
                         </OverlayTrigger>)}
                 </g>

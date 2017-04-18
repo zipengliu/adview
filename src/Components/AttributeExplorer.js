@@ -21,12 +21,14 @@ class AttributeExplorer extends Component {
 
         let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
             (<Histogram foregroundBins={fgData} backgroundBins={bgData} attributeName={att}
+                        selectionId={id}
                         selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
-                        changeSelectionRange={activeSelectionId === id? this.props.onChangeSelectionRange: null}
+                        changeSelectionRange={this.props.onChangeSelectionRange}
                         spec={this.props.spec} />):
             (<LineChart data={fgData} attributeName={att}
+                        selectionId={id}
                         selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
@@ -279,7 +281,7 @@ let mapDispatchToProps = dispatch => ({
     moveControlHandle: (v) => {dispatch(moveControlHandle(v))},
     toggleHistogram: (a) => {dispatch(toggleHistogramOrCDF(a))},
     onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))},
-    onChangeSelectionRange: (l, r) => {dispatch(changeSelectionRange(l, r))}
+    onChangeSelectionRange: (l, r, c) => {dispatch(changeSelectionRange(l, r, c))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(AttributeExplorer);

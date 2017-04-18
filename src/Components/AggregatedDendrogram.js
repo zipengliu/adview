@@ -14,7 +14,7 @@ class AggregatedDendrogram extends Component {
         let {spec, mode, shadedGranularity, onToggleBlock} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {blocks, branches, num, total, lastSelected} = this.props.data;
+        let {blocks, branches, num, total, lastSelected, isCBinRange} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
@@ -80,6 +80,8 @@ class AggregatedDendrogram extends Component {
         return (
             <svg width={size + margin.left + margin.right} height={size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
                 {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0"
+                                                     width={size + margin.left + margin.right} height={size + margin.top + margin.bottom}/>}
+                {isCBinRange && <rect className="range-selected-cb-indicator" x="0" y="0"
                                                      width={size + margin.left + margin.right} height={size + margin.top + margin.bottom}/>}
                 <g transform={`translate(${margin.left},${margin.top})`}>
                     {isClusterMode &&

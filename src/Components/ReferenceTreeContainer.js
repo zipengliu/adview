@@ -7,16 +7,20 @@ import {OverlayTrigger, ButtonGroup, Button, Tooltip, Glyphicon} from 'react-boo
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
 import {compareWithReference, toggleUniversalBranchLength} from '../actions';
+import {textEllipsis, createMappingFromArray} from '../utils';
 
 let ReferenceTreeContainer = props => (
     <div className="view" style={{height: '98%'}}>
         <div className="view-header">
-            <div style={{textAlign: 'center'}}>
-                <span className="view-title">Reference Tree </span>
-                <span>({props.tree.name})</span>
-                {props.comparingTree &&
-                <span> vs. {props.comparingTree.name}</span>}
-            </div>
+            <OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +
+            (props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>
+                <div style={{textAlign: 'center'}}>
+                    <span className="view-title">Reference Tree </span>
+                    <span>({textEllipsis(props.tree.name, 20)})</span>
+                    {props.comparingTree &&
+                    <span> vs. {textEllipsis(props.comparingTree.name, 20)}</span>}
+                </div>
+            </OverlayTrigger>
             <div style={{marginBottom: '5px'}}>
                 <ButtonGroup bsSize="xsmall">
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
@@ -41,8 +45,9 @@ let ReferenceTreeContainer = props => (
                 }
                 {props.tree.missing &&
                 <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
-                    {props.tree.entities.length} {props.comparingTree? `(vs. ${props.comparingTree.entities.length}) `: ''}
-                    / {props.tree.entities.length + props.tree.missing.length} taxa are present
+                    {Object.keys(createMappingFromArray(props.tree.entities)).length}
+                    {props.comparingTree? ` vs. ${Object.keys(createMappingFromArray(props.comparingTree.entities)).length} `: ''}
+                    / {props.allEntities} taxa are present
                 </div>
                 }
             </div>
@@ -99,6 +104,7 @@ let ReferenceTreeContainer = props => (
 </div>);
 
 let mapStateToProps = state => ({
+    allEntities: Object.keys(state.inputGroupData.entities).length,
     tree: state.inputGroupData.trees[state.referenceTree.id],
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,

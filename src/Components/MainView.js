@@ -13,6 +13,7 @@ import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
 import Inspector from './Inspector';
 import AttributeExplorer from './AttributeExplorer';
+import TaxaList from './TaxaList';
 import {getWindowHeight} from '../utils';
 
 import './MainView.css';
@@ -35,6 +36,7 @@ class MainView extends Component {
                     <div className="left-column">
                         <Overview />
                         <AttributeExplorer />
+                        <TaxaList />
                         <TreeList />
                     </div>
                     <div className="middle-column">

@@ -38,8 +38,8 @@ class Dotplot extends Component {
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
             {coordinates.map(d => <circle className={classNames('dot', {selected: selectedDots.indexOf(d.treeId) !== -1,
-                highlight: this.props.highlightDots.indexOf(d.treeId) !== -1})}
-                                          style={{fill: colors[d.treeId] || 'grey'}}
+                highlight: this.props.highlightDots.indexOf(d.treeId) !== -1, 'reference-tree-indicator': d.treeId === this.props.rid})}
+                                          style={{fill: colors[d.treeId] || 'black'}}
                                           r={this.props.highlightDot === d.treeId? 6: 3}
                                           cx={scale(d.x)} cy={scale(d.y)} key={d.treeId}></circle>)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
@@ -61,8 +61,9 @@ let getDotColors = createSelector(
 );
 
 let mapStateToProps = state => ({
-        ...state.overview,
-        colors: getDotColors(state)
+    ...state.overview,
+    colors: getDotColors(state),
+    rid: state.referenceTree.id,
 });
 
 let mapDispatchToProps = dispatch => ({

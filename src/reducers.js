@@ -77,7 +77,7 @@ let initialState = {
         mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
             size: 100,
-            margin: {left: 2, top: 2, right: 2, bottom: 2},
+            margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 5,
             branchLen: 6,
             leaveHeight: 4,
@@ -125,13 +125,17 @@ let initialState = {
         },
         attributeNames: ['support'],
         selection: [
-            {isMoving: false, range: [0.2, 0.6], cb: false, attribute: 'support'},      // for the support in the all branches section
-            {isMoving: false, range: [0.2, 0.6], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
-            {isMoving: false, range: [0.2, 0.6], cb: true, attribute: 'similarity'}],   // for the similarity in the cb section
+            {isMoving: false, range: [0, 1], cb: false, attribute: 'support'},      // for the support in the all branches section
+            {isMoving: false, range: [0, 1], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
+            {isMoving: false, range: [0, 1], cb: true, attribute: 'similarity'}],   // for the similarity in the cb section
         activeSelectionId: null,
     },
     treeList: {
         collapsed: true
+    },
+    taxaList: {
+        collapsed: true,
+        selected: {}
     }
 };
 
@@ -303,6 +307,7 @@ let getNextColor = (colors) => {
 };
 
 function visphyReducer(state = initialState, action) {
+    let newBids, newColors;
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             // Check if this branch is already highlighted
@@ -440,7 +445,7 @@ function visphyReducer(state = initialState, action) {
                 },
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, null, null),
+                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, state.referenceTree.id, null),
                     metricMode: 'global',
                     metricBranch: null,
                 }
@@ -484,6 +489,10 @@ function visphyReducer(state = initialState, action) {
                     ...state.highlight,
                     bids: [],
                     colors: (new Array(state.highlight.limit)).fill(false)
+                },
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    activeSelectionId: null
                 }
             });
         case TYPE.TOGGLE_USER_SPECIFIED:
@@ -617,6 +626,28 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.TOGGLE_SELECT_AGG_DENDRO:
+            let newHighlight;
+            if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tid) {
+                newColors = state.highlight.colors.slice();
+                newBids = state.highlight.bids.filter(h => {
+                    if (h.src !== state.referenceTree.id) {
+                        newColors[h.color] = false;     // If this group is to be removed, recycle the color
+                        return false;
+                    }
+                    return true;
+                }).map(h => (
+                    {...h, tgt: action.tid,
+                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
+                            state.inputGroupData.trees[action.tid])}
+                ));
+                newHighlight = {
+                    ...state.highlight,
+                    bids: newBids,
+                    colors: newColors
+                }
+            } else {
+                newHighlight = state.highlight;
+            }
             return Object.assign({}, state, {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
@@ -625,7 +656,12 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     selectedDots: state.aggregatedDendrogram.mode.indexOf('cluster') !== -1? action.tids: ([action.tid] || [])
-                }
+                },
+                pairwiseComparison: state.pairwiseComparison.tid? {
+                    ...state.pairwiseComparison,
+                    tid: action.tid,
+                }: state.pairwiseComparison,
+                highlight: newHighlight
             });
         case TYPE.SELECT_SET:
             return Object.assign({}, state, {
@@ -749,7 +785,6 @@ function visphyReducer(state = initialState, action) {
         //         }
         //     };
         case TYPE.COMPARE_WITH_REFERENCE:
-            let newBids, newColors;
             if (action.tid) {
                 // Entering pairwise comparison mode
                 newBids = state.highlight.bids.map(h => (
@@ -843,7 +878,8 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId? {...s, range: [action.l, action.r]}: s),
+                    selection: state.attributeExplorer.selection.map((s, i) => i === action.sid? {...s, range: [action.l, action.r]}: s),
+                    activeSelectionId: action.sid
                 }
             };
 
@@ -876,11 +912,11 @@ function visphyReducer(state = initialState, action) {
                 sets: [{
                     title: 'All Trees',
                     tids: Object.keys(action.data.trees),
-                    color: 'grey'
+                    color: 'black'
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(action.data.trees, state.cb, true, null, null)
+                    coordinates: getCoordinates(action.data.trees, state.cb, true, action.data.defaultReferenceTree, null)
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
@@ -944,6 +980,23 @@ function visphyReducer(state = initialState, action) {
                     msg: null
                 }
             };
+        case TYPE.TOGGLE_TAXA_LIST_COLLAPSE:
+            return {
+                ...state,
+                taxaList: {
+                    ...state.taxaList,
+                    collapsed: !state.taxaList.collapsed
+                }
+            };
+        case TYPE.TOGGLE_SELECT_TAXA:
+            return {
+                ...state,
+                taxaList: {
+                    ...state.taxaList,
+                    selected: {...state.taxaList.selected, [action.e]: !state.taxaList.selected[action.e]}
+                }
+            };
+
         default:
             return state;
 

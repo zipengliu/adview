@@ -101,12 +101,10 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
     // Concat all rf_dist in trees to a distance matrix
     // First, decide an order of trees for the matrix
 
-    let order;
+    let order = [];
     let dist = [];
     if (!isGlobal) {
         // Local distance matrix
-        console.log('Calculating local coordinates in Overview...');
-        order = [];
         let corr = trees[rid].branches[bid][cb];
         for (let tid in corr) if (corr.hasOwnProperty(tid)) {
             let e = trees[tid].branches[corr[tid].bid].entities;
@@ -115,10 +113,17 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
                 entities: corr[tid].in? e: subtractMapping(createMappingFromArray(trees[tid].entities), createMappingFromArray(e))
             });
         }
+        // Don't forget the reference tree itself!
+        order.push({tid: rid, bid, entities: createMappingFromArray(trees[rid].branches[bid].entities)});
+
+        console.log('Calculating local coordinates in Overview... #dots: ', order.length);
     } else {
-        console.log('Calculating global coordinates in Overview...');
         // Global distance matrix
-        order = Object.keys(trees);
+        for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
+            order.push(tid);
+        }
+        order.push(rid);
+        console.log('Calculating global coordinates in Overview... #dots: ', order.length);
     }
     for (let i = 0; i < order.length; i++) {
         let cur = [];
@@ -154,4 +159,12 @@ export function getWindowHeight() {
         de = d.documentElement,
         db = d.body || d.getElementsByTagName('body')[0];
     return w.innerHeight|| de.clientHeight|| db.clientHeight;
+}
+
+export function textEllipsis(s, l) {
+    if (s.length > l) {
+        return s.substring(0, l) + '...';
+    } else {
+        return s;
+    }
 }

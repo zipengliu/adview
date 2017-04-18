@@ -15,14 +15,14 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
-             entities, rangeSelection} = this.props;
+             entities, rangeSelection, cb} = this.props;
         let {selected, highlightEntities, highlightUncertainEntities} = referenceTree;
         let isComparing = comparingTree !== null;
 
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
         let highlightEntitiesMapping = createMappingFromArray(highlightEntities || []);
         let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities || []);
-        let {attrName, range} = rangeSelection || {};
+        let {attribute, range} = rangeSelection || {};
 
 
         // // Debounce the hovering
@@ -45,8 +45,18 @@ class FullDendrogram extends Component {
         let renderDendrogram = (tree, dendrogram, side='right', expandedBranches=[]) => {
             let {branchSpecs, verticalLines, responsiveBoxes,hoverBoxes, textSpecs} = dendrogram;
             let {missing, branches} = tree;
-            let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf && branches.hasOwnProperty(d.bid) &&
-            range[0] <= branches[d.bid][attrName] && branches[d.bid][attrName] <= range[1];
+
+            let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf
+            && branches.hasOwnProperty(d.bid) && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
+
+            let cbInRange = false;
+            if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
+                let corr = this.props.tree.branches[selected[0]][cb][tree.tid];
+                if (corr) {
+                    let v = attribute === 'similarity'? corr.jac: tree.branches[corr.bid][attribute];
+                    cbInRange = range[0] <= v && v <= range[1];
+                }
+            }
 
             let highlightBoxes = [];
             for (let i = 0; i < highlight.bids.length; i++) {
@@ -75,13 +85,28 @@ class FullDendrogram extends Component {
 
             return (
                <g>
+                   {tree.tid === referenceTree.id &&
+                   <rect className='reference-tree-indicator' x="0" y="-4"
+                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
+                   }
+                   {tree.tid !== referenceTree.id &&
+                   <rect className='comparing-tree-indicator' x="2" y="-4"
+                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
+                   }
+
+                   {tree.tid !== referenceTree.id && rangeSelection && rangeSelection.cb && cbInRange &&
+                   <rect className='range-selected-cb-indicator' x="0" y="-4"
+                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
+                   }
                    <g>
                        {highlightBoxes}
                    </g>
                    <g className="topology">
                        {branchSpecs.map((d, i) =>
                            (<g key={d.bid}>
-                               <line className={cn('branch-line', {selected: expandedBranches.indexOf(d.bid) !== -1, 'range-selected': inRange(d) })}
+                               <line className={cn('branch-line', {selected: expandedBranches.indexOf(d.bid) !== -1,
+                                   'range-selected': inRange(d),
+                                   'checking': tree.tid === referenceTree.id && referenceTree.checkingBranch === d.bid})}
                                      x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                                {tree.tid === referenceTree.id && this.props.metricBranch === d.bid && d.bid != null &&
                                <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
@@ -108,8 +133,8 @@ class FullDendrogram extends Component {
                        {responsiveBoxes.map(d =>
                            <rect className={cn("box")}
                                  x={d.x} y={d.y} width={d.width} height={d.height}
-                                 onMouseEnter={branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, d.bid): null}
-                                 onMouseLeave={branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, null): null}
+                                 onMouseEnter={tree.tid === referenceTree.id && branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, d.bid): null}
+                                 onMouseLeave={tree.tid === referenceTree.id && branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, null): null}
                                  onClick={(e) => {
                                      console.log('clicking on :', d.bid, 'ctrl: ', e.ctrlKey, ' alt: ', e.altKey, 'meta: ', e.metaKey);
                                      let isCtrl = e.ctrlKey || e.metaKey;
@@ -141,15 +166,15 @@ class FullDendrogram extends Component {
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                     {isComparing &&
                         <g>
-                            <g>{renderDendrogram(tree, dendrogram[0], 'right', selected)}</g>
+                            <g>
+                                {renderDendrogram(tree, dendrogram[0], 'right', selected)}
+                            </g>
                             <g transform={`translate(${dendrogram[0].treeBoundingBox.width}, 0)`}>
                                 {renderDendrogram(this.props.comparingTree, dendrogram[1], 'left', this.props.comparingTreeExpansion)}
                             </g>
                         </g>
                     }
-                    {!isComparing &&
-                        renderDendrogram(tree, dendrogram, 'right', selected)
-                    }
+                    {!isComparing && renderDendrogram(tree, dendrogram, 'right', selected)}
                 </g>
                 <symbol id="icon-triangle-up" viewBox="0 0 12 16">
                     <title>triangle-up</title>
@@ -321,10 +346,9 @@ function mapStateToProps(state, ownProps) {
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
-        rangeSelection: state.attributeExplorer.activeSelectionId === 0? {
-                attrName: 'support',
-                range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
-            }: null,
+        rangeSelection: state.attributeExplorer.activeSelectionId >= 0?
+            state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId]: null,
+        cb: state.cb
     };
 }
 
