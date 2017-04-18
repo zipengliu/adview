@@ -108,8 +108,8 @@ export function changeReferenceTree(inputGroupId, tid) {
     };
 }
 
-export function togglePersistHighlight() {
-    return {type: TYPE.TOGGLE_PERSIST_HIGHLIGHT};
+export function toggleHighlightDuplicate(e) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_DUPLICATE, e};
 }
 
 

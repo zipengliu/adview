@@ -495,12 +495,12 @@ function visphyReducer(state = initialState, action) {
                     activeSelectionId: null
                 }
             });
-        case TYPE.TOGGLE_USER_SPECIFIED:
+        case TYPE.TOGGLE_HIGHLIGHT_DUPLICATE:
             return {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
-                    isUserSpecified: !state.referenceTree.isUserSpecified,
+                    highlightEntities: action.e? [action.e]: []
                 }
             };
 

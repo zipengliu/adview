@@ -7,7 +7,8 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {scaleLinear} from 'd3';
-import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleCheckingBranch} from '../actions';
+import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleCheckingBranch,
+toggleHighlightDuplicate} from '../actions';
 import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
@@ -75,10 +76,13 @@ class FullDendrogram extends Component {
             }
 
             let names = textSpecs.map((d, i) => (
-                <text className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id),
+                <text key={i} className={cn('entity-name', {highlighted: highlightEntitiesMapping.hasOwnProperty(d.entity_id),
                     'uncertain-highlighted': highlightUncertainEntitiesMapping.hasOwnProperty(d.entity_id)})}
                       x={d.x} y={d.y} dx={side === 'left'? -5: 5} dy={3}
-                      textAnchor={side === 'left'? 'end': 'start'} key={i}>
+                      textAnchor={side === 'left'? 'end': 'start'}
+                      onMouseEnter={this.props.onHighlightDup.bind(null, d.entity_id)}
+                      onMouseLeave={this.props.onHighlightDup.bind(null, null)}
+                >
                     {entities[d.entity_id].name}
                 </text>));
             let missingBranch = missing && missing.length? branchSpecs.filter(d => d.bid === 'missing_taxa')[0]: null;
@@ -364,6 +368,7 @@ function mapDispatchToProps(dispatch) {
         onChangeDistanceMetric: (bid) => {
             dispatch(changeDistanceMetric('local', bid));
         },
+        onHighlightDup: eid => {dispatch(toggleHighlightDuplicate(eid))},
     }
 }
 
