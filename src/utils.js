@@ -90,7 +90,7 @@ export function getJaccardIndex(x, y) {
     let b = isArray(y)? createMappingFromArray(y): y;
     let lb = isArray(y)? y.length: Object.keys(y).length;
     let c = getIntersection(a, b);
-    return  c / (la + lb - c);
+    return  la + lb === 0? 0: c / (la + lb - c);
 }
 
 function isArray(obj){
@@ -106,11 +106,13 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
     if (!isGlobal) {
         // Local distance matrix
         let corr = trees[rid].branches[bid][cb];
-        for (let tid in corr) if (corr.hasOwnProperty(tid)) {
-            let e = trees[tid].branches[corr[tid].bid].entities;
+        for (let tid in corr) if (corr.hasOwnProperty(tid) && corr[tid]) {
+            // It is possible that we cannot find any cb in that tree.  Possible reason: all entities in our radar are missing from that tree
+            let e = !corr[tid].bid? []: trees[tid].branches[corr[tid].bid].entities;
             order.push({tid,
                 bid: corr[tid].bid,
-                entities: corr[tid].in? e: subtractMapping(createMappingFromArray(trees[tid].entities), createMappingFromArray(e))
+                entities: !corr[tid].bid || corr[tid].in? e:
+                    subtractMapping(createMappingFromArray(trees[tid].entities), createMappingFromArray(e))
             });
         }
         // Don't forget the reference tree itself!

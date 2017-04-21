@@ -16,7 +16,7 @@ import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
-        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, branchDetail} = this.props;
+        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, branchDetail, withSupport} = this.props;
         let attrName = this.props.attributeNames[0];
 
         let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
@@ -56,8 +56,8 @@ class AttributeExplorer extends Component {
                     <OverlayTrigger placement="right" overlay={<Tooltip id="att-current-focused">details about the branch being hovered or expanded lastly</Tooltip>}>
                         <div className="attribute-heading">&bull; Current focal branch</div>
                     </OverlayTrigger>
-                    <div style={{fontSize: '12px'}}>support: {branchDetail? branchDetail.support: 'NA'}</div>
-                    <div style={{fontSize: '12px'}}># exact matches: {branchDetail? branchDetail.numExact: 'NA'}</div>
+                    <div style={{fontSize: '12px'}}>support: {withSupport && branchDetail? branchDetail.support: 'NA'}</div>
+                    <div style={{fontSize: '12px'}}># exact matches: {branchDetail? `${branchDetail.numExact} (${Math.floor(branchDetail.gsf * 100)}%)`: 'NA'}</div>
 
                     <div className="attribute-section-divider"></div>
 
@@ -83,10 +83,16 @@ class AttributeExplorer extends Component {
                         </OverlayTrigger>
                     </FormGroup>
 
-                    {getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}
-                    {renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}
+                    {withSupport && getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}
+                    {withSupport && renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}
                     {getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}
                     {renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}
+
+                    <div className="attribute-section-divider"></div>
+                    <div className="attribute-heading">&bull; Reference Tree</div>
+                    {getSelectionButton(3, false)}
+                    {renderChart(data.ref.gsf.fg, null, '%exact matches (GSF)', 3)}
+
 
                     <div className="attribute-section-divider"></div>
 
@@ -115,8 +121,8 @@ class AttributeExplorer extends Component {
                         </OverlayTrigger>
                     </FormGroup>
 
-                    {getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
-                    {renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
+                    {withSupport && getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
+                    {withSupport && renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
 
                 </div>
             </div>
@@ -147,7 +153,7 @@ let getAttributeValues = (trees, tids, attrName, cb, rid, highlightMonophyly) =>
             }
         } else {
             for (let j in t.branches) if (t.branches.hasOwnProperty(j)) {
-                if (!t.branches[j].isLeaf && j !== t.rootBranch) {
+                if (!t.branches[j].isLeaf && j !== t.rootBranch) {          // non-trivial bipartition
                     values.push(t.branches[j][attrName]);
                 }
             }
@@ -169,6 +175,13 @@ let getSetWiseValues = createSelector(
 
 let getTreeWiseValues = createSelector(
     [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
+        state => state.cb,
+        (_, attrName) => attrName],
+    (tree, cb, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName, cb)
+);
+
+let getReferenceTreeValues = createSelector(
+    [state => state.inputGroupData.trees[state.referenceTree.id],
         state => state.cb,
         (_, attrName) => attrName],
     (tree, cb, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName, cb)
@@ -219,8 +232,14 @@ let mapStateToProps = state => {
         corr: {
             [attrName]: {fg: null, bg: null},
             similarity: {fg: null, bg: null}
+        },
+        ref: {
+            gsf: {fg: null}
         }
     };
+
+    // reference tree section
+    data.ref.gsf.fg = getReferenceTreeValues(state, 'gsf');
 
     // all section
     if (modes.all.scope === 'all') {
@@ -254,8 +273,9 @@ let mapStateToProps = state => {
         }
         branchDetail = {
             support: state.inputGroupData.trees[state.referenceTree.id].branches[focusedBranch].support,
-            numExact: data.corr.similarity.fg.filter(s => s === 1.0).length
-        }
+            numExact: data.corr.similarity.fg.filter(s => s === 1.0).length,
+        };
+        branchDetail.gsf = branchDetail.numExact / (Object.keys(state.inputGroupData.trees).length - 1);
     }
 
     // if shown as histogram: bin the data values; if shown as CDF, sort the data values

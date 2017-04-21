@@ -1033,7 +1033,7 @@ let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) =>
             let b = t.blocks[bid];
             // Check if this block has any branches falls into an active range
             b.rangeSelected = 0;
-            if (rangeSelection && !rangeSelection.cb) {
+            if (rangeSelection && !rangeSelection.cb && rangeSelection.attribute !== 'gsf') {
                 for (let bid1 in b.branches)
                     if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attribute]
                         && trees[tid].branches[bid1][attribute] <= range[1]) {

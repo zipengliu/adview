@@ -3,7 +3,7 @@
  */
 
 import * as TYPE from './actionTypes';
-import {scaleOrdinal, schemeCategory10} from 'd3-scale';
+import {scaleOrdinal, scaleLinear, schemeCategory10} from 'd3-scale';
 import {getCoordinates, createMappingFromArray} from './utils';
 
 let initialState = {
@@ -106,6 +106,7 @@ let initialState = {
         }
     },
     attributeExplorer: {
+        withSupport: true,
         modes: {
             all: {
                 scope: 'tree',           // could be 'all', 'set', 'tree'
@@ -114,6 +115,9 @@ let initialState = {
             corr: {
                 scope: 'all',           // could be 'all', 'set'
                 context: false,
+            },
+            ref: {
+
             }
         },
         shownAsHistogram: true,
@@ -127,7 +131,9 @@ let initialState = {
         selection: [
             {isMoving: false, range: [0, 1], cb: false, attribute: 'support'},      // for the support in the all branches section
             {isMoving: false, range: [0, 1], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
-            {isMoving: false, range: [0, 1], cb: true, attribute: 'similarity'}],   // for the similarity in the cb section
+            {isMoving: false, range: [0, 1], cb: true, attribute: 'similarity'},   // for the similarity in the cb section
+            {isMoving: false, range: [0, 1], cb: false, attribute: 'gsf'},
+            ],
         activeSelectionId: null,
     },
     treeList: {
@@ -231,12 +237,38 @@ let ladderize = (branches, rootBranch) => {
    return branches;
 };
 
+// calculate the percentage of trees that support a branch (gene support frequency)
+// n is the number of gene trees (or the number of trees in the tree collection, excluding the reference tree)
+let getGSF = (branches, cb, n, createNewObject=false) => {
+    let res = branches;
+    if (createNewObject) {
+        res = {};
+    }
+    for (let bid in branches) if (branches.hasOwnProperty(bid)) {
+        let b = branches[bid];
+        let cnt = 0;
+        for (let tid in b[cb]) if (b[cb].hasOwnProperty(tid)) {
+            cnt += b[cb][tid].jac === 1
+        }
+        if (createNewObject) {
+            res[bid] = {...b, gsf: cnt / n};
+        } else {
+            b.gsf = cnt / n;
+        }
+    }
+    return res;
+};
+
 // Fill in the field 'parent' and 'entities' on every branch
-let prepareBranches = (branches, rootBranch) => {
+// Re-scale the support if necessary
+let prepareBranches = (branches, rootBranch, supportRange=null) => {
+    let supportScale = supportRange? scaleLinear().domain(supportRange).range([0, 1]): null;
     let dfs = (bid) => {
         let b = branches[bid];
         //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
-        b.support /= 100;
+        if (supportRange) {
+            b.support = supportScale(b.support);
+        }
         if (b.left) {
             b.isLeaf = false;
             branches[b.left].parent = bid;
@@ -438,8 +470,9 @@ function visphyReducer(state = initialState, action) {
                         ...state.inputGroupData.trees,
                         [action.tid]: {
                             ...state.inputGroupData.trees[action.tid],
-                            branches: getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
-                                state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch)
+                            branches: getGSF(getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
+                                state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch),
+                                state.cb, Object.keys(state.inputGroupData.trees).length - 1)
                         }
                     }
                 },
@@ -895,9 +928,12 @@ function visphyReducer(state = initialState, action) {
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 action.data.trees[tid].tid = tid;
                 action.data.trees[tid].branches = getOrder(ladderize(prepareBranches(action.data.trees[tid].branches,
-                    action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
+                    action.data.trees[tid].rootBranch, action.data.supportRange), action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
                 action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
+            action.data.trees[action.data.defaultReferenceTree].branches =
+                getGSF(action.data.trees[action.data.defaultReferenceTree].branches,
+                    state.cb, Object.keys(action.data.trees).length - 1);
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
@@ -917,6 +953,10 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.trees, state.cb, true, action.data.defaultReferenceTree, null)
+                },
+                attributeExplorer: {
+                    ...state.attributeExplorer,
+                    withSupport: !!action.data.supportRange
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
@@ -962,8 +1002,23 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_JACCARD_MISSING:
+            // TODO if cb2 (cb when ignoring missing taxa) is not present, falls back to cb
+            // This is a quick hack
+            if (state.inputGroupData.inputGroupId === 1 && action.cb === 'cb2') {
+                return state;
+            }
             return {
                 ...state,
+                inputGroupData: {
+                    ...state.inputGroupData,
+                    trees: {
+                        ...state.inputGroupData.trees,
+                        [state.referenceTree.id]: {
+                            ...state.inputGroupData.trees[state.referenceTree.id],
+                            branches: getGSF(state.inputGroupData.trees[state.referenceTree.id].branches, action.cb, Object.keys(state.inputGroupData.trees).length - 1, true)
+                        }
+                    }
+                },
                 cb: action.cb,
                 overview: {
                     ...state.overview,

@@ -48,7 +48,8 @@ class FullDendrogram extends Component {
             let {missing, branches} = tree;
 
             let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf
-            && branches.hasOwnProperty(d.bid) && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
+            && branches.hasOwnProperty(d.bid) && branches[d.bid].hasOwnProperty(attribute)
+            && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
 
             let cbInRange = false;
             if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
