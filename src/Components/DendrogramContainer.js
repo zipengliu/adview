@@ -12,7 +12,7 @@ import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
     addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
     compareWithReference, toggleJaccardMissing} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersection, getIntersectionSet} from '../utils';
+import {createMappingFromArray, subtractMapping, getIntersection, getIntersectionSet, areSetsEqual} from '../utils';
 import './Dendrogram.css';
 
 
@@ -402,7 +402,8 @@ let calcRemainderLayout = (tree, spec) => {
         blocks[rootBlockId].children.push('missing');
     }
 
-    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
+    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name,
+        missing: createMappingFromArray(tree.missing)};
 };
 
 let calcFrondLayout = (tree, spec) => {
@@ -574,7 +575,7 @@ let calcFrondLayout = (tree, spec) => {
 
     let addNestedBlock = (e, nestedTo, isIngroup) => {
         let nestBlock = blocks[nestedTo];
-        let frondLevel = getNumFrond(distanceToLCA[e]);
+        let frondLevel = getNumFrond(isIngroup? distanceToLCA[e]: distanceToLCA[nestedTo]);
         let bl = e === lca || tree.branches[e].parent === lca? 15: frondBaseLength + (frondLevel - 1) * frondLeafGap;
         nestBlock.children.push(e);
         blocks[e] = {
@@ -669,7 +670,8 @@ let calcFrondLayout = (tree, spec) => {
         }
     }
 
-    return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name, rootBlockId};
+    return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name, rootBlockId,
+        missing: createMappingFromArray(tree.missing)};
 };
 
 
@@ -794,7 +796,8 @@ let calcFineGrainedLayout = (tree, spec) => {
     };
     traverse2(lca);
 
-    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name};
+    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name,
+        missing: createMappingFromArray(tree.missing)};
 };
 
 let getLayouts = createSelector(
@@ -839,20 +842,9 @@ let getHash = (blocks, rootBlockId, mode) => {
 // Return an array of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let getClusters = createSelector(
-    [trees => trees, (_, mode) => mode],
-    (trees, mode) => {
-        console.log('Clustering trees... mode: ', mode);
-        // Get the tree hashes
-        for (let i = 0; i < trees.length; i++) {
-            trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, mode);
-        }
-
-        // Sort the trees according to their hashes
-        trees.sort((a, b) => {
-            if (a.hash > b.hash) return 1;
-            if (a.hash < b.hash) return -1;
-            return 0;
-        });
+    [trees => trees, (_, mode) => mode,  (_, mode, withoutMissing) => withoutMissing],
+    (trees, mode, withoutMissing) => {
+        console.log('Clustering trees... mode: ', mode, 'without missing taxa: ', withoutMissing);
 
         // FIXME: if they don't share the same topo, this won't work!!!
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
@@ -863,7 +855,7 @@ let getClusters = createSelector(
                     return;
                 }
                 b.represent[addingTreeId] = addingBid;
-                b.matched = b.matched && addingBlocks[addingBid].matched;
+                b.matched = b.matched && addingBlocks[addingBid].matched;       // Here is problematic, outgroup does not align with ingroup!
                 for (let e in addingBlocks[addingBid].entities) if (addingBlocks[addingBid].entities.hasOwnProperty(e)) {
                     if (!b.entities.hasOwnProperty(e)) {
                         b.entities[e] = 0;
@@ -903,19 +895,62 @@ let getClusters = createSelector(
             return c;
         };
 
-        // Scan the array to construct cluster
         let clusters = [];
-        let c;
-        for (let i = 0; i < trees.length; i++) {
-            let t = trees[i];
-            if (i === 0 || t.hash !== trees[i - 1].hash) {
-                // create a new cluster
-                c = createEmptyClusterFromTree(t);
-                clusters.push(c);
+        let c, t;
+        if (mode === 'taxa-cluster' && withoutMissing) {
+            let taxaSetByTree = {};
+            let treeMapping = {};
+            for (let i = 0; i < trees.length; i++) {
+                t = trees[i];
+                taxaSetByTree[t.tid] = t.lastSelected? t.blocks[t.lastSelected].entities: {};
+                treeMapping[t.tid] = t;
             }
-            c.num += 1;
-            c.trees.push(t.tid);
-            addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
+
+            for (let i = 0; i < trees.length; i++) {
+                t = trees[i];
+                c = null;
+                for (let j = 0; j < clusters.length; j++) {
+                    let s = clusters[j];
+                    if (areSetsEqual(subtractMapping(taxaSetByTree[s.trees[0]], treeMapping[t.tid].missing),
+                            subtractMapping(taxaSetByTree[t.tid], treeMapping[s.trees[0]].missing))) {
+                        c = s;
+                        break;
+                    }
+                }
+                if (!c) {
+                    c = createEmptyClusterFromTree(t);
+                    clusters.push(c);
+                }
+                c.num += 1;
+                c.trees.push(t.tid);
+                addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
+            }
+        } else {
+            // Get the tree hashes
+            for (let i = 0; i < trees.length; i++) {
+                trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, mode);
+            }
+
+            // Sort the trees according to their hashes
+            trees.sort((a, b) => {
+                if (a.hash > b.hash) return 1;
+                if (a.hash < b.hash) return -1;
+                return 0;
+            });
+
+            // Scan the array to construct cluster
+            for (let i = 0; i < trees.length; i++) {
+                let t = trees[i];
+                if (i === 0 || t.hash !== trees[i - 1].hash) {
+                    // create a new cluster
+                    c = createEmptyClusterFromTree(t);
+                    clusters.push(c);
+                }
+                c.num += 1;
+                c.trees.push(t.tid);
+                addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
+            }
+
         }
 
         return clusters.sort((a, b) => b.num - a.num);
@@ -1086,7 +1121,7 @@ let getDendrograms = createSelector(
     (mode, trees, highlight, spec, rawTrees, rangeSelection, refTree, cb, shadedHistogram) => {
         let dendros = getLayouts(trees, spec, mode);
         let isClusterMode = mode.indexOf('cluster') !== -1;
-        let clusters = isClusterMode? getClusters(dendros, mode).slice(): [];
+        let clusters = isClusterMode? getClusters(dendros, mode, cb === 'cb2').slice(): [];
         dendros = dendros.slice();
         let dendroMapping = {};
         for (let i = 0; i < dendros.length; i++) {

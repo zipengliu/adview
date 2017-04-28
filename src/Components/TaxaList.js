@@ -11,7 +11,11 @@ import './taxa-list.css';
 class TaxaList extends Component {
     render() {
         let {collapsed, entities, selected} = this.props;
-        let entArr = Object.keys(entities);
+        let entArr = Object.keys(entities).sort((a ,b) => {
+            if (entities[a].name > entities[b].name) return 1;
+            if (entities[a].name < entities[b].name) return -1;
+            return 0;
+        });
         return <div className="view" id="taxa-list" style={{height: collapsed? '40px': '200px'}}>
             <div className="view-header">
                 <div className="view-title">Taxa List

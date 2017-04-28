@@ -84,6 +84,13 @@ export function getIntersectionSet(a, b) {
     return r;
 }
 
+export function areSetsEqual(a, b) {
+    if (Object.keys(a).length !== Object.keys(b).length) return false;
+    for (let k in a)
+        if (a.hasOwnProperty(k) && !b.hasOwnProperty(k)) return false;
+    return true;
+}
+
 export function getJaccardIndex(x, y) {
     let a = isArray(x)? createMappingFromArray(x): x;
     let la = isArray(x)? x.length: Object.keys(x).length;
