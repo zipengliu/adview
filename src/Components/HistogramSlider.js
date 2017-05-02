@@ -34,13 +34,12 @@ let HistogramSlider = props => {
     }
 
     return (
-        <svg width={spec.width} height={spec.chartHeight + spec.sliderHeight} className="attribute-chart"
+        <svg width={spec.width} height={spec.chartHeight + spec.sliderHeight + spec.margin.top + spec.margin.bottom} className="attribute-chart"
              onMouseMove={hasData && selection && selection.isMoving? onDragging: null}
              onMouseUp={hasData? props.toggleMoveHandle.bind(null, null): null}
         >
-            <text className="title" x={spec.margin.left} y="12">
-                {hasData? attributeName: 'Not Applicable'}
-                {hasData && selection && `   (${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])})`}
+            <text className="title" x="0" y="14">
+                {hasData? 'Dist. ' + attributeName: 'Not Applicable'}
             </text>
             <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                 {hasData &&
@@ -91,6 +90,9 @@ let HistogramSlider = props => {
                     }
                 </g>
             </g>
+            <text x={spec.margin.left} y="24">
+                {hasData && selection && `   (${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])})`}
+            </text>
         </svg>
     )
 };

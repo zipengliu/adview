@@ -22,6 +22,10 @@
 .attribute-chart text {
     font-size: 10px;
 }
+.attribute-chart text.title {
+    font-size: 12px;
+    font-weight: bold;
+}
 
 
 .attribute-chart .slider .control {
@@ -67,6 +71,7 @@
 }
 
 .attribute-section-divider {
+    clear: both;
     width: 95%;
     height: 15px;
 }

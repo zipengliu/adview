@@ -122,10 +122,10 @@ let initialState = {
         },
         shownAsHistogram: true,
         spec: {
-            width: 180,
+            width: 164,
             chartHeight: 50,
-            sliderHeight: 34,
-            margin: {left: 25, right: 8, top: 14, bottom: 2}
+            sliderHeight: 18,
+            margin: {left: 25, right: 8, top: 20, bottom: 2}
         },
         attributeNames: ['support'],
         selection: [
