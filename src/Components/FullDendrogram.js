@@ -203,26 +203,27 @@ let getDendrogramSpecs = createSelector(
         let aligned = side === 'left' || side === 'right';
 
         let getTreeWidth = function() {
-            let topo = 0, longestEntity = spec.minLabelWidth;
-            let traverse = function(bid, cur) {
+            let topo = 0, longestEntity = spec.minLabelWidth, depth = 0;
+            let traverse = function(bid, cur, dep) {
                 let b = branches[bid];
                 cur += ignoreBranchLen? spec.unitBranchLength: b.length;
                 topo = Math.max(cur, topo);
+                depth = Math.max(depth, dep);
                 if ('left' in b) {
-                    traverse(b.left, cur);
-                    traverse(b.right, cur);
+                    traverse(b.left, cur, dep + 1);
+                    traverse(b.right, cur, dep + 1);
                 } else {
                     longestEntity = Math.max(longestEntity, entities[b.entity].name.length * spec.labelUnitCharWidth);
                 }
             };
 
-            traverse(tree.rootBranch, 0);
+            traverse(tree.rootBranch, 0, 1);
             let topologyWidth = ignoreBranchLen? topo: spec.defaultTopologyWidth;
-            return {treeWidth: topologyWidth + longestEntity, topologyWidth, maxLength: topo};
+            return {treeWidth: topologyWidth + longestEntity, topologyWidth, maxLength: topo, depth};
         };
-        let {treeWidth, topologyWidth, maxLength} = getTreeWidth();
+        let {treeWidth, topologyWidth, maxLength, depth} = getTreeWidth();
 
-        let xScale = ignoreBranchLen? null: scaleLinear().domain([0, maxLength]).range([0, topologyWidth]);
+        let xScale = ignoreBranchLen? null: scaleLinear().domain([0, maxLength]).range([0, topologyWidth - depth * spec.minBranchLength]);
         let b = {};
         let connectLines = [];
         let curY = 0;
@@ -234,7 +235,7 @@ let getDendrogramSpecs = createSelector(
 
         let traverse = (bid, curX) => {
             let bLength = branches[bid].length;
-            let t = ignoreBranchLen? spec.unitBranchLength: xScale(bLength);
+            let t = ignoreBranchLen? spec.unitBranchLength: (xScale(bLength) + spec.minBranchLength);
             b[bid] = {x1: curX, x2: curX + t};
             curX += t;
             if ('left' in branches[bid]) {

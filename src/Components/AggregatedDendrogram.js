@@ -63,7 +63,7 @@ class AggregatedDendrogram extends Component {
             if (timer) {
                 clearTimeout(timer);
             } else {
-                onToggleBlock([], []);
+                setTimeout(() => {onToggleBlock([], [])}, 0);
             }
         };
 

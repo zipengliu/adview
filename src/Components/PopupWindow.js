@@ -15,22 +15,22 @@ class PopupWindow extends Component {
                     <Modal.Title>Creating New Set</Modal.Title>
                 </Modal.Header>
 
-                <Modal.Body>
-                    <form>
+                <form onSubmit={this.props.onSubmit}>
+                    <Modal.Body>
                         <FormGroup controlId="create-new-set-form">
                             <ControlLabel>Set title:</ControlLabel>
                             <FormControl type="text" value={this.props.title} placeholder={this.props.placeholder}
-                            onChange={this.props.onChange}/>
+                                         onChange={this.props.onChange}/>
                         </FormGroup>
                         <HelpBlock>Number of trees selected: {this.props.numTrees}</HelpBlock>
-                    </form>
-                </Modal.Body>
+                    </Modal.Body>
 
-                <Modal.Footer>
-                    <Button onClick={this.props.onHide}>Cancel</Button>
-                    <Button onClick={this.props.onSubmit}>Confirm</Button>
+                    <Modal.Footer>
+                        <Button onClick={this.props.onHide}>Cancel</Button>
+                        <Button type="submit" >Confirm</Button>
 
-                </Modal.Footer>
+                    </Modal.Footer>
+                </form>
             </Modal>
         )
     }
@@ -50,7 +50,7 @@ function mapDispatchToProps(dispatch) {
     return {
         onHide: () => {dispatch(closeCreateNewSetWindow())},
         onChange: (e) => {dispatch(typingTitle(e.target.value))},
-        onSubmit: () => {dispatch(createNewSet())}
+        onSubmit: (e) => {e.preventDefault(); dispatch(createNewSet())}
     }
 }
 

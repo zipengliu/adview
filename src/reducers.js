@@ -38,6 +38,7 @@ let initialState = {
         responsiveAreaSize: 7,          // height of a transparent box over a branch to trigger interaction
         unitBranchLength: 10,            // When using a unit length for branch in regardless of the length of the branch in the original dataset
                                         //      used in pairwise comparison to save space
+        minBranchLength: 3              // the minimum length of a branch in pixel
     },
     referenceTree: {
         id: null,
