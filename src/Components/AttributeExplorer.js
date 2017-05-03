@@ -16,7 +16,7 @@ import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
-        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, branchDetail, withSupport} = this.props;
+        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, withSupport} = this.props;
         let attrName = this.props.attributeNames[0];
 
         let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
@@ -53,14 +53,6 @@ class AttributeExplorer extends Component {
                 </div>
 
                 <div className="view-body">
-                    {/*<OverlayTrigger placement="right" overlay={<Tooltip id="att-current-focused">details about the branch being hovered or expanded lastly</Tooltip>}>*/}
-                        {/*<div className="attribute-heading">&bull; Current focal branch</div>*/}
-                    {/*</OverlayTrigger>*/}
-                    {/*<div style={{fontSize: '12px'}}>support: {withSupport && branchDetail? branchDetail.support: 'NA'}</div>*/}
-                    {/*<div style={{fontSize: '12px'}}># exact matches: {branchDetail? `${branchDetail.numExact} (${Math.floor(branchDetail.gsf * 100)}%)`: 'NA'}</div>*/}
-
-                    {/*<div className="attribute-section-divider"></div>*/}
-
                     <div className="attribute-heading">&diams; Reference Tree</div>
                     <div style={{marginLeft: '18px'}}>
                         {renderChart(data.ref.gsf.fg, null, '%exact matches (GSF)', 3)}
@@ -263,7 +255,6 @@ let mapStateToProps = state => {
     }
 
     // corr section
-    let branchDetail = null;
     let focusedBranch = getCurrentFocusedBranch(state);
     if (focusedBranch) {
         if (modes.corr.scope === 'all') {
@@ -278,11 +269,6 @@ let mapStateToProps = state => {
                 data.corr.similarity.bg = getGlobalJaccardArray(state);
             }
         }
-        branchDetail = {
-            support: state.inputGroupData.trees[state.referenceTree.id].branches[focusedBranch].support,
-            numExact: data.corr.similarity.fg.filter(s => s === 1.0).length,
-        };
-        branchDetail.gsf = branchDetail.numExact / (Object.keys(state.inputGroupData.trees).length - 1);
     }
 
     // if shown as histogram: bin the data values; if shown as CDF, sort the data values
@@ -297,7 +283,6 @@ let mapStateToProps = state => {
 
     return {
         ...state.attributeExplorer,
-        branchDetail,
         data,
     };
 };

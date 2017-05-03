@@ -108,6 +108,10 @@ let initialState = {
     },
     attributeExplorer: {
         withSupport: true,
+        branchAttributes: [             // for showing a tooltip of branch attributes of the current focal branch
+            {attribute: 'support', accessor: b => b.hasOwnProperty('support')? Math.floor(b.support * 100): 'NA' },
+            {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' }
+        ],
         modes: {
             all: {
                 scope: 'tree',           // could be 'all', 'set', 'tree'
@@ -957,7 +961,11 @@ function visphyReducer(state = initialState, action) {
                 },
                 attributeExplorer: {
                     ...state.attributeExplorer,
-                    withSupport: !!action.data.supportRange
+                    withSupport: !!action.data.supportRange,
+                    branchAttributes: !!action.data.supportRange? state.attributeExplorer.branchAttributes:
+                        [{attribute: 'support', accessor: b => 'NA'},
+                            ...state.attributeExplorer.branchAttributes.slice(1)
+                        ]
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:

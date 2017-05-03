@@ -25,24 +25,6 @@ class FullDendrogram extends Component {
         let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities || []);
         let {attribute, range} = rangeSelection || {};
 
-
-        // // Debounce the hovering
-        // let timer = null;
-        // let onMouseEnterBranch = (bid) => {
-        //     timer = setTimeout(() => {
-        //         this.props.toggleHighlightMonophyly(bid);
-        //         timer = null;
-        //     }, 300);
-        // };
-        // let onMouseLeaveBranch = () => {
-        //     if (timer) {
-        //         clearTimeout(timer);
-        //     } else {
-        //         this.props.toggleHighlightMonophyly(null);
-        //     }
-        // };
-
-
         let renderDendrogram = (tree, dendrogram, side='right', expandedBranches=[]) => {
             let {branchSpecs, verticalLines, responsiveBoxes,hoverBoxes, textSpecs} = dendrogram;
             let {missing, branches} = tree;
@@ -165,9 +147,9 @@ class FullDendrogram extends Component {
             dendrogram.treeBoundingBox.width) + spec.margin.left + spec.margin.right;
         let svgHeight = (isComparing? Math.max(dendrogram[0].treeBoundingBox.height, dendrogram[1].treeBoundingBox.height):
                 dendrogram.treeBoundingBox.height) + spec.margin.top + spec.margin.bottom;
+
         return (
-            <svg width={svgWidth}
-                 height={svgHeight}>
+            <svg width={svgWidth} height={svgHeight}>
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
                     {isComparing &&
                         <g>
@@ -354,7 +336,7 @@ function mapStateToProps(state, ownProps) {
         metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
         rangeSelection: state.attributeExplorer.activeSelectionId >= 0?
             state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId]: null,
-        cb: state.cb
+        cb: state.cb,
     };
 }
 
