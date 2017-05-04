@@ -185,11 +185,12 @@ let getDendrogramSpecs = createSelector(
         let aligned = side === 'left' || side === 'right';
 
         let getTreeWidth = function() {
-            let topo = 0, longestEntity = spec.minLabelWidth, depth = 0;
+            let maxTopoWidth = 0, depth = 0;
+            let longestEntity = aligned? spec.comparingLabelWidth: spec.minLabelWidth;
             let traverse = function(bid, cur, dep) {
                 let b = branches[bid];
                 cur += ignoreBranchLen? spec.unitBranchLength: b.length;
-                topo = Math.max(cur, topo);
+                maxTopoWidth = Math.max(cur, maxTopoWidth);
                 depth = Math.max(depth, dep);
                 if ('left' in b) {
                     traverse(b.left, cur, dep + 1);
@@ -200,8 +201,8 @@ let getDendrogramSpecs = createSelector(
             };
 
             traverse(tree.rootBranch, 0, 1);
-            let topologyWidth = ignoreBranchLen? topo: spec.defaultTopologyWidth;
-            return {treeWidth: topologyWidth + longestEntity, topologyWidth, maxLength: topo, depth};
+            let topologyWidth = ignoreBranchLen? maxTopoWidth: (aligned? spec.comparingTopologyWidth: spec.defaultTopologyWidth);
+            return {treeWidth: topologyWidth + longestEntity, topologyWidth, maxLength: maxTopoWidth, depth};
         };
         let {treeWidth, topologyWidth, maxLength, depth} = getTreeWidth();
 
@@ -317,8 +318,8 @@ function mapStateToProps(state, ownProps) {
     let den, den1, den2;
     let compExp = [];
     if (c.tid) {
-        den1 = getDendrogramSpecs(state, null, 'right', true);
-        den2 = getDendrogramSpecs(state, c.tid, 'left', true);
+        den1 = getDendrogramSpecs(state, null, 'right', state.referenceTree.universalBranchLen);
+        den2 = getDendrogramSpecs(state, c.tid, 'left', state.referenceTree.universalBranchLen);
         let tree = state.inputGroupData.trees[state.referenceTree.id];
         compExp = state.referenceTree.selected.map(s => tree.branches[s][state.cb][c.tid].bid);
     } else {

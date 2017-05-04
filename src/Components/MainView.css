@@ -23,6 +23,12 @@
 .right-column {
     flex: 1 1 auto;
     margin: 0 5px;
+
+    display: flex;
+    display: -webkit-flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0 5px;
 }
 .middle-column {
     flex: 0 0 auto;
@@ -72,6 +78,14 @@
     flex: 0 0 auto;
     height: 60px;
     /*min-height: 30px;*/
+}
+
+#aggregated-dendrogram {
+    flex: 0 0 auto;
+    min-height: 60%;
+}
+#tree-distribution {
+    flex: 0 0 auto;
 }
 
 .inspector-window {

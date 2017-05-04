@@ -11,14 +11,14 @@ import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
     addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
-    compareWithReference, toggleJaccardMissing} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersection, getIntersectionSet, areSetsEqual} from '../utils';
+    compareWithReference} from '../actions';
+import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual} from '../utils';
 import './Dendrogram.css';
 
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, cb, mode, dendrograms, activeTreeId, rangeSelection} = this.props;
+        let {spec, mode, dendrograms, activeTreeId, rangeSelection} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
@@ -61,7 +61,7 @@ class DendrogramContainer extends Component {
         };
         const disabledTools = activeTreeId == null;
         return (
-            <div className="view" style={{height: '98%'}}>
+            <div className="view" id="aggregated-dendrograms">
                 <div className="view-header">
                     <div style={{textAlign: 'center'}}>
                         <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
@@ -122,17 +122,11 @@ class DendrogramContainer extends Component {
                                     <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
                                 </ButtonGroup>
                             }
-                            <span style={{marginLeft: '2px'}}> of the ref. tree, measured </span>
-                            <ButtonGroup bsSize="xsmall">
-                                <Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>
-                                <Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>
-                            </ButtonGroup>
-                            <span> missing taxa. </span>
-                            {isClusterMode && <span> There are {dendrograms.length} cluster{dendrograms.length <= 1? '':'s'}, distributed as follows:</span>}
+                            <span style={{marginLeft: '2px'}}> of the ref. tree.</span>
                         </div>
 
 
-                        {isClusterMode &&
+                        {isClusterMode && false &&
                         <div className="partition-distribution">
                             {dendrograms.map((d, i) =>
                                 <OverlayTrigger key={i} placement="bottom" overlay={<Tooltip id={`dist-${i}`}># trees in this cluster: {d.num}</Tooltip>}>
@@ -1140,7 +1134,6 @@ let mapStateToProps = (state) => {
     return {
         ...state.aggregatedDendrogram,
         inputGroupId: state.inputGroupData.inputGroupId,
-        cb: state.cb,
         referenceTid: state.referenceTree.id,
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
@@ -1172,7 +1165,6 @@ let mapDispatchToProps = (dispatch) => ({
     clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
     onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))},
-    onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

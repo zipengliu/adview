@@ -14,6 +14,7 @@ import TreeList from './TreeList';
 import Inspector from './Inspector';
 import AttributeExplorer from './AttributeExplorer';
 import TaxaList from './TaxaList';
+import TreeDistribution from './TreeDistribution';
 import {getWindowHeight} from '../utils';
 
 import './MainView.css';
@@ -43,6 +44,7 @@ class MainView extends Component {
                         <ReferenceTreeContainer></ReferenceTreeContainer>
                     </div>
                     <div className="right-column">
+                        <TreeDistribution />
                         <DendrogramContainer />
                     </div>
                 </div>}

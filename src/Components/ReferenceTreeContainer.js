@@ -30,7 +30,7 @@ class ReferenceTreeContainer extends Component {
                         <ButtonGroup bsSize="xsmall">
                             <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
                                 {props.universalBranchLen? 'Encode branch length': 'Use universal branch length'} </Tooltip>}>
-                                <Button disabled={!!props.comparingTree} onClick={props.toggleBranchLen}>
+                                <Button onClick={props.toggleBranchLen}>
                                     <Glyphicon glyph={props.universalBranchLen? 'align-right': 'align-justify'} />
                                 </Button>
                             </OverlayTrigger>

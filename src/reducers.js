@@ -4,7 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import {scaleOrdinal, scaleLinear, schemeCategory10} from 'd3-scale';
-import {getCoordinates, createMappingFromArray} from './utils';
+import {getCoordinates, createMappingFromArray, guid} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -38,7 +38,9 @@ let initialState = {
         responsiveAreaSize: 7,          // height of a transparent box over a branch to trigger interaction
         unitBranchLength: 10,            // When using a unit length for branch in regardless of the length of the branch in the original dataset
                                         //      used in pairwise comparison to save space
-        minBranchLength: 3              // the minimum length of a branch in pixel
+        minBranchLength: 3,              // the minimum length of a branch in pixel
+        comparingTopologyWidth: 200,
+        comparingLabelWidth: 100
     },
     referenceTree: {
         id: null,
@@ -560,6 +562,7 @@ function visphyReducer(state = initialState, action) {
         case TYPE.CREATE_NEW_SET:
             return Object.assign({}, state, {
                 sets: [...state.sets, {
+                    sid: guid(),
                     title: state.overview.currentTitle,
                     tids: state.overview.selectedDots,
                     color: getColor(state.sets.length)
@@ -951,6 +954,7 @@ function visphyReducer(state = initialState, action) {
                     id: action.data.defaultReferenceTree
                 },
                 sets: [{
+                    sid: guid(),
                     title: 'All Trees',
                     tids: Object.keys(action.data.trees),
                     color: 'black'
