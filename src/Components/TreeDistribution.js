@@ -6,30 +6,44 @@ import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector, createSelectorCreator} from 'reselect';
 import {scaleLinear} from 'd3';
-import {Button, ButtonGroup, OverlayTrigger, Tooltip, Table} from 'react-bootstrap';
-import {toggleJaccardMissing} from '../actions';
+import {Button, ButtonGroup, OverlayTrigger, Tooltip, Table, Badge} from 'react-bootstrap';
+import {toggleSubsetDistribution, toggleHighlightTreesDistribution} from '../actions';
 import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
 
 class TreeDistribution extends Component {
     render() {
-        let {cb, expandedBranches, fullDistribution, sets} = this.props;
+        let {cb, expandedBranches, sets, distributions} = this.props;
+        let showSubsets = this.props.treeDistribution.showSubsets;
+        let numTrees = sets[0].tids.length;
+
 
         let renderBars = (d, sid, bid) => {
+            let fullLength = Math.floor(d.n / numTrees * 100);
             let x = scaleLinear().domain([0, d.n]).range([0, 100]);
             let curN = 0;
             return (
-                <div style={{position: 'relative', height: '100%', width: '100%'}}>
+                <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #000'}}>
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
-                        return <OverlayTrigger key={i} placement="top"
+                        return <OverlayTrigger key={i} placement={leftPos <= 50? 'right': 'left'}
                                                overlay={<Tooltip id={`tree-dist-${sid}-${bid}-${i}`}>
-                                                   # Trees in this cluster: {b.length}. <br/> This cluster {i === 0? 'agrees': 'disagrees'} with the reference tree on this partition.
+                                                   # trees in this cluster: {b.length}. <br/>
+                                                   This cluster {d.hasCompatibleTree && i === 0? 'agrees ': 'disagrees '}
+                                                   with the reference tree on this partition.
                                                </Tooltip>}>
-                            <div style={{position: 'absolute', height: '100%', borderRight: '1px solid #000',
-                                backgroundColor: i === 0? 'grey': 'none', opacity: .15,
-                                top: 0, left: leftPos + '%', width: x(b.length) + '%'}} />
+                            <div style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #000': 'none',
+                                backgroundColor: d.hasCompatibleTree && i === 0? 'rgba(128, 128, 128, .3)': 'none',
+                                top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
+                                 onMouseEnter={this.props.onHighlightTrees.bind(null, b)}
+                                 onMouseLeave={this.props.onHighlightTrees.bind(null, [])}
+                            >
+                                {d.highlightCnt &&
+                                <div style={{position: 'relative', top: 0, left: 0, height: '100%',
+                                    backgroundColor: 'rgba(31, 119, 180, .3)',
+                                    width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
+                            </div>
                             </OverlayTrigger>
                     })}
                 </div>
@@ -42,17 +56,10 @@ class TreeDistribution extends Component {
                     <div className="view-title">Tree Distribution by Partition</div>
                     <div style={{marginBottom: '5px', fontSize: '12px'}}>
                         <ButtonGroup bsSize="xsmall">
-                            <Button >Show</Button>
-                            <Button >Hide</Button>
+                            <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
+                            <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
                         </ButtonGroup>
                         <span> distribution for subsets. </span>
-
-                        <span>Matching monophyly </span>
-                        <ButtonGroup bsSize="xsmall">
-                            <Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>
-                            <Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>
-                        </ButtonGroup>
-                        <span> missing taxa. </span>
                     </div>
                 </div>
 
@@ -66,14 +73,20 @@ class TreeDistribution extends Component {
                             </tr>
                         </thead>
                         <tbody>
-                        {expandedBranches.map((bid, i) =>
-                            <tr key={i}>
-                                {i === 0 && <td rowSpan={expandedBranches.length}>All Trees</td>}
-                                <td>{i + 1}</td>
-                                <td style={{height: '100%', padding: 0}}>
-                                    {renderBars(fullDistribution[i], 0, bid)}
-                                </td>
-                            </tr>
+                        {distributions.map((s, i) =>
+                            (expandedBranches.map((bid, j) =>
+                                <tr key={`${i}-${j}`}>
+                                    {j === 0 &&
+                                    <td rowSpan={expandedBranches.length}>
+                                        {sets[i].title} <br/>
+                                        <Badge style={{backgroundColor: sets[i].color}}>{sets[i].tids.length}</Badge>
+                                    </td>}
+                                    <td style={{color: '#e41a1c', fontWeight: 'bold'}}>{j + 1}</td>
+                                    <td style={{height: '100%', padding: 0}}>
+                                        {renderBars(distributions[i][j], i, bid)}
+                                    </td>
+                                </tr>
+                            ))
                         )}
                         </tbody>
                     </Table>
@@ -104,6 +117,8 @@ let memoizeDistribution = (func) => {
 };
 
 let clusterSelector = createSelectorCreator(memoizeDistribution);
+
+let binSortFunc = (a, b) => (b.length - a.length);
 let clusterTreesByBranch = clusterSelector(
     state => state.inputGroupData.trees,
     state => state.referenceTree.id,
@@ -138,42 +153,119 @@ let clusterTreesByBranch = clusterSelector(
                 if (areSetsEqual(set1, set2)) {
                     found = true;
                     s.push(tid);
-                    treeToBin[tid] = j;
                     break;
                 }
             }
             if (!found) {
                 // create a new bin
                 bins.push([tid]);
-                treeToBin[tid] = bins.length - 1;
             }
         }
 
         // Sort the bins except the first one
-        bins = [bins[0], ...bins.slice(1).sort((a, b) => (b.length - a.length))];
+        bins = [bins[0], ...bins.slice(1).sort(binSortFunc)];
+        for (let i = 0; i < bins.length; i++) {
+            for (let j = 0; j < bins[i].length; j++) {
+                treeToBin[bins[i][j]] = i;
+            }
+
+        }
 
         console.log('bins = ', bins);
-        return {bins, treeToBin, n: Object.keys(trees).length};
+        return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: true};
+    }
+);
+
+let getHighlightProportion = (distribution, tids) => {
+    let {bins, treeToBin} = distribution;
+    let highlightCnt = (new Array(bins.length)).fill(0);
+    for (let i = 0; i < tids.length; i++) {
+        if (treeToBin.hasOwnProperty(tids[i])) {
+            highlightCnt[treeToBin[tids[i]]] += 1;
+        }
+    }
+    return highlightCnt;
+};
+
+let getSubsetDistribution = createSelector(
+    [full => full, (_, sets) => sets],
+    (fullDistribution, sets) => {
+        let s = [];
+        for (let i = 1; i < sets.length; i++) {         // The first set is the full set, so skip it
+            s.push([]);
+            for (let j = 0; j < fullDistribution.length; j++) {
+                let fd = fullDistribution[j];
+
+                // Init the bins for subset[i] and bipartition j
+                let bins = [];
+                for (let k = 0; k < fd.bins.length; k++) {
+                    bins.push([]);
+                }
+
+                // Bin the trees according to full distribution
+                for (let k = 0; k < sets[i].tids.length; k++) {
+                    let tid = sets[i].tids[k];
+                    bins[fd.treeToBin[tid]].push(tid);
+                }
+                let hasCompatibleTree = bins[0].length > 0;
+
+                // Filter and sort the bins
+                let filteredBins = bins.filter(b => b.length > 0);
+                if (hasCompatibleTree) {
+                    filteredBins = [filteredBins[0], ...filteredBins.slice(1).sort(binSortFunc)];
+                } else {
+                    filteredBins = filteredBins.sort(binSortFunc);
+                }
+
+                // Fill in its treeToBin
+                let treeToBin = {};
+                for (let k = 0; k < filteredBins.length; k++) {
+                    for (let x = 0; x < filteredBins[k].length; x++) {
+                        treeToBin[filteredBins[k][x]] = k;
+                    }
+                }
+
+                // Store the distribution data
+                s[i - 1].push({bins: filteredBins, treeToBin, hasCompatibleTree, n: sets[i].tids.length});
+            }
+        }
+        console.log('subset distribution:',  s);
+        return s;
     }
 );
 
 let mapStateToProps = state => {
-    let fullDistribution = [];
+    let distributions = [[]];
+    let tids = state.treeDistribution.highlightTids;
     for (let i = state.referenceTree.selected.length - 1; i >= 0; i--) {
         let bid = state.referenceTree.selected[i];
-        fullDistribution.push(clusterTreesByBranch(state, bid));
+        let d = clusterTreesByBranch(state, bid);
+        d.highlightCnt = getHighlightProportion(d, tids);
+        distributions[0].push(d);
+    }
+
+    let sets = state.sets;
+    if (state.treeDistribution.showSubsets) {
+        distributions = distributions.concat(getSubsetDistribution(distributions[0], sets));
+        for (let i = 1; i < sets.length; i++) {
+            for (let j = 0; j < state.referenceTree.selected.length; j++) {
+                distributions[i][j].highlightCnt = getHighlightProportion(distributions[i][j], tids);
+            }
+        }
     }
 
     return {
         cb: state.cb,
         expandedBranches: state.referenceTree.selected,
         sets: state.sets,
-        fullDistribution,
+        treeDistribution: state.treeDistribution,
+        distributions
     };
 };
 
 let mapDispatchToProps = dispatch => ({
-    onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))}
+    onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},
+    onHighlightTrees: (tids) => {dispatch(toggleHighlightTreesDistribution(tids))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TreeDistribution);

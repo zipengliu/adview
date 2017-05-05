@@ -4,8 +4,8 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import {Glyphicon} from 'react-bootstrap';
-import {fetchInputGroup, closeToast} from '../actions';
+import {Glyphicon, Button} from 'react-bootstrap';
+import {fetchInputGroup, closeToast, toggleGlobalToolkit} from '../actions';
 import cn from 'classnames';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
@@ -15,6 +15,7 @@ import Inspector from './Inspector';
 import AttributeExplorer from './AttributeExplorer';
 import TaxaList from './TaxaList';
 import TreeDistribution from './TreeDistribution';
+import GlobalToolkit from './GlobalToolkit';
 import {getWindowHeight} from '../utils';
 
 import './MainView.css';
@@ -32,8 +33,15 @@ class MainView extends Component {
                         <Glyphicon glyph="remove"/>
                     </div>
                 </div>
+
+                <Button bsSize="xsmall" active={this.props.globalToolkit.show} style={{position: 'fixed', top: 65, right: 5}}
+                        onClick={this.props.onToggleGlobalToolkit}>
+                    <Glyphicon glyph="wrench"/>
+                </Button>
+
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
                 <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
+                    <GlobalToolkit/>
                     <div className="left-column">
                         <Overview />
                         <AttributeExplorer />
@@ -61,7 +69,8 @@ function mapStateToProps(state) {
 
 let mapDispatchToProps = dispatch => ({
     onRequestInputGroup: (id) => {dispatch(fetchInputGroup(id))},
-    onCloseToast: () => {dispatch(closeToast())}
+    onCloseToast: () => {dispatch(closeToast())},
+    onToggleGlobalToolkit: () => {dispatch(toggleGlobalToolkit())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainView);

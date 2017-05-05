@@ -73,8 +73,8 @@ export function selectBranchOnFullDendrogram(bid) {
     }
 }
 
-export function clearBranchSelection() {
-    return {type: TYPE.CLEAR_BRANCH_SELECTION}
+export function clearAll() {
+    return {type: TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT}
 }
 
 export function fetchTreeRequest(tid) {
@@ -214,12 +214,12 @@ export function toggleHighlightTree(tids, isHighlight) {
     }
 }
 
-export function toggleSelectAggDendro(tid, tids) {
-    return {
-        type: TYPE.TOGGLE_SELECT_AGG_DENDRO,
-        tid, tids
-    }
-}
+// export function toggleSelectAggDendro(tid, tids) {
+//     return {
+//         type: TYPE.TOGGLE_SELECT_AGG_DENDRO,
+//         tid, tids
+//     }
+// }
 
 export function selectSet(i) {
     return {
@@ -344,4 +344,31 @@ export function toggleTaxaListCollapse() {
 
 export function toggleSelectTaxa(e) {
     return {type: TYPE.TOGGLE_SELECT_TAXA, e};
+}
+
+
+export function toggleSubsetDistribution() {
+    return {type: TYPE.TOGGLE_SHOW_SUBSET_DISTRIBUTION};
+}
+
+export function toggleHighlightTreesDistribution(tids) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_TREES_DISTRIBUTION, tids};
+}
+
+
+export function toggleSelectTrees(tids, isAdd) {
+    return {type: TYPE.TOGGLE_SELECT_TREES, tids, isAdd};
+}
+
+
+export function toggleGlobalToolkit() {
+    return {type: TYPE.TOGGLE_GLOBAL_TOOLKIT};
+}
+
+export function moveGlobalToolkit(position) {
+    return {type: TYPE.MOVE_GLOBAL_TOOLKIT, position}
+}
+
+export function clearSelectedTrees() {
+    return {type: TYPE.CLEAR_SELECTED_TREES};
 }

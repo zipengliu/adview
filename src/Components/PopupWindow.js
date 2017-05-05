@@ -42,7 +42,7 @@ function mapStateToProps(state) {
         sets: state.sets,
         title: state.overview.currentTitle,
         placeholder: 'Enter set title',
-        numTrees: state.overview.selectedDots.length
+        numTrees: Object.keys(state.selectedTrees).length
     }
 }
 

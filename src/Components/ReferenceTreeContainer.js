@@ -29,14 +29,9 @@ class ReferenceTreeContainer extends Component {
                     <div style={{marginBottom: '5px'}}>
                         <ButtonGroup bsSize="xsmall">
                             <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
-                                {props.universalBranchLen? 'Encode branch length': 'Use universal branch length'} </Tooltip>}>
+                                {props.universalBranchLen? 'Encode branch length': 'Use uniform branch length'} </Tooltip>}>
                                 <Button onClick={props.toggleBranchLen}>
-                                    <Glyphicon glyph={props.universalBranchLen? 'align-right': 'align-justify'} />
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
-                                <Button disabled>
-                                    Import
+                                    use {props.universalBranchLen? 'encoded': 'uniform'} branch length
                                 </Button>
                             </OverlayTrigger>
                         </ButtonGroup>
@@ -132,7 +127,7 @@ let mapStateToProps = state => ({
 
 let mapDispatchToProps = dispatch => ({
     cancelCompare: () => {dispatch(compareWithReference(null))},
-    toggleBranchLen: () => {dispatch(toggleUniversalBranchLength())}
+    toggleBranchLen: () => {dispatch(toggleUniversalBranchLength())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

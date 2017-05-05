@@ -27,7 +27,7 @@
     display: flex;
     display: -webkit-flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 0 5px;
 }
 .middle-column {
@@ -81,11 +81,10 @@
 }
 
 #aggregated-dendrogram {
-    flex: 0 0 auto;
-    min-height: 60%;
+    flex: 1 1 auto;
 }
 #tree-distribution {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
 }
 
 .inspector-window {

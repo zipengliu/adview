@@ -9,42 +9,40 @@ import {scaleLinear, hsl, extent, scaleLog} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {toggleHighlightTree, toggleSelectAggDendro, selectSet, changeReferenceTree, removeFromSet, removeSet,
-    addTreeToInspector, toggleInspector, toggleSorting, toggleAggregationMode, clearBranchSelection, toggleHighlightEntities,
-    compareWithReference} from '../actions';
+import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual} from '../utils';
 import './Dendrogram.css';
 
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, mode, dendrograms, activeTreeId, rangeSelection} = this.props;
+        let {spec, mode, dendrograms, selectedTrees, rangeSelection} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let isOrderStatic = this.props.treeOrder.static;
         // Padding + border + proportion bar
         let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
         let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
-        let activeTids;
-        if (isClusterMode && activeTreeId) {
-            let activeDendrogram;
-            for (let i = 0; i < dendrograms.length; i++) {
-                if (dendrograms[i].tid === activeTreeId) {
-                    activeDendrogram = dendrograms[i];
-                    break;
-                }
-            }
-            if (activeDendrogram) {
-                activeTids = activeDendrogram.trees;
-            }
-        }
+
+        let numSelectedTrees = Object.keys(selectedTrees).length;
+        // let activeTids, activeTreeId;
+        // if (isClusterMode && activeTreeId) {
+        //     let activeDendrogram;
+        //     for (let i = 0; i < dendrograms.length; i++) {
+        //         if (dendrograms[i].tid === activeTreeId) {
+        //             activeDendrogram = dendrograms[i];
+        //             break;
+        //         }
+        //     }
+        //     if (activeDendrogram) {
+        //         activeTids = activeDendrogram.trees;
+        //     }
+        // }
         let getDendroBox = (t, i) => {
             let div = (
-                <div className={cn("agg-dendro-box", {selected: activeTreeId === t.tid})} key={t.tid}
+                <div className={cn("agg-dendro-box", {selected: selectedTrees.hasOwnProperty(t.tid)})} key={t.tid}
                      style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
-                     onMouseEnter={true? null: this.props.onToggleHighlightTree.bind(null, isClusterMode? t.trees:[t.tid], true)}
-                     onMouseLeave={true? null: this.props.onToggleHighlightTree.bind(null, null, false)}
-                     onClick={this.props.onClick.bind(null, activeTreeId === t.tid? null: t.tid,
-                         isClusterMode && activeTreeId !== t.tid? t.trees: [])}>
+                     onClick={(e) => {this.props.onSelectTrees(isClusterMode? t.trees: [t.tid], e.shiftKey)}}
+                >
                     <AggregatedDendrogram data={t} spec={spec} mode={mode} isReferenceTree={t.tid === this.props.referenceTid}
                                           onToggleBlock={this.props.onToggleBlock}
                                           rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
@@ -59,7 +57,7 @@ class DendrogramContainer extends Component {
                 )
             }
         };
-        const disabledTools = activeTreeId == null;
+
         return (
             <div className="view" id="aggregated-dendrograms">
                 <div className="view-header">
@@ -67,76 +65,45 @@ class DendrogramContainer extends Component {
                         <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
                         <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
                             <span style={{marginRight: '5px'}}>(as</span>
-                            <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>supercluster</Radio>
-                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>topo-cluster</Radio>
-                            <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>taxa-cluster</Radio>
-                            <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>remainder</Radio>
-                            <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>fine-grained</Radio>
-                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>frond</Radio>
+                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individule: frond</Radio>
+                            <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
+                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
+                            <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>
+                                <span style={{textDecoration: 'line-through'}}>taxa-cluster</span>
+                            </Radio>
+                            <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
+                                <span style={{textDecoration: 'line-through'}}>remainder</span>
+                            </Radio>
+                            <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>
+                                <span style={{textDecoration: 'line-through'}}>fine-grained</span>
+                            </Radio>
                             )
                         </FormGroup>
                     </div>
 
                     <div style={{marginBottom: '5px'}}>
-                        <ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
-                                <Button disabled={this.props.activeSetIndex === 0}
-                                        onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
-                                    <Glyphicon glyph="trash"/><span className="glyph-text">Remove set</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-trash">Remove tree from the current set</Tooltip>}>
-                                <Button disabled={disabledTools} onClick={this.props.onRemove.bind(null, isClusterMode? activeTids: [activeTreeId], this.props.activeSetIndex)}>
-                                    <Glyphicon glyph="trash"/><span className="glyph-text">Remove tree</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-ref-tree">Set tree as reference tree on the right</Tooltip>}>
-                                <Button disabled={disabledTools || isClusterMode} onClick={this.props.onChangeReferenceTree.bind(null, this.props.inputGroupId, activeTreeId)}>
-                                    <Glyphicon glyph="tree-conifer"/><span className="glyph-text">Set as reference</span>
-
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>
-                                <Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>
-                                    <Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-compare">Compare tree with the reference tree in detail</Tooltip>}>
-                                <Button disabled={isClusterMode || activeTreeId === this.props.referenceTid}
-                                        onClick={this.props.onCompareWithReference.bind(null, activeTreeId)}>
-                                    <Glyphicon glyph="zoom-in" /><span className="glyph-text">Compare</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-clear-selection">Clear all branch expansion</Tooltip>}>
-                                <Button onClick={this.props.clearSelection}>
-                                    <Glyphicon glyph="refresh" /><span className="glyph-text">Reset</span>
-                                </Button>
-                            </OverlayTrigger>
-                        </ButtonGroup>
+                        {/*<ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>*/}
+                            {/*<OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>*/}
+                                {/*<Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>*/}
+                                    {/*<Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>*/}
+                                {/*</Button>*/}
+                            {/*</OverlayTrigger>*/}
+                        {/*</ButtonGroup>*/}
 
                         <div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>
                             <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
                             {isClusterMode? <span>#trees in a cluster</span>:
                                 <ButtonGroup bsSize="xsmall">
                                     <Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>
-                                    <Button active={!isOrderStatic} onClick={isOrderStatic? this.props.onChangeSorting: null}>highlighted subtree</Button>
+                                    {this.props.expandedBranches.length > 0 &&
+                                    <Button active={!isOrderStatic}
+                                            onClick={isOrderStatic ? this.props.onChangeSorting : null}>
+                                        branch {this.props.expandedBranches.length}
+                                    </Button>}
                                 </ButtonGroup>
                             }
-                            <span style={{marginLeft: '2px'}}> of the ref. tree.</span>
+                            <span style={{marginLeft: '2px'}}> of the reference tree.</span>
                         </div>
-
-
-                        {isClusterMode && false &&
-                        <div className="partition-distribution">
-                            {dendrograms.map((d, i) =>
-                                <OverlayTrigger key={i} placement="bottom" overlay={<Tooltip id={`dist-${i}`}># trees in this cluster: {d.num}</Tooltip>}>
-                                    <div style={{width: (d.num / d.total * 100) + '%'}}
-                                         onClick={this.props.onClick.bind(null, activeTreeId === d.tid? null: d.tid,
-                                             isClusterMode && activeTreeId !== d.tid? d.trees: [])} />
-                                </OverlayTrigger>
-                            )}
-                        </div>
-                        }
                     </div>
 
                     <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
@@ -1133,7 +1100,6 @@ let mapStateToProps = (state) => {
     let trees = getTrees(state);
     return {
         ...state.aggregatedDendrogram,
-        inputGroupId: state.inputGroupData.inputGroupId,
         referenceTid: state.referenceTree.id,
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
@@ -1143,26 +1109,15 @@ let mapStateToProps = (state) => {
             attrName: 'support',
             range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
         }: null,
+        selectedTrees: state.selectedTrees,
+        expandedBranches: state.referenceTree.selected
     }
 };
 
 let mapDispatchToProps = (dispatch) => ({
-    onToggleHighlightTree: (tids, isHighlight) => {dispatch(toggleHighlightTree(tids, isHighlight))},
-    onClick: (tid, tids) => {dispatch(toggleSelectAggDendro(tid, tids))},
+    onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onSelectSet: i => {dispatch(selectSet(i))},
-    onRemove: (tid, setIndex) => {dispatch(removeFromSet(tid, setIndex))},
-    onChangeReferenceTree: (iid, tid) => {dispatch(changeReferenceTree(iid, tid))},
-    onRemoveSet: setIndex => {dispatch(removeSet(setIndex))},
-    onAddTreeToInspector: (tid) => {
-        if (tid != null) {
-            dispatch(addTreeToInspector(tid))
-        } else {
-            dispatch(toggleInspector())
-        }
-    },
-    onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
     onChangeSorting: () => {dispatch(toggleSorting())},
-    clearSelection: () => {dispatch(clearBranchSelection())},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
     onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))},
 });

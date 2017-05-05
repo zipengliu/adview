@@ -4,7 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import {scaleOrdinal, scaleLinear, schemeCategory10} from 'd3-scale';
-import {getCoordinates, createMappingFromArray, guid} from './utils';
+import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
 
 let initialState = {
     isFetching: false,
@@ -68,14 +68,13 @@ let initialState = {
         metricBranch: null,
         createWindow: false,
         currentTitle: '',
-        selectedDots: [],
-        highlightDots: [],
         dotplotSize: 0,
         isSelecting: false,
         selectingArea: null
     },
+    selectedTrees: {},
     aggregatedDendrogram: {
-        activeTreeId: null,
+        // activeTreeId: null,
         activeSetIndex: 0,
         mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
@@ -149,6 +148,14 @@ let initialState = {
     taxaList: {
         collapsed: true,
         selected: {}
+    },
+    treeDistribution: {
+        showSubsets: false,
+        highlightTids: []
+    },
+    globalToolkit: {
+        show: true,
+        position: {left: 400, top: 10}
     }
 };
 
@@ -158,13 +165,6 @@ let initialState = {
 let colorPallete = scaleOrdinal(schemeCategory10);
 let getColor = idx => idx < 10? colorPallete(idx): 'black';
 
-let mergeSets = (a, b) => {
-    let c = a.slice();
-    for (let i = 0; i < b.length; i++) {
-        if (a.indexOf(b[i]) === -1) {c.push(b[i])}
-    }
-    return c;
-};
 
 let findMissing = (geneTree, allEntities) => {
     let geneEntities = geneTree.entities;
@@ -517,9 +517,16 @@ function visphyReducer(state = initialState, action) {
                     {   // if there is no selection and cb range selection is activated, deactivate it
                         ...state.attributeExplorer,
                         activeSelectionId: null
-                    }: state.attributeExplorer
+                    }: state.attributeExplorer,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        static: newSelected.length === 0? true: state.aggregatedDendrogram.treeOrder.static
+                    }
+                }
             });
-        case TYPE.CLEAR_BRANCH_SELECTION:
+        case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
@@ -533,6 +540,14 @@ function visphyReducer(state = initialState, action) {
                 attributeExplorer: {
                     ...state.attributeExplorer,
                     activeSelectionId: null
+                },
+                selectedTrees: {},
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    treeOrder: {
+                        ...state.aggregatedDendrogram.treeOrder,
+                        static: true
+                    }
                 }
             });
         case TYPE.TOGGLE_HIGHLIGHT_DUPLICATE:
@@ -560,18 +575,22 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.CREATE_NEW_SET:
+            let newSetIndex = state.sets.length;
             return Object.assign({}, state, {
                 sets: [...state.sets, {
                     sid: guid(),
                     title: state.overview.currentTitle,
-                    tids: state.overview.selectedDots,
+                    tids: Object.keys(state.selectedTrees),
                     color: getColor(state.sets.length)
                 }],
                 overview: {
                     ...state.overview,
                     currentTitle: '',
-                    selectedDots: [],
                     createWindow: false
+                },
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    activeSetIndex: newSetIndex
                 }
             });
         case TYPE.TYPING_TITLE:
@@ -584,11 +603,7 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.ADD_TO_SET:
             return Object.assign({}, state, {
-                sets: state.sets.map((s, i) => i !== action.sid? s: {...s, tids: mergeSets(s.tids, state.overview.selectedDots)}),
-                overview: {
-                    ...state.overview,
-                    selectedDots: []
-                }
+                sets: state.sets.map((s, i) => i !== action.sid? s: {...s, tids: mergeMappingToArray(s.tids, state.selectedTrees).slice()}),
             });
         case TYPE.REMOVE_SET:
             return Object.assign({}, state, {
@@ -614,8 +629,8 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     isSelecting: false,
-                    selectedDots: action.tids
-                }
+                },
+                selectedTrees: createMappingFromArray(action.tids)
             });
         case TYPE.CHANGE_SELECTION:
             return Object.assign({}, state, {
@@ -659,51 +674,51 @@ function visphyReducer(state = initialState, action) {
             };
 
 
-        case TYPE.TOGGLE_HIGHLIGHT_TREE:
-            return Object.assign({}, state, {
-                overview: {
-                    ...state.overview,
-                    highlightDots: action.isHighlight? action.tids: []
-                }
-            });
-        case TYPE.TOGGLE_SELECT_AGG_DENDRO:
-            let newHighlight;
-            if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tid) {
-                newColors = state.highlight.colors.slice();
-                newBids = state.highlight.bids.filter(h => {
-                    if (h.src !== state.referenceTree.id) {
-                        newColors[h.color] = false;     // If this group is to be removed, recycle the color
-                        return false;
-                    }
-                    return true;
-                }).map(h => (
-                    {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
-                            state.inputGroupData.trees[action.tid])}
-                ));
-                newHighlight = {
-                    ...state.highlight,
-                    bids: newBids,
-                    colors: newColors
-                }
-            } else {
-                newHighlight = state.highlight;
-            }
-            return Object.assign({}, state, {
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    activeTreeId: action.tid
-                },
-                overview: {
-                    ...state.overview,
-                    selectedDots: state.aggregatedDendrogram.mode.indexOf('cluster') !== -1? action.tids: ([action.tid] || [])
-                },
-                pairwiseComparison: state.pairwiseComparison.tid? {
-                    ...state.pairwiseComparison,
-                    tid: action.tid,
-                }: state.pairwiseComparison,
-                highlight: newHighlight
-            });
+        // case TYPE.TOGGLE_HIGHLIGHT_TREE:
+        //     return Object.assign({}, state, {
+        //         overview: {
+        //             ...state.overview,
+        //             highlightDots: action.isHighlight? action.tids: []
+        //         }
+        //     });
+        // case TYPE.TOGGLE_SELECT_AGG_DENDRO:
+        //     let newHighlight;
+        //     if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tid) {
+        //         newColors = state.highlight.colors.slice();
+        //         newBids = state.highlight.bids.filter(h => {
+        //             if (h.src !== state.referenceTree.id) {
+        //                 newColors[h.color] = false;     // If this group is to be removed, recycle the color
+        //                 return false;
+        //             }
+        //             return true;
+        //         }).map(h => (
+        //             {...h, tgt: action.tid,
+        //                 [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
+        //                     state.inputGroupData.trees[action.tid])}
+        //         ));
+        //         newHighlight = {
+        //             ...state.highlight,
+        //             bids: newBids,
+        //             colors: newColors
+        //         }
+        //     } else {
+        //         newHighlight = state.highlight;
+        //     }
+        //     return Object.assign({}, state, {
+        //         aggregatedDendrogram: {
+        //             ...state.aggregatedDendrogram,
+        //             activeTreeId: action.tid
+        //         },
+        //         overview: {
+        //             ...state.overview,
+        //             selectedDots: state.aggregatedDendrogram.mode.indexOf('cluster') !== -1? action.tids: ([action.tid] || [])
+        //         },
+        //         pairwiseComparison: state.pairwiseComparison.tid? {
+        //             ...state.pairwiseComparison,
+        //             tid: action.tid,
+        //         }: state.pairwiseComparison,
+        //         highlight: newHighlight
+        //     });
         case TYPE.SELECT_SET:
             return Object.assign({}, state, {
                 aggregatedDendrogram: {
@@ -1063,6 +1078,83 @@ function visphyReducer(state = initialState, action) {
                     ...state.taxaList,
                     selected: {...state.taxaList.selected, [action.e]: !state.taxaList.selected[action.e]}
                 }
+            };
+
+        case TYPE.TOGGLE_SHOW_SUBSET_DISTRIBUTION:
+            return {
+                ...state,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    showSubsets: !state.treeDistribution.showSubsets
+                }
+            };
+        case TYPE.TOGGLE_HIGHLIGHT_TREES_DISTRIBUTION:
+            return {
+                ...state,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    highlightTids: action.tids
+                }
+            };
+        case TYPE.TOGGLE_SELECT_TREES:
+            // If select a different tree for pairwise comparison
+            if (action.tids.length === 1 && state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
+                && (!action.isAdd || action.isAdd && !Object.keys(state.selectedTrees).length)) {
+                // Update data for pairwise comparison and highlights
+                newColors = state.highlight.colors.slice();
+                let comparingTid = action.tids[0];
+                newBids = state.highlight.bids.filter(h => {
+                    if (h.src !== state.referenceTree.id) {
+                        newColors[h.color] = false;     // If this group is to be removed, recycle the color
+                        return false;
+                    }
+                    return true;
+                }).map(h => (
+                    {...h, tgt: action.tid,
+                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
+                            state.inputGroupData.trees[action.tid])}
+                ));
+                return {
+                    ...state,
+                    selectedTrees: createMappingFromArray(action.tids),
+                    pairwiseComparison: {
+                        ...state.pairwiseComparison,
+                        tid: comparingTid
+                    },
+                    highlight: {
+                        ...state.highlight,
+                        bids: newBids,
+                        colors: newColors
+                    }
+                }
+            }
+
+            // If not for pairwise comparison
+            return {
+                ...state,
+                selectedTrees: action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids)
+            };
+
+        case TYPE.TOGGLE_GLOBAL_TOOLKIT:
+            return {
+                ...state,
+                globalToolkit: {
+                    ...state.globalToolkit,
+                    show: !state.globalToolkit.show
+                }
+            };
+        case TYPE.MOVE_GLOBAL_TOOLKIT:
+            return {
+                ...state,
+                globalToolkit: {
+                    ...state.globalToolkit,
+                    position: action.position
+                }
+            };
+        case TYPE.CLEAR_SELECTED_TREES:
+            return {
+                ...state,
+                selectedTrees: {}
             };
 
         default:

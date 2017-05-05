@@ -20,7 +20,7 @@ let isDotWithinBox = (dot, box) => {
 class Dotplot extends Component {
     render() {
         let s = this.props.containerWidth;
-        let {coordinates, selectionArea, colors, selectedDots, isSelecting} = this.props;
+        let {coordinates, selectionArea, colors, selectedTrees, isSelecting} = this.props;
         let rect = {};
         if (isSelecting) {
             let {x1, x2, y1, y2} = selectionArea;
@@ -37,11 +37,10 @@ class Dotplot extends Component {
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
-            {coordinates.map(d => <circle className={classNames('dot', {selected: selectedDots.indexOf(d.treeId) !== -1,
-                highlight: this.props.highlightDots.indexOf(d.treeId) !== -1, 'reference-tree-indicator': d.treeId === this.props.rid})}
+            {coordinates.map(d => <circle className={classNames('dot', {selected: selectedTrees.hasOwnProperty(d.treeId),
+                'reference-tree-indicator': d.treeId === this.props.rid})}
                                           style={{fill: colors[d.treeId] || 'black'}}
-                                          r={this.props.highlightDot === d.treeId? 6: 3}
-                                          cx={scale(d.x)} cy={scale(d.y)} key={d.treeId}></circle>)}
+                                          r={3} cx={scale(d.x)} cy={scale(d.y)} key={d.treeId} />)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
         </svg>
     }
@@ -64,6 +63,7 @@ let mapStateToProps = state => ({
     ...state.overview,
     colors: getDotColors(state),
     rid: state.referenceTree.id,
+    selectedTrees: state.selectedTrees
 });
 
 let mapDispatchToProps = dispatch => ({

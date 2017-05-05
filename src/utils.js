@@ -74,6 +74,16 @@ export function getIntersection(a, b) {
     return r;
 }
 
+export function mergeArrayToMapping(m, a) {
+    return a.reduce((acc, ele) => {acc[ele] = true; return acc}, m);
+}
+export function mergeMappingToArray(a, m) {
+    for (let k in m) if (m.hasOwnProperty(k)) {
+        if (a.indexOf(k) === -1) a.push(k)
+    }
+    return a;
+}
+
 export function getIntersectionSet(a, b) {
     let r = {};
     for (let k in a) {

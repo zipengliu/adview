@@ -102,6 +102,11 @@ class FullDendrogram extends Component {
                                    <use xlinkHref="#icon-triangle-up" x={(d.x1 + d.x2) / 2 - 4} y={d.y1 + 2} width="10" height="10" style={{fill: '#e41a1c'}} />
                                </g>
                                }
+                               {expandedBranches.length && expandedBranches.indexOf(d.bid) !== -1 &&
+                               <text x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy="-4" style={{fill: '#e41a1c', fontSize: '12px', fontWeight: 'bold'}}>
+                                   {expandedBranches.length - expandedBranches.indexOf(d.bid)}
+                               </text>
+                               }
                            </g>))}
                        {verticalLines.map((d, i) =>
                            <line className="branch-line" key={i} x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />

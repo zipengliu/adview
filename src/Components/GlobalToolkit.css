@@ -1,0 +1,18 @@
+#global-toolkit {
+    min-width: 200px;
+    z-index: 1000;
+}
+#global-toolkit .panel-heading{
+    position: relative;
+    cursor: move;
+}
+
+
+#global-toolkit .close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 16px;
+    z-index: 100;
+    cursor: pointer;
+}
