@@ -11,28 +11,15 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, mode, shadedGranularity, onToggleBlock} = this.props;
+        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {blocks, branches, num, total, lastSelected, isCBinRange} = this.props.data;
+        let {trees, blocks, branches, num, total, isCBinRange, selectedCnt} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
-
-        let numMatches = 0;
-        let numNonMatches = 0;
-        // if (isClusterMode) {
-        //     if (lastSelected) {
-        //         let s = blocks[lastSelected].similarity;
-        //         numMatches = s.filter(a => a === 1.0).length;
-        //         if (s.length > 5) {
-        //             numMatches = Math.ceil(5 * numMatches / s.length);
-        //         }
-        //         numNonMatches = Math.min(s.length, 5) - numMatches;
-        //     }
-        // } else {
-        //     numMatches = lastSelected && blocks[lastSelected] && blocks[lastSelected].similarity === 1.0? 1: 0;
-        // }
+        let highlightTreeCnt = isClusterMode? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
+            hoveredTrees.hasOwnProperty(this.props.data.tid);
 
         let hasUncertainty = block => {
             if (!block) return false;
@@ -77,18 +64,27 @@ class AggregatedDendrogram extends Component {
             return <path d={p.toString()} style={{stroke: 'none', fill: '#e41a1c'}}></path>;
         };
 
+        let svgWidth = size + margin.left + margin.right;
+        let svgHeight = size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0);
+
         return (
-            <svg width={size + margin.left + margin.right} height={size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0)}>
-                {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0"
-                                                     width={size + margin.left + margin.right} height={size + margin.top + margin.bottom}/>}
-                {isCBinRange && <rect className="range-selected-cb-indicator" x="0" y="0"
-                                                     width={size + margin.left + margin.right} height={size + margin.top + margin.bottom}/>}
+            <svg width={svgWidth} height={svgHeight}>
+                {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+                {isCBinRange && <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+                {((!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num)) &&
+                <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+
                 <g transform={`translate(${margin.left},${margin.top})`}>
                     {isClusterMode &&
                     <g className="proportion" >
                         <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
                         <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
-                        <text x={size} dx="-14" dy="9">{num}</text>
+                        {highlightTreeCnt > 0 &&
+                        <rect x="0" y="0" width={numScale(highlightTreeCnt)} height={proportionBarHeight} className="highlight" />}
+                        {selectedCnt > 0 &&
+                        <rect x="0" y="0" width={numScale(selectedCnt)} height={proportionBarHeight} className="selected" />}
+
+                        <text x="0" y="0" dx="4" dy="9">{num}</text>
                     </g>
                     }
                     <g transform={`translate(0,${isClusterMode? proportionBarHeight + proportionTopMargin: 0})`}>
@@ -107,7 +103,6 @@ class AggregatedDendrogram extends Component {
                                                                    style={{fill: f.color}}
                                                                    x={b.x + f.start * b.width} y={b.y} width={f.width * b.width} height={b.height} />) }
 
-                                    {/*TODO*/}
                                     {!isClusterMode && b.fill && b.isLeaf && false &&
                                     <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
                                           width={b.highlightWidth} height={b.height} />}

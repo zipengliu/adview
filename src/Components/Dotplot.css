@@ -8,7 +8,7 @@
     stroke-width: 2px;
 }
 .dot.highlight {
-    stroke: #e41a1c;
+    stroke: steelblue !important;
     stroke-width: 2px;
 }
 

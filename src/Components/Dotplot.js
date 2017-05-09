@@ -5,7 +5,7 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import Dimensions from 'react-dimensions';
-import classNames from 'classnames';
+import cn from 'classnames';
 import {scaleLinear} from 'd3-scale';
 import {createSelector} from 'reselect';
 import {startSelection, endSelection, changeSelection} from '../actions';
@@ -20,7 +20,7 @@ let isDotWithinBox = (dot, box) => {
 class Dotplot extends Component {
     render() {
         let s = this.props.containerWidth;
-        let {coordinates, selectionArea, colors, selectedTrees, isSelecting} = this.props;
+        let {coordinates, selectionArea, colors, selectedTrees, hoveredTrees, isSelecting} = this.props;
         let rect = {};
         if (isSelecting) {
             let {x1, x2, y1, y2} = selectionArea;
@@ -37,8 +37,10 @@ class Dotplot extends Component {
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
-            {coordinates.map(d => <circle className={classNames('dot', {selected: selectedTrees.hasOwnProperty(d.treeId),
-                'reference-tree-indicator': d.treeId === this.props.rid})}
+            {coordinates.map(d => <circle className={cn('dot',
+                {selected: selectedTrees.hasOwnProperty(d.treeId),
+                    'reference-tree-indicator': d.treeId === this.props.rid,
+                    highlight:  hoveredTrees.hasOwnProperty(d.treeId)})}
                                           style={{fill: colors[d.treeId] || 'black'}}
                                           r={3} cx={scale(d.x)} cy={scale(d.y)} key={d.treeId} />)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
@@ -63,7 +65,8 @@ let mapStateToProps = state => ({
     ...state.overview,
     colors: getDotColors(state),
     rid: state.referenceTree.id,
-    selectedTrees: state.selectedTrees
+    selectedTrees: state.selectedTrees,
+    hoveredTrees: state.hoveredTrees
 });
 
 let mapDispatchToProps = dispatch => ({

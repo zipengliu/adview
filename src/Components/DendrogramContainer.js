@@ -9,7 +9,7 @@ import {scaleLinear, hsl, extent, scaleLog} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees} from '../actions';
+import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
 import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual} from '../utils';
 import './Dendrogram.css';
 
@@ -23,27 +23,20 @@ class DendrogramContainer extends Component {
         let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
         let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
 
-        let numSelectedTrees = Object.keys(selectedTrees).length;
-        // let activeTids, activeTreeId;
-        // if (isClusterMode && activeTreeId) {
-        //     let activeDendrogram;
-        //     for (let i = 0; i < dendrograms.length; i++) {
-        //         if (dendrograms[i].tid === activeTreeId) {
-        //             activeDendrogram = dendrograms[i];
-        //             break;
-        //         }
-        //     }
-        //     if (activeDendrogram) {
-        //         activeTids = activeDendrogram.trees;
-        //     }
-        // }
-        let getDendroBox = (t, i) => {
+        let getDendroBox = t => {
+            t.selectedCnt = isClusterMode? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
+                selectedTrees.hasOwnProperty(t.tid);
             let div = (
-                <div className={cn("agg-dendro-box", {selected: selectedTrees.hasOwnProperty(t.tid)})} key={t.tid}
+                <div className={cn("agg-dendro-box", {selected: isClusterMode? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
+                     key={t.tid}
                      style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
+                     onMouseEnter={this.props.onHighlightTrees.bind(null, isClusterMode? t.trees: [t.tid])}
+                     onMouseLeave={this.props.onHighlightTrees.bind(null, null)}
                      onClick={(e) => {this.props.onSelectTrees(isClusterMode? t.trees: [t.tid], e.shiftKey)}}
                 >
-                    <AggregatedDendrogram data={t} spec={spec} mode={mode} isReferenceTree={t.tid === this.props.referenceTid}
+                    <AggregatedDendrogram data={t} spec={spec} mode={mode}
+                                          isReferenceTree={t.tid === this.props.referenceTid}
+                                          hoveredTrees={this.props.hoveredTrees}
                                           onToggleBlock={this.props.onToggleBlock}
                                           rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
                 </div>);
@@ -1113,12 +1106,14 @@ let mapStateToProps = (state) => {
             range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
         }: null,
         selectedTrees: state.selectedTrees,
-        expandedBranches: state.referenceTree.selected
+        expandedBranches: state.referenceTree.selected,
+        hoveredTrees: state.hoveredTrees
     }
 };
 
 let mapDispatchToProps = (dispatch) => ({
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
+    onHighlightTrees: (tids) => {dispatch(toggleHighlightTrees(tids))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onChangeSorting: () => {dispatch(toggleSorting())},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},

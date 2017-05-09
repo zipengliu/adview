@@ -73,6 +73,7 @@ let initialState = {
         selectingArea: null
     },
     selectedTrees: {},
+    hoveredTrees: {},
     aggregatedDendrogram: {
         // activeTreeId: null,
         activeSetIndex: 0,
@@ -151,7 +152,7 @@ let initialState = {
     },
     treeDistribution: {
         showSubsets: false,
-        highlightTids: []
+        tooltipMsg: null,
     },
     globalToolkit: {
         show: true,
@@ -675,51 +676,6 @@ function visphyReducer(state = initialState, action) {
             };
 
 
-        // case TYPE.TOGGLE_HIGHLIGHT_TREE:
-        //     return Object.assign({}, state, {
-        //         overview: {
-        //             ...state.overview,
-        //             highlightDots: action.isHighlight? action.tids: []
-        //         }
-        //     });
-        // case TYPE.TOGGLE_SELECT_AGG_DENDRO:
-        //     let newHighlight;
-        //     if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tid) {
-        //         newColors = state.highlight.colors.slice();
-        //         newBids = state.highlight.bids.filter(h => {
-        //             if (h.src !== state.referenceTree.id) {
-        //                 newColors[h.color] = false;     // If this group is to be removed, recycle the color
-        //                 return false;
-        //             }
-        //             return true;
-        //         }).map(h => (
-        //             {...h, tgt: action.tid,
-        //                 [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
-        //                     state.inputGroupData.trees[action.tid])}
-        //         ));
-        //         newHighlight = {
-        //             ...state.highlight,
-        //             bids: newBids,
-        //             colors: newColors
-        //         }
-        //     } else {
-        //         newHighlight = state.highlight;
-        //     }
-        //     return Object.assign({}, state, {
-        //         aggregatedDendrogram: {
-        //             ...state.aggregatedDendrogram,
-        //             activeTreeId: action.tid
-        //         },
-        //         overview: {
-        //             ...state.overview,
-        //             selectedDots: state.aggregatedDendrogram.mode.indexOf('cluster') !== -1? action.tids: ([action.tid] || [])
-        //         },
-        //         pairwiseComparison: state.pairwiseComparison.tid? {
-        //             ...state.pairwiseComparison,
-        //             tid: action.tid,
-        //         }: state.pairwiseComparison,
-        //         highlight: newHighlight
-        //     });
         case TYPE.SELECT_SET:
             return Object.assign({}, state, {
                 aggregatedDendrogram: {
@@ -808,39 +764,6 @@ function visphyReducer(state = initialState, action) {
                     pairwiseComparison: action.p
                 }
             };
-        // case TYPE.TOGGLE_COMPARING_HIGHLIGHT_MONOPHYLY:
-        //     let oldBidsArr = state.pairwiseComparison.highlight.bids;
-        //     // Find out where are the highlighted entities in the other tree
-        //     // The list of branches returned contains exactly all the highlighted entities
-        //     let tgtEntities;
-        //     if (action.bid ===  'missing_taxa') {
-        //         tgtEntities = state.inputGroupData.trees[action.tid].missing;
-        //     } else if (action.bid.startsWith('m-')) {
-        //         tgtEntities = [action.bid.substr(2)];
-        //     } else {
-        //         tgtEntities = state.inputGroupData.trees[action.tid].branches[action.bid].entities;
-        //     }
-        //     let bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
-        //     let newBid = {src: action.tid, [action.tid]: [action.bid], [otherTid]: bids};
-        //     let newBidsArr;
-        //     let newPointer = state.pairwiseComparison.highlight.pointer;
-        //     if (oldBidsArr.length + 1 > state.pairwiseComparison.highlight.limit) {
-        //         newBidsArr = oldBidsArr.map((d, i) => (i === newPointer? newBid: d));
-        //         newPointer += 1;
-        //     } else {
-        //         newBidsArr = oldBidsArr.concat([newBid]);
-        //     }
-        //     return {
-        //         ...state,
-        //         pairwiseComparison: {
-        //             ...state.pairwiseComparison,
-        //             highlight: {
-        //                 ...state.pairwiseComparison.highlight,
-        //                 bids: newBidsArr,
-        //                 pointer: newPointer
-        //             }
-        //         }
-        //     };
         case TYPE.COMPARE_WITH_REFERENCE:
             if (action.tid) {
                 // Entering pairwise comparison mode
@@ -1089,12 +1012,13 @@ function visphyReducer(state = initialState, action) {
                     showSubsets: !state.treeDistribution.showSubsets
                 }
             };
-        case TYPE.TOGGLE_HIGHLIGHT_TREES_DISTRIBUTION:
+        case TYPE.TOGGLE_HIGHLIGHT_TREES:
             return {
                 ...state,
+                hoveredTrees: action.tids && action.tids.length? createMappingFromArray(action.tids): {},
                 treeDistribution: {
                     ...state.treeDistribution,
-                    highlightTids: action.tids
+                    tooltipMsg: action.msg
                 }
             };
         case TYPE.TOGGLE_SELECT_TREES:

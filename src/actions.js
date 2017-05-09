@@ -202,24 +202,6 @@ function changeDistanceMetricFailure(error) {
     return {type: TYPE.CHANGE_DISTANCE_METRIC_FAILURE, error}
 }
 
-export function togglePickingMetricBranch() {
-    return {type: TYPE.TOGGLE_PICKING_METRIC_BRANCH}
-}
-
-export function toggleHighlightTree(tids, isHighlight) {
-    return {
-        type: TYPE.TOGGLE_HIGHLIGHT_TREE,
-        tids,
-        isHighlight
-    }
-}
-
-// export function toggleSelectAggDendro(tid, tids) {
-//     return {
-//         type: TYPE.TOGGLE_SELECT_AGG_DENDRO,
-//         tid, tids
-//     }
-// }
 
 export function selectSet(i) {
     return {
@@ -351,8 +333,8 @@ export function toggleSubsetDistribution() {
     return {type: TYPE.TOGGLE_SHOW_SUBSET_DISTRIBUTION};
 }
 
-export function toggleHighlightTreesDistribution(tids) {
-    return {type: TYPE.TOGGLE_HIGHLIGHT_TREES_DISTRIBUTION, tids};
+export function toggleHighlightTrees(tids, msg) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_TREES, tids, msg};
 }
 
 
