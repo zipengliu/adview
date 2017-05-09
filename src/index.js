@@ -18,7 +18,9 @@ import UserManual from './Components/UserManual';
 
 console.log('Welcome to VisPhy!');
 
-let loggerMiddleware = createLogger();
+let loggerMiddleware = createLogger({
+    collapsed: true
+});
 let store = createStore(visphyReducer, applyMiddleware(thunkMiddleware, loggerMiddleware));
 
 let root = (

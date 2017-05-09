@@ -5,22 +5,23 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Glyphicon, Badge} from 'react-bootstrap';
+import {Glyphicon, Badge, Clearfix} from 'react-bootstrap';
 import cn from 'classnames';
 import {toggleTreeListCollapse} from '../actions';
 import './TreeList.css';
 
 let TreeList = (props) => (
-    <div className="view" id="tree-list" style={{height: props.collapsed? '60px': '200px'}}>
-        <div className="view-header">
+    <div className={cn("view panel panel-default", {'panel-collapsed': props.collapsed})} id="tree-list">
+        <div className="view-header panel-heading">
             <div className="view-title">Tree List
                 <Badge style={{marginLeft: '5px'}}>{props.trees.length}</Badge>
-                <span style={{marginLeft: '10px', cursor: 'pointer'}} onClick={props.onToggleCollapsed}>
+                <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={props.onToggleCollapsed}>
                 <Glyphicon glyph={props.collapsed? 'triangle-top': 'triangle-bottom'}/>
                 </span>
             </div>
+            <Clearfix/>
         </div>
-        <div className="view-body">
+        <div className="view-body panel-body">
                 {props.trees.map((t, i) =>
                     <div className="list-item" key={t.tid}>
                         {i === 0 && <Glyphicon glyph="tree-conifer" style={{display: 'inline'}} />}
@@ -32,12 +33,12 @@ let TreeList = (props) => (
                             </span>
                     </div>)}
         </div>
-        <div className="view-footer legends">
-            <Glyphicon glyph="tree-conifer" />
-            <span>ref. tree</span>
-            <span className="tree-name current-set" style={{marginLeft: '10px', marginRight: '10px'}}>in current set</span>
-            <span className="tree-name selected">selected</span>
-        </div>
+        {/*<div className="view-footer legends panel-footer">*/}
+            {/*<Glyphicon glyph="tree-conifer" />*/}
+            {/*<span>ref. tree</span>*/}
+            {/*<span className="tree-name current-set" style={{marginLeft: '10px', marginRight: '10px'}}>in current set</span>*/}
+            {/*<span className="tree-name selected">selected</span>*/}
+        {/*</div>*/}
     </div>
 );
 

@@ -59,35 +59,37 @@ class DendrogramContainer extends Component {
         };
 
         return (
-            <div className="view" id="aggregated-dendrograms">
-                <div className="view-header">
-                    <div style={{textAlign: 'center'}}>
+            <div className="view panel panel-default" id="aggregated-dendrograms">
+                <div className="view-header panel-heading">
                         <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
-                        <FormGroup style={{marginLeft: '10px', marginBottom: 0, display: 'inline-block'}}>
-                            <span style={{marginRight: '5px'}}>(as</span>
-                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individule: frond</Radio>
-                            <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
-                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
-                            <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>
-                                <span style={{textDecoration: 'line-through'}}>taxa-cluster</span>
-                            </Radio>
-                            <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
-                                <span style={{textDecoration: 'line-through'}}>remainder</span>
-                            </Radio>
-                            <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>
-                                <span style={{textDecoration: 'line-through'}}>fine-grained</span>
-                            </Radio>
-                            )
-                        </FormGroup>
-                    </div>
+                </div>
 
-                    <div style={{marginBottom: '5px'}}>
+                <div className="view-body panel-body">
+
+                    <FormGroup style={{display: 'inline-block'}}>
+                        <span style={{marginRight: '5px'}}>(as</span>
+                        <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
+                        <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
+                        <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
+                        <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>
+                            <span style={{textDecoration: 'line-through'}}>taxa-cluster</span>
+                        </Radio>
+                        <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
+                            <span style={{textDecoration: 'line-through'}}>remainder</span>
+                        </Radio>
+                        <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>
+                            <span style={{textDecoration: 'line-through'}}>fine-grained</span>
+                        </Radio>
+                        )
+                    </FormGroup>
+
+                    <div>
                         {/*<ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>*/}
-                            {/*<OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>*/}
-                                {/*<Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>*/}
-                                    {/*<Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>*/}
-                                {/*</Button>*/}
-                            {/*</OverlayTrigger>*/}
+                        {/*<OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>*/}
+                        {/*<Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>*/}
+                        {/*<Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>*/}
+                        {/*</Button>*/}
+                        {/*</OverlayTrigger>*/}
                         {/*</ButtonGroup>*/}
 
                         <div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>
@@ -126,9 +128,10 @@ class DendrogramContainer extends Component {
                             </Tab>
                         )}
                     </Tabs>
-                </div>
-                <div className="view-body dendrogram-container">
-                    {dendrograms.map(getDendroBox)}
+
+                    <div className="dendrogram-container">
+                        {dendrograms.map(getDendroBox)}
+                    </div>
                 </div>
             </div>
         )

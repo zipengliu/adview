@@ -7,13 +7,13 @@ import {connect} from 'react-redux';
 import {createSelector, createSelectorCreator} from 'reselect';
 import {scaleLinear} from 'd3';
 import {Button, ButtonGroup, OverlayTrigger, Tooltip, Table, Badge} from 'react-bootstrap';
-import {toggleSubsetDistribution, toggleHighlightTreesDistribution} from '../actions';
+import {toggleSubsetDistribution, toggleHighlightTreesDistribution, toggleSelectTrees} from '../actions';
 import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
 
 class TreeDistribution extends Component {
     render() {
-        let {cb, expandedBranches, sets, distributions} = this.props;
+        let {expandedBranches, sets, distributions} = this.props;
         let showSubsets = this.props.treeDistribution.showSubsets;
         let numTrees = sets[0].tids.length;
 
@@ -27,7 +27,7 @@ class TreeDistribution extends Component {
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
-                        return <OverlayTrigger key={i} placement={leftPos <= 50? 'right': 'left'}
+                        return <OverlayTrigger key={i} placement={leftPos + x(b.length) <= 50? 'right': 'left'}
                                                overlay={<Tooltip id={`tree-dist-${sid}-${bid}-${i}`}>
                                                    # trees in this cluster: {b.length}. <br/>
                                                    This cluster {d.hasCompatibleTree && i === 0? 'agrees ': 'disagrees '}
@@ -51,45 +51,44 @@ class TreeDistribution extends Component {
         };
 
         return (
-            <div id="tree-distribution" className="view">
-                <div className="view-header">
+            <div id="tree-distribution" className="view panel panel-default">
+                <div className="view-header panel-heading">
                     <div className="view-title">Tree Distribution by Partition</div>
-                    <div style={{marginBottom: '5px', fontSize: '12px'}}>
-                        <ButtonGroup bsSize="xsmall">
-                            <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
-                            <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
-                        </ButtonGroup>
-                        <span> distribution for subsets. </span>
-                    </div>
                 </div>
 
-                <div className="view-body" style={{fontSize: '12px'}}>
-                    <Table condensed bordered>
-                        <thead>
-                            <tr>
-                                <th style={{width: '67px'}}>Tree set</th>
-                                <th style={{width: '50px'}}>Partition</th>
-                                <th>Distribution</th>
+                <Table condensed bordered>
+                    <thead>
+                    <tr>
+                        <th style={{width: '100px'}}>Tree set</th>
+                        <th style={{width: '50px'}}>Partition</th>
+                        <th>Distribution</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {distributions.map((s, i) =>
+                        (expandedBranches.map((bid, j) =>
+                            <tr key={`${i}-${j}`}>
+                                {j === 0 &&
+                                <td rowSpan={expandedBranches.length}>
+                                    {sets[i].title} {expandedBranches.length > 1 && <br/>}
+                                    <Badge style={{backgroundColor: sets[i].color}}>{sets[i].tids.length}</Badge>
+                                </td>}
+                                <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{j + 1}</td>
+                                <td style={{height: '100%', padding: 0}}>
+                                    {renderBars(distributions[i][j], i, bid)}
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                        {distributions.map((s, i) =>
-                            (expandedBranches.map((bid, j) =>
-                                <tr key={`${i}-${j}`}>
-                                    {j === 0 &&
-                                    <td rowSpan={expandedBranches.length}>
-                                        {sets[i].title} <br/>
-                                        <Badge style={{backgroundColor: sets[i].color}}>{sets[i].tids.length}</Badge>
-                                    </td>}
-                                    <td style={{color: '#e41a1c', fontWeight: 'bold'}}>{j + 1}</td>
-                                    <td style={{height: '100%', padding: 0}}>
-                                        {renderBars(distributions[i][j], i, bid)}
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                        </tbody>
-                    </Table>
+                        ))
+                    )}
+                    </tbody>
+                </Table>
+                <div className="panel-footer">
+                    <ButtonGroup bsSize="xsmall">
+                        <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
+                        <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
+                    </ButtonGroup>
+                    <span> distribution for subsets. </span>
+                    {}
                 </div>
             </div>
         )
@@ -135,8 +134,16 @@ let clusterTreesByBranch = clusterSelector(
         };
         // Extract the corresponding set of taxa
         for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
-            taxaSetByTree[tid] = correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].hasOwnProperty('bid')?
-                createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities): {};
+            taxaSetByTree[tid] = {};
+            if (correspondingBranches.hasOwnProperty(tid)) {
+                let corr = correspondingBranches[tid];
+                if (corr.bid) {
+                    taxaSetByTree[tid] = createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities);
+                    if (!corr.in) {
+                        taxaSetByTree[tid] = subtractMapping(createMappingFromArray(trees[tid].entities), taxaSetByTree[tid]);
+                    }
+                }
+            }
         }
 
         // First bin is always the one that is in line with the reference tree
@@ -171,7 +178,6 @@ let clusterTreesByBranch = clusterSelector(
 
         }
 
-        console.log('bins = ', bins);
         return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: true};
     }
 );
@@ -255,7 +261,6 @@ let mapStateToProps = state => {
     }
 
     return {
-        cb: state.cb,
         expandedBranches: state.referenceTree.selected,
         sets: state.sets,
         treeDistribution: state.treeDistribution,
@@ -266,6 +271,7 @@ let mapStateToProps = state => {
 let mapDispatchToProps = dispatch => ({
     onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},
     onHighlightTrees: (tids) => {dispatch(toggleHighlightTreesDistribution(tids))},
+    onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TreeDistribution);

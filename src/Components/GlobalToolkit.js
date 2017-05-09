@@ -4,9 +4,11 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
+import Draggable from 'react-draggable';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {toggleGlobalToolkit, clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet, changeReferenceTree,
-    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing} from '../actions';
+    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing,
+    moveGlobalToolkit, moveToolkitEnd, moveToolkitStart} from '../actions';
 import './GlobalToolkit.css';
 
 class GlobalToolkit extends Component {
@@ -15,9 +17,16 @@ class GlobalToolkit extends Component {
         let {show, position} = this.props.globalToolkit;
 
         return (
+            <Draggable
+                axis="both"
+                defaultPosition={{x: position.left, y: position.top}}
+                handle="#global-toolkit .panel-heading"
+                bounds="body"
+            >
             <div id="global-toolkit" className="panel panel-primary"
-                 style={{display: show? 'block': 'none', position: 'fixed', ...position}}>
-                <div className="panel-heading">
+                 style={{display: show? 'block': 'none', position: 'fixed'}}>
+                <div className="panel-heading"
+                >
                     <div>Toolkit</div>
                     <div className="close-btn" onClick={this.props.onToggleGlobalToolkit}><Glyphicon glyph="remove"/></div>
                 </div>
@@ -108,6 +117,7 @@ class GlobalToolkit extends Component {
                     </ButtonGroup>
                 </div>
             </div>
+            </Draggable>
         )
     }
 };
@@ -138,6 +148,10 @@ let mapDispatchToProps = dispatch => ({
     onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
 
     onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))},
+
+    onMoveGlobalToolkit: (pos) => {dispatch(moveGlobalToolkit(pos))},
+    onMoveStart: (pos) => {dispatch(moveToolkitStart(pos))},
+    onMoveEnd: () => {dispatch(moveToolkitEnd())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(GlobalToolkit);

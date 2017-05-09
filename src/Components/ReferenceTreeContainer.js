@@ -15,18 +15,20 @@ class ReferenceTreeContainer extends Component {
         let viewBodyPos = this.viewBody? this.viewBody.getBoundingClientRect(): {bottom: 0, left: 0};
 
         return (
-            <div className="view" style={{height: '100%'}}>
-                <div className="view-header">
+            <div className="view panel panel-default" style={{height: '100%'}} id="reference-tree">
+                <div className="view-header panel-heading">
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +
                     (props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>
-                        <div style={{textAlign: 'center'}}>
+                        <div>
                             <span className="view-title">Reference Tree </span>
                             <span>({textEllipsis(props.tree.name, 20)})</span>
                             {props.comparingTree &&
                             <span> vs. {textEllipsis(props.comparingTree.name, 20)}</span>}
                         </div>
                     </OverlayTrigger>
-                    <div style={{marginBottom: '5px'}}>
+                </div>
+                <div className="view-body panel-body" ref={v => {this.viewBody = v}}>
+                    <div>
                         <ButtonGroup bsSize="xsmall">
                             <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
                                 {props.universalBranchLen? 'Encode branch length': 'Use uniform branch length'} </Tooltip>}>
@@ -51,9 +53,9 @@ class ReferenceTreeContainer extends Component {
                         </div>
                         }
                     </div>
-                </div>
-                <div className="view-body" ref={v => {this.viewBody = v}}>
+
                     <FullDendrogram />
+
                     {props.checkingBranch &&
                     <div className="checking-branch-tooltip" style={{top: viewBodyPos.bottom + 'px', left: viewBodyPos.left + 'px'}}>
                         {props.branchAttributes.map((a, i) =>

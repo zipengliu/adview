@@ -10,11 +10,14 @@ import PopupWindow from './PopupWindow';
 import { changeDistanceMetric} from '../actions';
 
 let Overview = props => (
-    <div id="overview" className="view">
-        <div className="view-header">
-            <div className="view-title">Overview</div>
+    <div id="overview" className="view panel panel-default">
+        <div className="view-header panel-heading">
+            <div className="view-title">Tree Similarity</div>
+        </div>
+
+        <div className="view-body panel-body">
             <div>
-                <span style={{fontSize: '12px'}}>Distance:</span>
+                <span>Distance:</span>
                 <ButtonGroup bsSize="xsmall" style={{padding: '2px'}}>
                     <OverlayTrigger placement="top" overlay={<Tooltip id="dist-metric-full">RF distance between trees</Tooltip>}>
                         <Button active={props.metricMode === 'global'}
@@ -27,9 +30,6 @@ let Overview = props => (
                     </OverlayTrigger>
                 </ButtonGroup>
             </div>
-        </div>
-
-        <div className="view-body">
             <Dotplot />
         </div>
 

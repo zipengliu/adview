@@ -365,8 +365,14 @@ export function toggleGlobalToolkit() {
     return {type: TYPE.TOGGLE_GLOBAL_TOOLKIT};
 }
 
-export function moveGlobalToolkit(position) {
-    return {type: TYPE.MOVE_GLOBAL_TOOLKIT, position}
+export function moveGlobalToolkit(mousePosition) {
+    return {type: TYPE.MOVE_GLOBAL_TOOLKIT, mousePosition}
+}
+export function moveToolkitStart(mousePosition) {
+    return {type: TYPE.MOVE_TOOLKIT_START, mousePosition}
+}
+export function moveToolkitEnd() {
+    return {type: TYPE.MOVE_TOOLKIT_END}
 }
 
 export function clearSelectedTrees() {

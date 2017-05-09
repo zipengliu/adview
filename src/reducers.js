@@ -128,7 +128,7 @@ let initialState = {
         },
         shownAsHistogram: true,
         spec: {
-            width: 164,
+            width: 154,
             chartHeight: 50,
             sliderHeight: 18,
             margin: {left: 25, right: 8, top: 20, bottom: 2}
@@ -155,7 +155,8 @@ let initialState = {
     },
     globalToolkit: {
         show: true,
-        position: {left: 400, top: 10}
+        position: {left: 400, top: 10},
+        isMoving: false
     }
 };
 
@@ -1144,13 +1145,36 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.MOVE_GLOBAL_TOOLKIT:
+            let {positionBeforeDrag, mousePosition} = state.globalToolkit;
             return {
                 ...state,
                 globalToolkit: {
                     ...state.globalToolkit,
-                    position: action.position
+                    position: {left: positionBeforeDrag.left + (action.mousePosition.x - mousePosition.x),
+                        top: positionBeforeDrag.top + (action.mousePosition.y - mousePosition.y)}
                 }
             };
+        case TYPE.MOVE_TOOLKIT_START:
+            return {
+                ...state,
+                globalToolkit: {
+                    ...state.globalToolkit,
+                    isMoving: true,
+                    mousePosition: action.mousePosition,
+                    positionBeforeDrag: {...state.globalToolkit.position}
+                }
+            };
+        case TYPE.MOVE_TOOLKIT_END:
+            return {
+                ...state,
+                globalToolkit: {
+                    ...state.globalToolkit,
+                    isMoving: false,
+                    mousePosition: null,
+                    positionBeforeDrag: null
+                }
+            };
+
         case TYPE.CLEAR_SELECTED_TREES:
             return {
                 ...state,

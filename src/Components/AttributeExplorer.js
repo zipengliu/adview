@@ -41,18 +41,18 @@ class AttributeExplorer extends Component {
             </Button>;
 
         return (
-            <div id="attribute-explorer" className="view">
+            <div id="attribute-explorer" className="view panel panel-default">
 
-                <div className="view-header">
+                <div className="view-header panel-heading">
                     <div className="view-title">Attribute Explorer</div>
-                    <FormGroup style={{textAlign: 'center'}}>
-                        <span style={{marginRight: '2px'}}>as</span>
-                        <Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>
-                        <Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>
-                    </FormGroup>
+                    {/*<FormGroup style={{textAlign: 'center'}}>*/}
+                        {/*<span style={{marginRight: '2px'}}>as</span>*/}
+                        {/*<Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>*/}
+                        {/*<Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>*/}
+                    {/*</FormGroup>*/}
                 </div>
 
-                <div className="view-body">
+                <div className="view-body panel-body">
                     <div className="attribute-heading">&diams; Reference Tree</div>
                     <div style={{marginLeft: '18px'}}>
                         {renderChart(data.ref.gsf.fg, null, '%exact matches (GSF)', 3)}

@@ -34,7 +34,7 @@ class MainView extends Component {
                     </div>
                 </div>
 
-                <Button bsSize="xsmall" active={this.props.globalToolkit.show} style={{position: 'fixed', top: 65, right: 5}}
+                <Button bsStyle="primary" bsSize="xsmall" active={this.props.globalToolkit.show} style={{position: 'fixed', top: 65, right: 5}}
                         onClick={this.props.onToggleGlobalToolkit}>
                     <Glyphicon glyph="wrench"/>
                 </Button>
