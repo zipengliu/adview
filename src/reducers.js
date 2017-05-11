@@ -156,6 +156,9 @@ let initialState = {
         showSubsets: false,
         tooltipMsg: null,
     },
+    bipartitionDistribution: {
+        tooltipMsg: null,
+    },
     globalToolkit: {
         show: true,
         position: {left: 400, top: 10},
@@ -1019,10 +1022,14 @@ function visphyReducer(state = initialState, action) {
             return {
                 ...state,
                 hoveredTrees: action.tids && action.tids.length? createMappingFromArray(action.tids): {},
-                treeDistribution: {
+                treeDistribution: action.isMsgForBip? state.treeDistribution: {
                     ...state.treeDistribution,
                     tooltipMsg: action.msg
-                }
+                },
+                bipartitionDistribution: action.isMsgForBip? {
+                    ...state.treeDistribution,
+                    tooltipMsg: action.msg
+                }: state.bipartitionDistribution
             };
         case TYPE.TOGGLE_SELECT_TREES:
             // If select a different tree for pairwise comparison

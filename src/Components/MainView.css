@@ -126,6 +126,9 @@
 #tree-distribution {
     flex: 0 0 auto;
 }
+#bip-distribution {
+    flex: 0 0 auto;
+}
 
 .inspector-window {
     width: 90%;

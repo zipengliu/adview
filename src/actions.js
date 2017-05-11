@@ -333,8 +333,8 @@ export function toggleSubsetDistribution() {
     return {type: TYPE.TOGGLE_SHOW_SUBSET_DISTRIBUTION};
 }
 
-export function toggleHighlightTrees(tids, msg) {
-    return {type: TYPE.TOGGLE_HIGHLIGHT_TREES, tids, msg};
+export function toggleHighlightTrees(tids, msg, isMsgForBip=false) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_TREES, tids, msg, isMsgForBip};
 }
 
 

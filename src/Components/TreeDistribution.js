@@ -54,7 +54,7 @@ class TreeDistribution extends Component {
         return (
             <div id="tree-distribution" className="view panel panel-default">
                 <div className="view-header panel-heading">
-                    <div className="view-title">Tree Distribution by Partition</div>
+                    <div className="view-title">Tree Distribution by Reference Partition</div>
                 </div>
 
                 <Table condensed bordered>
@@ -116,7 +116,7 @@ let memoizeDistribution = (func) => {
     }
 };
 
-let clusterSelector = createSelectorCreator(memoizeDistribution);
+export let clusterSelector = createSelectorCreator(memoizeDistribution);
 
 let binSortFunc = (a, b) => (b.length - a.length);
 let clusterTreesByBranch = clusterSelector(
@@ -183,12 +183,18 @@ let clusterTreesByBranch = clusterSelector(
     }
 );
 
-let getHighlightProportion = (distribution, tids) => {
+export let getHighlightProportion = (distribution, tids) => {
     let {bins, treeToBin} = distribution;
     let highlightCnt = (new Array(bins.length)).fill(0);
     for (let tid in tids) if (tids.hasOwnProperty(tid)) {
         if (treeToBin.hasOwnProperty(tid)) {
-            highlightCnt[treeToBin[tid]] += 1;
+            if (Array.isArray(treeToBin[tid])) {
+                for (let i = 0; i < treeToBin[tid].length; i++) {
+                    highlightCnt[treeToBin[tid][i]] += 1;
+                }
+            } else {
+                highlightCnt[treeToBin[tid]] += 1;
+            }
         }
     }
     return highlightCnt;

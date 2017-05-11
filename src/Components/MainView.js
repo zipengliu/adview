@@ -16,6 +16,7 @@ import AttributeExplorer from './AttributeExplorer';
 import TaxaList from './TaxaList';
 import TreeDistribution from './TreeDistribution';
 import GlobalToolkit from './GlobalToolkit';
+import BipartitionDistribution from './BipartitionDistribution';
 import {getWindowHeight} from '../utils';
 
 import './MainView.css';
@@ -53,6 +54,7 @@ class MainView extends Component {
                     </div>
                     <div className="right-column">
                         <TreeDistribution />
+                        <BipartitionDistribution />
                         <DendrogramContainer />
                     </div>
                 </div>}
