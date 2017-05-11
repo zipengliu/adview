@@ -6,6 +6,7 @@
     "react-scripts": "0.7.0"
   },
   "dependencies": {
+    "bitset.js": "^4.0.0",
     "classnames": "^2.2.5",
     "d3": "^4.3.0",
     "react": "^15.3.2",

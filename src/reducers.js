@@ -5,11 +5,13 @@
 import * as TYPE from './actionTypes';
 import {scaleOrdinal, scaleLinear, schemeCategory10} from 'd3-scale';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
+import BipartitionList from './bipartitions';
 
 let initialState = {
     isFetching: false,
     isFetchFailed: false,
     inputGroupData: null,
+    bipartitions: {},
     datasets: [],
     toast: {
         msg: null,
@@ -884,6 +886,7 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
+                bipartitions: new BipartitionList(action.data.trees, action.data.entities, action.data.defaultReferenceTree),
                 toast: {
                     ...state.toast,
                     msg: null
