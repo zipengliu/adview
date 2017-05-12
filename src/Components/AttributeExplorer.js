@@ -16,7 +16,7 @@ import './AttributeExplorer.css';
 
 class AttributeExplorer extends Component {
     render() {
-        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, withSupport} = this.props;
+        let {modes, onChangeMode, shownAsHistogram, data, activeSelectionId, withSupport, referenceTree} = this.props;
         let attrName = this.props.attributeNames[0];
 
         let renderChart = (fgData, bgData, att, id) => shownAsHistogram?
@@ -65,7 +65,9 @@ class AttributeExplorer extends Component {
                     <div className="attribute-section-divider"></div>
 
                     <OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>
-                        <div className="attribute-heading">&diams; Corresponding branches</div>
+                        <div className="attribute-heading">&diams; Corresponding branches to
+                            {referenceTree.checkingBranch? ' hovered reference branch':
+                                (referenceTree.selected.length? ` branch ${referenceTree.selected.length}`: ' none')}</div>
                     </OverlayTrigger>
                     <div style={{marginLeft: '18px'}}>
                         <ButtonGroup bsSize="xsmall">
@@ -283,6 +285,7 @@ let mapStateToProps = state => {
 
     return {
         ...state.attributeExplorer,
+        referenceTree: state.referenceTree,
         data,
     };
 };

@@ -54,7 +54,8 @@ class MainView extends Component {
                     </div>
                     <div className="right-column">
                         <TreeDistribution />
-                        <BipartitionDistribution />
+                        {this.props.inputGroupData.inputGroupId < 3 &&
+                        <BipartitionDistribution />}
                         <DendrogramContainer />
                     </div>
                 </div>}
