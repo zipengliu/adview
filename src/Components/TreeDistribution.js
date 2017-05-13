@@ -125,11 +125,17 @@ let clusterTreesByBranch = clusterSelector(
     state => state.cb,
     (_, bid) => bid,
     (trees, rid, cb, bid) => {
-        console.log('Binning trees by ', rid, bid);
+        console.log('Binning trees by ', rid, bid, cb);
         let bins = [], treeToBin = {};
         let withoutMissing = cb === 'cb2';
         let correspondingBranches = trees[rid].branches[bid][cb];
 
+        let missingMap = {};
+        if (withoutMissing) {
+            for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+                missingMap[tid] = createMappingFromArray(trees[tid].missing);
+            }
+        }
         let taxaSetByTree = {
             [rid]: createMappingFromArray(trees[rid].branches[bid].entities)
         };
@@ -151,13 +157,14 @@ let clusterTreesByBranch = clusterSelector(
         bins.push([rid]);
         treeToBin[rid] = 0;
 
+
         // Bin all other the trees
         for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
             let found = false;
             for (let j = 0; j < bins.length; j++) {
                 let s = bins[j];
-                let set1 = withoutMissing? subtractMapping(taxaSetByTree[s[0]], trees[tid].missing): taxaSetByTree[s[0]];
-                let set2 = withoutMissing? subtractMapping(taxaSetByTree[tid], trees[s[0]].missing): taxaSetByTree[tid];
+                let set1 = withoutMissing? subtractMapping(taxaSetByTree[s[0]], missingMap[tid]): taxaSetByTree[s[0]];
+                let set2 = withoutMissing? subtractMapping(taxaSetByTree[tid], missingMap[s[0]]): taxaSetByTree[tid];
                 if (areSetsEqual(set1, set2)) {
                     found = true;
                     s.push(tid);
