@@ -16,7 +16,7 @@ let initialState = {
     toast: {
         msg: null,
     },
-    cb: 'cb',
+    cb: 'cb2',                      // 'cb' means match with missing taxa, 'cb2' w/o
     inspector: {
         show: false,
         pairwiseComparison: null,
@@ -883,9 +883,10 @@ function visphyReducer(state = initialState, action) {
                     action.data.trees[tid].rootBranch, action.data.supportRange), action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
                 action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
+            let newCB = action.data.hasMissingTaxa? 'cb2': 'cb';
             action.data.trees[action.data.defaultReferenceTree].branches =
                 getGSF(action.data.trees[action.data.defaultReferenceTree].branches,
-                    state.cb, Object.keys(action.data.trees).length - 1);
+                    newCB, Object.keys(action.data.trees).length - 1);
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
@@ -906,7 +907,7 @@ function visphyReducer(state = initialState, action) {
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(action.data.trees, state.cb, true, action.data.defaultReferenceTree, null)
+                    coordinates: getCoordinates(action.data.trees, newCB, true, action.data.defaultReferenceTree, null)
                 },
                 attributeExplorer: {
                     ...state.attributeExplorer,
@@ -915,7 +916,8 @@ function visphyReducer(state = initialState, action) {
                         [{attribute: 'support', accessor: b => 'NA'},
                             ...state.attributeExplorer.branchAttributes.slice(1)
                         ]
-                }
+                },
+                cb: newCB
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
             return Object.assign({}, state, {

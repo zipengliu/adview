@@ -16,6 +16,7 @@ class BipartitionDistribution extends Component {
         let {tooltipMsg} = this.props.bipartitionDistribution;
 
         let renderBars = (d, bid, branchNo) => {
+            let numBips = d.bipBins.reduce((acc, x) => (acc + x), 0);
             let x = scaleLinear().domain([0, numBips]).range([0, 100]);
             let curN = 0;
             return (
@@ -99,7 +100,7 @@ let mapStateToProps = state => {
         d.selectCnt = getHighlightProportion(d, state.selectedTrees);
         distributions.push(d);
     }
-    console.log(distributions);
+    // console.log(distributions);
 
     return {
         expandedBranches: state.referenceTree.selected,

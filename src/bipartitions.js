@@ -146,6 +146,7 @@ class BipartitionList {
         console.log('Number of entries in hash table: ', this.numEntries);
         console.log('load of hash table: ', Object.keys(this.hash).length);
         console.log('Number of bips: ', this.numBips);
+        console.log(this.entriesArray);
     }
 
     static isCompatible(a, b) {
@@ -205,8 +206,8 @@ class BipartitionList {
             let j;
             for (j = 0; j < entries.length; j++) {
                 if (BipartitionList.isCompatible(e, entries[j])) {
-                    entries[j].treeVector.or(e.treeVector);
-                    entries[j].numBips += e.n;
+                    // entries[j].treeVector.or(e.treeVector);
+                    // entries[j].numBips += e.n;
                     break;
                 }
             }
@@ -222,6 +223,7 @@ class BipartitionList {
         }
 
         let sortedEntries = entries.slice(0, 1).concat(entries.slice(1).sort((a, b) => (b.numBips - a.numBips))).slice(0, numConflictsThreshold);
+        console.log(sortedEntries);
         d.bipBins = sortedEntries.map(e => e.numBips);
         d.bins = sortedEntries.map(e => BipartitionList.getTidsFromTreeVector(e.treeVector));
         for (let i = 0; i < d.bins.length; i++) {
