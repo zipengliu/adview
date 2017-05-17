@@ -79,7 +79,7 @@ function getPresentEntities(all, missing) {
 }
 
 class BipartitionList {
-    constructor(trees, allEntities, referenceTreeId) {
+    constructor(referenceTree, trees, allEntities) {
         let numTrees = Object.keys(trees).length;
         let numTaxa = Object.keys(allEntities).length;
 
@@ -87,11 +87,10 @@ class BipartitionList {
         this.numBips = 0;
         this.hash = {};
         this.size = getHashTableSize(numTrees, numTaxa, 2);
-        // A mapping from bid in reference tree to hash table entry
-        this.referenceBranches = {};
         // entries sorted by frequency
         this.entriesArray = [];
 
+        // Hash all bipartitions in the tree vector
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             let tIdx = parseInt(tid.slice(1));
             let branches = trees[tid].branches;
@@ -112,11 +111,8 @@ class BipartitionList {
                         for (let i = 0; i < bucket.length; i++) {
                             if (v.equals(bucket[i].bitVector) && vMissing.equals(bucket[i].missingMask)) {
                                 found = true;
-                                bucket[i].n += 1;
+                                bucket[i].numBips += 1;
                                 bucket[i].treeVector.set(tIdx);
-                                if (tid === referenceTreeId) {
-                                    this.referenceBranches[bid] = bucket[i];
-                                }
                                 break;
                             }
                         }
@@ -130,23 +126,33 @@ class BipartitionList {
                             bitVector: v,
                             missingMask: vMissing,
                             treeVector: BitSet([tIdx]),
-                            n: 1,
+                            numBips: 1,
                         };
                         this.hash[h].push(newEntry);
                         this.entriesArray.push(newEntry);
-                        if (tid === referenceTreeId) {
-                            this.referenceBranches[bid] = newEntry;
-                        }
                     }
                 }
             }
         }
 
-        this.entriesArray.sort((a, b) => (b.n - a.n));
+        this.entriesArray.sort((a, b) => (b.numBips - a.numBips));
         console.log('Number of entries in hash table: ', this.numEntries);
         console.log('load of hash table: ', Object.keys(this.hash).length);
         console.log('Number of bips: ', this.numBips);
         console.log(this.entriesArray);
+
+        // Pre-calculate the bitVector and mask for all bipartitions in the reference tree
+        this.referenceBranchBitVectors = {};
+        this.referenceMissingMask = getBitVector(referenceTree.missing);
+        let referencePresent = getPresentEntities(allEntities, referenceTree.missing);
+
+        for (let bid in referenceTree.branches) if (referenceTree.branches.hasOwnProperty(bid)) {
+            let b = referenceTree.branches[bid];
+            // Filter the trivial branches
+            if (!b.isLeaf && bid !== referenceTree.rootBranch && bid !== referenceTree.branches[referenceTree.rootBranch].right) {
+                this.referenceBranchBitVectors[bid] = getCanonicalBitVector(b.entities, referencePresent);
+            }
+        }
     }
 
     static isCompatible(a, b) {
@@ -189,40 +195,55 @@ class BipartitionList {
         return v.toArray().map(tid => 't' + tid);
     }
 
-    // Return the distribution of the bipartitions by branch bid in tree
+    // Find the entry in hash
+    getEntry(bid) {
+        let v = this.referenceBranchBitVectors[bid];
+        let h = getBitVectorHash(v, this.size);
+        if (this.hash.hasOwnProperty(h)) {
+            let bucket = this.hash[h];
+            for (let i = 0; i < bucket.length; i++) {
+                if (v.equals(bucket[i].bitVector) && this.referenceMissingMask.equals(bucket[i].missingMask)) {
+                    return bucket[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    // Return the distribution of the bipartitions according to a branch bid in the reference tree
     getDistribution(bid) {
-        let r = this.referenceBranches[bid];
-        let entries = [{...r, treeVector: r.treeVector.clone(), numBips: r.n}];
+        let rEntry = this.getEntry(bid);
+        let conflictEntries = [];
         let d = {
             bins: [],
             bipBins: [],
             treeToBin: {},
-            hasCompatibleTree: true
+            hasCompatibleTree: !!rEntry
         };
 
-        for (let i = 0; i < this.entriesArray.length; i++) if (this.entriesArray[i] !== r) {
+        for (let i = 0; i < this.entriesArray.length; i++) {
             let e = this.entriesArray[i];
 
-            let j;
-            for (j = 0; j < entries.length; j++) {
-                if (BipartitionList.isCompatible(e, entries[j])) {
-                    // entries[j].treeVector.or(e.treeVector);
-                    // entries[j].numBips += e.n;
-                    break;
+            if (!rEntry || BipartitionList.isCompatible(rEntry, e)) {
+                let j;
+                for (j = 0; j < conflictEntries.length; j++) {
+                    if (BipartitionList.isCompatible(e, conflictEntries[j])) {
+                        // entries[j].treeVector.or(e.treeVector);
+                        break;
+                    }
                 }
-            }
 
-            if (j === entries.length) {
-                entries.push({
-                    ...e,
-                    treeVector: e.treeVector.clone(),
-                    numBips: e.n
-                });
-                // if (entries.length === numConflictsThreshold) break;
+                if (j === conflictEntries.length) {
+                    conflictEntries.push(e);
+                    if (conflictEntries.length === numConflictsThreshold) break;
+                }
             }
         }
 
-        let sortedEntries = entries.slice(0, 1).concat(entries.slice(1).sort((a, b) => (b.numBips - a.numBips))).slice(0, numConflictsThreshold);
+        let sortedEntries = conflictEntries.sort((a, b) => (b.numBips - a.numBips));
+        if (rEntry) {
+            sortedEntries = conflictEntries.unshift(rEntry);
+        }
         console.log(sortedEntries);
         d.bipBins = sortedEntries.map(e => e.numBips);
         d.bins = sortedEntries.map(e => BipartitionList.getTidsFromTreeVector(e.treeVector));

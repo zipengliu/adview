@@ -20,9 +20,6 @@
 .tree-name.current-set {
     /*background: #ddd;*/
 }
-.tree-name.reference-tree-indicator {
-    background: #ddd;
-}
 
 .tree-name.selected {
     border: 1px solid red;

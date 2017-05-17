@@ -183,7 +183,7 @@ export function changeDistanceMetric(mode, bid) {
         } else {
             setTimeout(() => {
                 dispatch(changeDistanceMetricSuccess(
-                    getCoordinates(state.inputGroupData.trees, state.cb, mode === 'global' || bid == null, state.referenceTree.id, bid)));
+                    getCoordinates(state.inputGroupData.referenceTree, state.inputGroupData.trees, state.cb, mode === 'global' || bid == null, bid)));
             }, 100);
         }
     }

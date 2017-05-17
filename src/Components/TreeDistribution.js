@@ -121,14 +121,17 @@ export let clusterSelector = createSelectorCreator(memoizeDistribution);
 let binSortFunc = (a, b) => (b.length - a.length);
 let clusterTreesByBranch = clusterSelector(
     state => state.inputGroupData.trees,
-    state => state.referenceTree.id,
+    state => state.inputGroupData.referenceTree,
     state => state.cb,
     (_, bid) => bid,
-    (trees, rid, cb, bid) => {
-        console.log('Binning trees by ', rid, bid, cb);
+    (trees, ref, cb, bid) => {
+        console.log('Binning trees by ', bid, ' in reference tree under mode ', cb);
         let bins = [], treeToBin = {};
         let withoutMissing = cb === 'cb2';
-        let correspondingBranches = trees[rid].branches[bid][cb];
+        let correspondingBranches = ref.branches[bid][cb];
+
+        // Push the exact matching trees first
+        let exactMatchBin = Object.keys(trees).filter(tid => correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac === 1.0);
 
         let missingMap = {};
         if (withoutMissing) {
@@ -136,13 +139,11 @@ let clusterTreesByBranch = clusterSelector(
                 missingMap[tid] = createMappingFromArray(trees[tid].missing);
             }
         }
-        let taxaSetByTree = {
-            [rid]: createMappingFromArray(trees[rid].branches[bid].entities)
-        };
+        let taxaSetByTree = {};
         // Extract the corresponding set of taxa
-        for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
-            taxaSetByTree[tid] = {};
-            if (correspondingBranches.hasOwnProperty(tid)) {
+        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+            if (correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac < 1.0) {
+                taxaSetByTree[tid] = {};
                 let corr = correspondingBranches[tid];
                 if (corr.bid) {
                     taxaSetByTree[tid] = createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities);
@@ -153,13 +154,10 @@ let clusterTreesByBranch = clusterSelector(
             }
         }
 
-        // First bin is always the one that is in line with the reference tree
-        bins.push([rid]);
-        treeToBin[rid] = 0;
-
+        bins.push();
 
         // Bin all other the trees
-        for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
+        for (let tid in trees) if (trees.hasOwnProperty(tid) && taxaSetByTree.hasOwnProperty(tid)) {
             let found = false;
             for (let j = 0; j < bins.length; j++) {
                 let s = bins[j];
@@ -178,7 +176,8 @@ let clusterTreesByBranch = clusterSelector(
         }
 
         // Sort the bins except the first one
-        bins = [bins[0], ...bins.slice(1).sort(binSortFunc)];
+        bins = exactMatchBin.length > 0? [exactMatchBin, ...bins.sort(binSortFunc)]:
+            bins.sort(binSortFunc);
         for (let i = 0; i < bins.length; i++) {
             for (let j = 0; j < bins[i].length; j++) {
                 treeToBin[bins[i][j]] = i;
@@ -186,7 +185,8 @@ let clusterTreesByBranch = clusterSelector(
 
         }
 
-        return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: true};
+        console.log(bins);
+        return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
     }
 );
 

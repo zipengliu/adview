@@ -132,15 +132,16 @@ class DendrogramContainer extends Component {
 }
 
 let getTrees = createSelector(
-    [state => state.inputGroupData.trees, state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
+    [state => state.inputGroupData.trees,
+        state => state.inputGroupData.referenceTree,
+        state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
         state => state.aggregatedDendrogram.treeOrder,
         state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
-        state => state.referenceTree.id, state => state.referenceTree.selected,
+        state => state.referenceTree.selected,
         state => state.cb],
-    (trees, setTids, order, bid, rid, selected, cb) => {
+    (trees, ref, setTids, order, bid, selected, cb) => {
         console.log('Getting new trees in the dendrogram container');
         let res = [];
-        let ref = trees[rid];
         let sortFunc;
         if (order.static || !bid || typeof bid === 'object') {
             sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
@@ -156,15 +157,10 @@ let getTrees = createSelector(
             let last = null;
             for (let j = 0; j < selected.length; j++) {
                 let e = selected[j];
-                if (tid === rid) {
-                    expansion[e] = {jac: 1, in: true};
-                    if (j === 0) last = e;
-                } else {
-                    let corr = ref.branches[e][cb][tid];
-                    if (corr && corr.bid) {
-                        expansion[corr.bid] = {jac: corr.jac, in: corr.in};
-                        if (j === 0) last = corr.bid;
-                    }
+                let corr = ref.branches[e][cb][tid];
+                if (corr && corr.bid) {
+                    expansion[corr.bid] = {jac: corr.jac, in: corr.in};
+                    if (j === 0) last = corr.bid;
                 }
             }
             res.push({

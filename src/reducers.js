@@ -232,24 +232,28 @@ let getEntitiesByBid = (tree, bid) => {
     }
 };
 
-let ladderize = (branches, rootBranch) => {
-   let traverse = bid => {
-       let b = branches[bid];
-       if (!b.isLeaf) {
-           let left = branches[b.left];
-           let right = branches[b.right];
-           if (left.entities.length > right.entities.length) {
-               let tmp = b.left;
-               b.left = b.right;
-               b.right = tmp;
-           }
-           traverse(b.left);
-           traverse(b.right);
-       }
-   };
-   traverse(rootBranch);
-   return branches;
-};
+let getTreeByTid = (state, tid) => {
+    return tid === state.referenceTree.id? state.inputGroupData.referenceTree: state.inputGroupData.trees[tid];
+}
+
+// let ladderize = (branches, rootBranch) => {
+//    let traverse = bid => {
+//        let b = branches[bid];
+//        if (!b.isLeaf) {
+//            let left = branches[b.left];
+//            let right = branches[b.right];
+//            if (left.entities.length > right.entities.length) {
+//                let tmp = b.left;
+//                b.left = b.right;
+//                b.right = tmp;
+//            }
+//            traverse(b.left);
+//            traverse(b.right);
+//        }
+//    };
+//    traverse(rootBranch);
+//    return branches;
+// };
 
 // calculate the percentage of trees that support a branch (gene support frequency)
 // n is the number of gene trees (or the number of trees in the tree collection, excluding the reference tree)
@@ -273,10 +277,11 @@ let getGSF = (branches, cb, n, createNewObject=false) => {
     return res;
 };
 
-// Fill in the field 'parent' and 'entities' on every branch
+// Fill in the field 'parent', 'entities' and also the in-order of every branch
 // Re-scale the support if necessary
 let prepareBranches = (branches, rootBranch, supportRange=null) => {
     let supportScale = supportRange? scaleLinear().domain(supportRange).range([0, 1]): null;
+    let order = 0;
     let dfs = (bid) => {
         let b = branches[bid];
         //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
@@ -288,11 +293,15 @@ let prepareBranches = (branches, rootBranch, supportRange=null) => {
             branches[b.left].parent = bid;
             branches[b.right].parent = bid;
             dfs(b.left);
+            b.order = order;
+            order += 1;
             dfs(b.right);
             b.entities = branches[b.left].entities.concat(branches[b.right].entities)
         } else {
             b.isLeaf = true;
             b.entities = [b.entity];
+            b.order = order;
+            order += 1;
         }
     };
     dfs(rootBranch);
@@ -301,23 +310,23 @@ let prepareBranches = (branches, rootBranch, supportRange=null) => {
     return branches;
 };
 
-let getOrder = (branches, rootBranch) => {
-    let order = 0;
-    let dfs = (bid) => {
-        let b = branches[bid];
-        if (b.left) {
-            dfs(b.left);
-            b.order = order;
-            order += 1;
-            dfs(b.right);
-        } else {
-            b.order = order;
-            order += 1;
-        }
-    };
-    dfs(rootBranch);
-    return branches;
-};
+// let getOrder = (branches, rootBranch) => {
+//     let order = 0;
+//     let dfs = (bid) => {
+//         let b = branches[bid];
+//         if (b.left) {
+//             dfs(b.left);
+//             b.order = order;
+//             order += 1;
+//             dfs(b.right);
+//         } else {
+//             b.order = order;
+//             order += 1;
+//         }
+//     };
+//     dfs(rootBranch);
+//     return branches;
+// };
 
 let findHighlight = (bids, tid, bid) => {
     for (let i = 0; i < bids.length; i++) {
@@ -379,11 +388,11 @@ function visphyReducer(state = initialState, action) {
                 }
             } else {
                 let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
-                let tgtEntities = getEntitiesByBid(state.inputGroupData.trees[action.tid], action.bid);
+                let tgtEntities = getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
                 let bids;
 
                 if (otherTid) {
-                    bids = findEntities(tgtEntities, state.inputGroupData.trees[otherTid]);
+                    bids = findEntities(tgtEntities, getTreeByTid(state, otherTid));
                 }
                 if (action.addictive && state.highlight.bids.length) {
                     // Add to the current (last) highlight group
@@ -468,35 +477,36 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.FETCH_TREE_SUCCESS:
-            return Object.assign({}, state, {
-                toast: {
-                    ...state.toast,
-                    msg: null
-                },
-                referenceTree: {
-                    ...state.referenceTree,
-                    id: action.tid,
-                    isFetching: false,
-                },
-                inputGroupData: {
-                    ...state.inputGroupData,
-                    trees: {
-                        ...state.inputGroupData.trees,
-                        [action.tid]: {
-                            ...state.inputGroupData.trees[action.tid],
-                            branches: getGSF(getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
-                                state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch),
-                                state.cb, Object.keys(state.inputGroupData.trees).length - 1)
-                        }
-                    }
-                },
-                overview: {
-                    ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, state.referenceTree.id, null),
-                    metricMode: 'global',
-                    metricBranch: null,
-                }
-            });
+            return state;
+            // return Object.assign({}, state, {
+            //     toast: {
+            //         ...state.toast,
+            //         msg: null
+            //     },
+            //     referenceTree: {
+            //         ...state.referenceTree,
+            //         id: action.tid,
+            //         isFetching: false,
+            //     },
+            //     inputGroupData: {
+            //         ...state.inputGroupData,
+            //         trees: {
+            //             ...state.inputGroupData.trees,
+            //             [action.tid]: {
+            //                 ...state.inputGroupData.trees[action.tid],
+            //                 branches: getGSF(getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
+            //                     state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch),
+            //                     state.cb, Object.keys(state.inputGroupData.trees).length - 1)
+            //             }
+            //         }
+            //     },
+            //     overview: {
+            //         ...state.overview,
+            //         coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, state.referenceTree.id, null),
+            //         metricMode: 'global',
+            //         metricBranch: null,
+            //     }
+            // });
 
         case TYPE.FETCH_TREE_FAILURE:
             return Object.assign({}, state, {
@@ -774,8 +784,8 @@ function visphyReducer(state = initialState, action) {
                 // Entering pairwise comparison mode
                 newBids = state.highlight.bids.map(h => (
                     {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
-                            state.inputGroupData.trees[action.tid])}
+                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                            getTreeByTid(state, action.tid))}
                 ));
                 newColors = state.highlight.colors;
             } else {
@@ -877,27 +887,29 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
+            let newCB = action.data.hasMissingTaxa? 'cb2': 'cb';
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
-                action.data.trees[tid].tid = tid;
-                action.data.trees[tid].branches = getOrder(ladderize(prepareBranches(action.data.trees[tid].branches,
-                    action.data.trees[tid].rootBranch, action.data.supportRange), action.data.trees[tid].rootBranch), action.data.trees[tid].rootBranch);
+                // action.data.trees[tid].tid = tid;
+                action.data.trees[tid].branches = prepareBranches(action.data.trees[tid].branches,
+                    action.data.trees[tid].rootBranch, action.data.supportRange);
                 action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
             }
-            let newCB = action.data.hasMissingTaxa? 'cb2': 'cb';
-            action.data.trees[action.data.defaultReferenceTree].branches =
-                getGSF(action.data.trees[action.data.defaultReferenceTree].branches,
-                    newCB, Object.keys(action.data.trees).length - 1);
+            action.data.referenceTree.branches =
+                getGSF(prepareBranches(action.data.referenceTree.branches, action.data.referenceTree.rootBranch, action.data.supportRange),
+                    newCB, Object.keys(action.data.trees).length);
+            action.data.referenceTree.missing = findMissing(action.data.referenceTree, action.data.entities);
+
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
-                bipartitions: new BipartitionList(action.data.trees, action.data.entities, action.data.defaultReferenceTree),
+                bipartitions: new BipartitionList(action.data.referenceTree, action.data.trees, action.data.entities),
                 toast: {
                     ...state.toast,
                     msg: null
                 },
                 referenceTree: {
                     ...state.referenceTree,
-                    id: action.data.defaultReferenceTree
+                    id: action.data.referenceTree.tid
                 },
                 sets: [{
                     sid: guid(),
@@ -907,7 +919,7 @@ function visphyReducer(state = initialState, action) {
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(action.data.trees, newCB, true, action.data.defaultReferenceTree, null)
+                    coordinates: getCoordinates(action.data.referenceTree, action.data.trees, newCB, true, null)
                 },
                 attributeExplorer: {
                     ...state.attributeExplorer,
@@ -982,9 +994,8 @@ function visphyReducer(state = initialState, action) {
                 cb: action.cb,
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.trees, state.cb,
-                        state.overview.metricMode === 'global' || state.overview.metricBranch == null,
-                        state.referenceTree.id, state.overview.metricBranch)
+                    coordinates: getCoordinates(state.inputGroupData.referenceTree, state.inputGroupData.trees, state.cb,
+                        state.overview.metricMode === 'global' || state.overview.metricBranch == null, state.overview.metricBranch)
                 }
             };
         case TYPE.CLOSE_TOAST:
@@ -1048,8 +1059,8 @@ function visphyReducer(state = initialState, action) {
                     return true;
                 }).map(h => (
                     {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(state.inputGroupData.trees[h.src], h[h.src][0]),
-                            state.inputGroupData.trees[action.tid])}
+                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                            getTreeByTid(state, action.tid))}
                 ));
                 return {
                     ...state,

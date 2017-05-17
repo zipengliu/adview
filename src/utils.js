@@ -114,7 +114,7 @@ function isArray(obj){
     return !!obj && obj.constructor === Array;
 }
 
-export function getCoordinates(trees, cb, isGlobal, rid, bid) {
+export function getCoordinates(ref, trees, cb, isGlobal, bid) {
     // Concat all rf_dist in trees to a distance matrix
     // First, decide an order of trees for the matrix
 
@@ -122,7 +122,7 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
     let dist = [];
     if (!isGlobal) {
         // Local distance matrix
-        let corr = trees[rid].branches[bid][cb];
+        let corr = ref.branches[bid][cb];
         for (let tid in corr) if (corr.hasOwnProperty(tid) && corr[tid]) {
             // It is possible that we cannot find any cb in that tree.  Possible reason: all entities in our radar are missing from that tree
             let e = !corr[tid].bid? []: trees[tid].branches[corr[tid].bid].entities;
@@ -133,15 +133,15 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
             });
         }
         // Don't forget the reference tree itself!
-        order.push({tid: rid, bid, entities: createMappingFromArray(trees[rid].branches[bid].entities)});
+        order.push({tid: ref.tid, bid, entities: createMappingFromArray(ref.branches[bid].entities)});
 
         console.log('Calculating local coordinates in Overview... #dots: ', order.length);
     } else {
         // Global distance matrix
-        for (let tid in trees) if (trees.hasOwnProperty(tid) && tid !== rid) {
+        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             order.push(tid);
         }
-        order.push(rid);
+        order.push(ref.tid);
         console.log('Calculating global coordinates in Overview... #dots: ', order.length);
     }
     for (let i = 0; i < order.length; i++) {
@@ -153,7 +153,7 @@ export function getCoordinates(trees, cb, isGlobal, rid, bid) {
                     // TODO: can make it faster by caching the entities first
                     cur.push(1.0 - getJaccardIndex(order[i].entities, order[j].entities));
                 } else {
-                    cur.push(trees[order[i]].rfDistance[order[j]]);
+                    cur.push((order[i] === ref.tid? ref: trees[order[i]]).rfDistance[order[j]]);
                 }
             } else if (j < i) {
                 // The distance matrix is symmetric

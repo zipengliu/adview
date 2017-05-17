@@ -19,11 +19,9 @@ class ReferenceTreeContainer extends Component {
                 <div className="view-header panel-heading">
                     <OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +
                     (props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>
-                        <div>
-                            <span className="view-title">Reference Tree </span>
-                            <span>({textEllipsis(props.tree.name, 20)})</span>
-                            {props.comparingTree &&
-                            <span> vs. {textEllipsis(props.comparingTree.name, 20)}</span>}
+                        <div className="view-title" style={{textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'}}>
+                            Reference Tree ({props.tree.name})
+                            {props.comparingTree? ` vs. ${props.comparingTree.name}`: ''}
                         </div>
                     </OverlayTrigger>
                 </div>
@@ -118,7 +116,7 @@ class ReferenceTreeContainer extends Component {
 
 let mapStateToProps = state => ({
     allEntities: Object.keys(state.inputGroupData.entities).length,
-    tree: state.inputGroupData.trees[state.referenceTree.id],
+    tree: state.inputGroupData.referenceTree,
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
     universalBranchLen: state.referenceTree.universalBranchLen,

@@ -69,7 +69,6 @@ class AggregatedDendrogram extends Component {
 
         return (
             <svg width={svgWidth} height={svgHeight}>
-                {this.props.isReferenceTree && <rect className="reference-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
                 {isCBinRange && <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
                 {((!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num)) &&
                 <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}

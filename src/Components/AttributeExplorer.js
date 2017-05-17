@@ -175,14 +175,14 @@ let getSetWiseValues = createSelector(
 );
 
 let getTreeWiseValues = createSelector(
-    [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.trees[state.referenceTree.id],
+    [state => state.inputGroupData.trees[state.aggregatedDendrogram.activeTreeId] || state.inputGroupData.referenceTree,
         state => state.cb,
         (_, attrName) => attrName],
     (tree, cb, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName, cb)
 );
 
 let getReferenceTreeValues = createSelector(
-    [state => state.inputGroupData.trees[state.referenceTree.id],
+    [state => state.inputGroupData.referenceTree,
         state => state.cb,
         (_, attrName) => attrName],
     (tree, cb, attrName) => getAttributeValues({[tree.tid]: tree}, [tree.tid], attrName, cb)
@@ -257,21 +257,21 @@ let mapStateToProps = state => {
     }
 
     // corr section
-    let focusedBranch = getCurrentFocusedBranch(state);
-    if (focusedBranch) {
-        if (modes.corr.scope === 'all') {
-            data.corr[attrName].fg = getCorrGlobalValues(state, attrName);
-            data.corr.similarity.fg = getGlobalJaccardArray(state);
-        } else if (modes.corr.scope === 'set') {
-            data.corr[attrName].fg = getCorrSetWiseValues(state, attrName);
-            data.corr.similarity.fg = getSetWiseJaccardArray(state);
-
-            if (modes.corr.context) {
-                data.corr[attrName].bg = getCorrGlobalValues(state, attrName);
-                data.corr.similarity.bg = getGlobalJaccardArray(state);
-            }
-        }
-    }
+    // let focusedBranch = getCurrentFocusedBranch(state);
+    // if (focusedBranch) {
+    //     if (modes.corr.scope === 'all') {
+    //         data.corr[attrName].fg = getCorrGlobalValues(state, attrName);
+    //         data.corr.similarity.fg = getGlobalJaccardArray(state);
+    //     } else if (modes.corr.scope === 'set') {
+    //         data.corr[attrName].fg = getCorrSetWiseValues(state, attrName);
+    //         data.corr.similarity.fg = getSetWiseJaccardArray(state);
+    //
+    //         if (modes.corr.context) {
+    //             data.corr[attrName].bg = getCorrGlobalValues(state, attrName);
+    //             data.corr.similarity.bg = getGlobalJaccardArray(state);
+    //         }
+    //     }
+    // }
 
     // if shown as histogram: bin the data values; if shown as CDF, sort the data values
     for (let i in data) if (data.hasOwnProperty(i)) {

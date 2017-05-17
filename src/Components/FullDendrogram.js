@@ -179,7 +179,7 @@ class FullDendrogram extends Component {
 
 
 let getDendrogramSpecs = createSelector(
-    [(state, tid) => tid? state.inputGroupData.trees[tid]: state.inputGroupData.trees[state.referenceTree.id],
+    [(state, tid) => tid? state.inputGroupData.trees[tid]: state.inputGroupData.referenceTree,
         state => state.inputGroupData.entities,
         (_, tid, alignToSide) => alignToSide,
         (_, tid, alignToSide, ignoreBranchLen) => ignoreBranchLen,
@@ -318,14 +318,14 @@ let getDendrogramSpecs = createSelector(
 );
 
 
-function mapStateToProps(state, ownProps) {
+function mapStateToProps(state) {
     let c = state.pairwiseComparison;
     let den, den1, den2;
     let compExp = [];
     if (c.tid) {
         den1 = getDendrogramSpecs(state, null, 'right', state.referenceTree.universalBranchLen);
         den2 = getDendrogramSpecs(state, c.tid, 'left', state.referenceTree.universalBranchLen);
-        let tree = state.inputGroupData.trees[state.referenceTree.id];
+        let tree = state.inputGroupData.referenceTree;
         compExp = state.referenceTree.selected.map(s => tree.branches[s][state.cb][c.tid].bid);
     } else {
         den = getDendrogramSpecs(state, null, null, state.referenceTree.universalBranchLen);
@@ -334,7 +334,7 @@ function mapStateToProps(state, ownProps) {
         dendrogram: c.tid? [den1, den2]: den,
         highlight: state.highlight,
         referenceTree: state.referenceTree,
-        tree: state.inputGroupData.trees[ownProps.tid? ownProps.tid: state.referenceTree.id],
+        tree: state.inputGroupData.referenceTree,
         comparingTree: c.tid? state.inputGroupData.trees[c.tid]: null,
         comparingTreeExpansion: c.tid? compExp: null,
         spec: state.dendrogramSpec,

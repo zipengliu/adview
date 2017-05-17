@@ -134,10 +134,6 @@
     stroke-width: 2px;
 }
 
-.agg-dendro-box rect.reference-tree-indicator {
-    fill: grey;
-    fill-opacity: .4;
-}
 rect.range-selected-cb-indicator {
     fill: #984ea3;
     fill-opacity: .15;

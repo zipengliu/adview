@@ -16,7 +16,7 @@ let TreeList = (props) => (
             <div className="view-title">Tree List
                 <Badge style={{marginLeft: '5px'}}>{props.trees.length}</Badge>
                 <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={props.onToggleCollapsed}>
-                <Glyphicon glyph={props.collapsed? 'triangle-top': 'triangle-bottom'}/>
+                <Glyphicon glyph={props.collapsed? 'th-list': 'minus'}/>
                 </span>
             </div>
             <Clearfix/>
@@ -24,11 +24,7 @@ let TreeList = (props) => (
         <div className="view-body panel-body">
                 {props.trees.map((t, i) =>
                     <div className="list-item" key={t.tid}>
-                        {i === 0 && <Glyphicon glyph="tree-conifer" style={{display: 'inline'}} />}
-                        <span className={cn('tree-name', {
-                            'current-set': t.isCurrentSet,
-                            'reference-tree-indicator': i === 0,
-                            selected: props.selectedTrees.hasOwnProperty(t.tid)})}>
+                        <span className={cn('tree-name', {selected: props.selectedTrees.hasOwnProperty(t.tid)})}>
                             {t.name}
                             </span>
                     </div>)}
@@ -60,20 +56,8 @@ let TreeList = (props) => (
 // );
 
 let getTrees = createSelector(
-    [state => state.inputGroupData.trees, state => state.referenceTree.id,
-    state => state.sets[state.aggregatedDendrogram.activeSetIndex]],
-    (trees, ref, set) => {
-        let res = [{tid: ref, name: trees[ref].name, isCurrentSet: set.tids.indexOf(ref) !== -1}];
-        for (let i = 0; i < set.tids.length; i++)
-            if (set.tids[i] !== ref) {
-                res.push({tid: set.tids[i], name: trees[set.tids[i]].name, isCurrentSet: true});
-            }
-        for (let tid in trees)
-            if (trees.hasOwnProperty(tid) && tid !== ref && set.tids.indexOf(tid) === -1) {
-                res.push({tid, name: trees[tid].name, isCurrentSet: false})
-            }
-        return res;
-    }
+    [state => state.inputGroupData.trees],
+    (trees) => Object.keys(trees).sort().map(tid => ({tid, name: trees[tid].name}))
 );
 
 let mapStateToProps = state => ({

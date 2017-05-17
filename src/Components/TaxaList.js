@@ -22,7 +22,7 @@ class TaxaList extends Component {
                 <div className="view-title">Taxa List
                     <Badge style={{marginLeft: '5px'}}>{entArr.length}</Badge>
                     <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={this.props.onToggleCollapsed}>
-                        <Glyphicon glyph={collapsed? 'triangle-top': 'triangle-bottom'}/>
+                        <Glyphicon glyph={collapsed? 'th-list': 'minus'}/>
                     </span>
                 </div>
                 {/*<Button bsSize="xsmall">*/}
