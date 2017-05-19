@@ -74,6 +74,14 @@ export function getIntersection(a, b) {
     return r;
 }
 
+// Check if a is a subset of b.  a and b are both objects
+export function isSubset(a, b) {
+    for (let x in a) {
+        if (!b.hasOwnProperty(x)) return false;
+    }
+    return true;
+}
+
 export function mergeArrayToMapping(m, a) {
     return a.reduce((acc, ele) => {acc[ele] = true; return acc}, m);
 }

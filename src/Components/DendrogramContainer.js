@@ -5,12 +5,13 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {scaleLinear, hsl, extent, scaleLog} from 'd3';
+import {scaleLinear, hsl, extent} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual} from '../utils';
+import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual, isSubset} from '../utils';
+import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
 
 
@@ -64,14 +65,11 @@ class DendrogramContainer extends Component {
                         <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
                         <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
                         <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
-                        <Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>
-                            <span style={{textDecoration: 'line-through'}}>taxa-cluster</span>
-                        </Radio>
+                        {/*<Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>*/}
+                            {/*<span style={{textDecoration: 'line-through'}}>taxa-cluster</span>*/}
+                        {/*</Radio>*/}
                         <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
                             <span style={{textDecoration: 'line-through'}}>remainder</span>
-                        </Radio>
-                        <Radio inline checked={mode === 'fine-grained'} onChange={this.props.onToggleMode.bind(null, 'fine-grained')}>
-                            <span style={{textDecoration: 'line-through'}}>fine-grained</span>
                         </Radio>
                         )
                     </FormGroup>
@@ -85,20 +83,20 @@ class DendrogramContainer extends Component {
                         {/*</OverlayTrigger>*/}
                         {/*</ButtonGroup>*/}
 
-                        <div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>
-                            <span style={{marginRight: '2px'}}>Sort by similarity to the </span>
-                            {isClusterMode? <span>#trees in a cluster</span>:
-                                <ButtonGroup bsSize="xsmall">
-                                    <Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>
-                                    {this.props.expandedBranches.length > 0 &&
-                                    <Button active={!isOrderStatic}
-                                            onClick={isOrderStatic ? this.props.onChangeSorting : null}>
-                                        branch {this.props.expandedBranches.length}
-                                    </Button>}
-                                </ButtonGroup>
-                            }
-                            <span style={{marginLeft: '2px'}}> of the reference tree.</span>
-                        </div>
+                        {/*<div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>*/}
+                            {/*<span style={{marginRight: '2px'}}>Sort by similarity to the </span>*/}
+                            {/*{isClusterMode? <span>#trees in a cluster</span>:*/}
+                                {/*<ButtonGroup bsSize="xsmall">*/}
+                                    {/*<Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>*/}
+                                    {/*{this.props.expandedBranches.length > 0 &&*/}
+                                    {/*<Button active={!isOrderStatic}*/}
+                                            {/*onClick={isOrderStatic ? this.props.onChangeSorting : null}>*/}
+                                        {/*branch {this.props.expandedBranches.length}*/}
+                                    {/*</Button>}*/}
+                                {/*</ButtonGroup>*/}
+                            {/*}*/}
+                            {/*<span style={{marginLeft: '2px'}}> of the reference tree.</span>*/}
+                        {/*</div>*/}
                     </div>
 
                     <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
@@ -131,675 +129,83 @@ class DendrogramContainer extends Component {
     }
 }
 
-let getTrees = createSelector(
-    [state => state.inputGroupData.trees,
-        state => state.inputGroupData.referenceTree,
-        state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids,
-        state => state.aggregatedDendrogram.treeOrder,
-        state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
-        state => state.referenceTree.selected,
-        state => state.cb],
-    (trees, ref, setTids, order, bid, selected, cb) => {
-        console.log('Getting new trees in the dendrogram container');
-        let res = [];
-        let sortFunc;
-        if (order.static || !bid || typeof bid === 'object') {
-            sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
-        } else {
-            let corr = ref.branches[bid][cb];
-            sortFunc = (t1, t2) => (t2 in corr? corr[t2].jac: 1.1) - (t1 in corr? corr[t1].jac: 1.1)
-        }
-        let sortedTids = setTids.slice().sort(sortFunc);
 
-        for (let i = 0; i < sortedTids.length; i++) {
-            let tid = sortedTids[i];
-            let expansion = {};
-            let last = null;
-            for (let j = 0; j < selected.length; j++) {
-                let e = selected[j];
-                let corr = ref.branches[e][cb][tid];
-                if (corr && corr.bid) {
-                    expansion[corr.bid] = {jac: corr.jac, in: corr.in};
-                    if (j === 0) last = corr.bid;
+
+// Get the layout of all trees
+let getLayouts = createSelector(
+    [state => state.inputGroupData.referenceTree,
+    state => state.referenceTree.expanded,
+    state => state.cb,
+    state => state.inputGroupData.trees,
+    state => state.aggregatedDendrogram.mode,
+    state => state.aggregatedDendrogram.spec],
+    (referenceTree, expanded, cb, trees, mode, spec) => {
+        console.log('getLayouts...');
+
+        let layoutFunc = calcFrondLayout;
+        if (mode === 'remainder') layoutFunc = calcRemainderLayout;
+
+        let layouts = {};
+        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+            // Get corresponding branches in the tree
+            let e = {};
+            for (let rBid in expanded) if (expanded.hasOwnProperty(rBid)) {
+                let corr = referenceTree.branches[rBid][cb];
+                if (corr.hasOwnProperty(tid) && corr[tid].bid) {
+                    e[corr[tid].bid] = {
+                        ...corr[tid],
+                        no: expanded[rBid]
+                    }
                 }
             }
-            res.push({
-                ...trees[tid],
-                expand: expansion,
-                lastSelected: last
-            })
+
+            // calculate the layout
+            layouts[tid] = layoutFunc(trees[tid], e, spec);
         }
-        return res;
+
+        return layouts;
     }
 );
 
-
-let getBranchesInSubtree = (tree, bid) => {
-    let res = {};
-    let dfs = (bid) => {
-        res[bid] = true;
-        if (!tree.branches[bid].isLeaf) {
-            dfs(tree.branches[bid].left);
-            dfs(tree.branches[bid].right);
+// Pick out the layouts that belong to the current active sub-collection
+let filterLayouts = createSelector(
+    [(_, layouts) => layouts,
+        state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids],
+    (layouts, tids) => {
+        console.log('Filtering layouts...');
+        let filteredLayouts = {};
+        for (let i = 0; i < tids.length; i++) {
+            filteredLayouts[tids[i]] = layouts[tids[i]];
         }
-    };
-    dfs(bid);
-    return res;
-};
-
-// Compute LCA of all expanded branches (ndoes) in a tree
-// as well as the pre-order of each expanded node
-let getLCA = tree => {
-    let l = [];
-    let anc = {};
-    let eitherOne = null;
-    let getAncestorList = (bid) => {
-        let b = tree.branches[bid];
-        l.push(bid);
-        if (tree.expand.hasOwnProperty(bid)) {
-            if (!eitherOne) eitherOne = bid;
-            anc[bid] = l.slice();
-        }
-        if (!b.isLeaf) {
-            getAncestorList(b.left);
-            getAncestorList(b.right);
-        }
-        l.pop();
-    };
-    getAncestorList(tree.rootBranch);
-
-    // If they share a common ancestor at the same index, return true, otherwise false
-    let compare = idx => {
-        if (idx >= anc[eitherOne].length) return false;
-        for (let j in anc) if (anc.hasOwnProperty(j)) {
-            if (idx >= anc[j].length) return false;
-            if (anc[j][idx] !== anc[eitherOne][idx]) return false;
-        }
-        return true;
-    };
-
-    let i = 0;
-    while (compare(i)) {
-        i += 1;
-    }
-    let distanceToLCA = {};
-    for (let j in anc) if (anc.hasOwnProperty(j)) {
-        distanceToLCA[j] = anc[j].length - i - 1;
-    }
-    return {lca: anc[eitherOne][i - 1], distanceToLCA};
-};
-
-// Calculating the blocks of the aggregaated dendrogram
-// given a tree (tree document from DB) (tree),
-// a dictionary of branches to be expanded (tree.expand),
-// an array of highlighting entities (exploreEntities)
-// and size specification (spec)
-// Return the dictionary of blocks and branches
-let calcRemainderLayout = (tree, spec) => {
-    let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, size} = spec;
-    let height = size, width = size;
-
-    let blocks = {};
-    let missingHeight = 0;
-    if (tree.missing) {
-        missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
-        blocks.missing = {
-            id: 'missing', children: [],
-            isMissing: true,
-            height: missingHeight,
-            width, x: 0, y: height - missingHeight,
-            n: tree.missing.length,          // the number of entities this block represents
-            branches: {},
-            entities: createMappingFromArray(tree.missing)
-        };
-    }
-    // Generate all blocks needed to display.  Blocks are indexed by their expanded branch id except the root block.
-    // Create a seudo root with id rootBranchId + "-a"
-    let rootBlockId = tree.rootBranch + '-a';
-    blocks[rootBlockId] = {
-        id: rootBlockId, children: [], level: 1,
-        height: missingHeight? height - missingHeight - verticalGap: height, width: 0, x: 0, y: 0,
-        n: tree.branches[tree.rootBranch].entities.length,          // the number of entities this block reprensents
-        branches: createMappingFromArray(Object.keys(tree.branches)),
-        context: true,
-        entities: createMappingFromArray(tree.branches[tree.rootBranch].entities)
-    };
-
-    let splitBlock = function (blockId, curBid) {
-        let b = tree.branches[curBid];
-        let newBlockId = blockId;
-        if (tree.expand.hasOwnProperty(curBid)) {
-            // split block
-            blocks[curBid] = {children: [], level: blocks[blockId].level + 1, id: curBid, width: 0,
-                // similarity: tree.expand[curBid].in? tree.expand[curBid].jac: null,
-                lastExpanded: curBid === tree.lastSelected && tree.expand[curBid].in,
-                matched: tree.expand[curBid].jac === 1 && tree.expand[curBid].in,
-                context: !tree.expand[curBid].in,
-                branches: getBranchesInSubtree(tree, curBid),
-                isLeaf: !!b.isLeaf,
-                n: b.entities.length,
-                entities: createMappingFromArray(b.entities)};
-            blocks[blockId].n -= b.entities.length;
-            blocks[blockId].entities = subtractMapping(blocks[blockId].entities, blocks[curBid].entities);
-            blocks[blockId].branches = subtractMapping(blocks[blockId].branches, blocks[curBid].branches);
-            blocks[blockId].children.push(curBid);
-            blocks[blockId].lastExpanded = !tree.expand[curBid].in && curBid === tree.lastSelected;
-            if (!tree.expand[curBid].in) {
-                blocks[blockId].matched = tree.expand[curBid].jac === 1;
-                blocks[blockId].context = false;
-                // blocks[blockId].similarity = tree.expand[curBid].jac;
-            }
-            newBlockId = curBid;
-        }
-        // otherwise recursively go down the children
-        if (!b['isLeaf']) {
-            splitBlock(newBlockId, b['left']);
-            splitBlock(newBlockId, b['right']);
-        }
-    };
-    splitBlock(rootBlockId, tree.rootBranch);
-
-    // branches are the lines connecting the blocks
-    let branches = {};
-    // Calculate the position, width and height of blocks and expanding branches
-    let widthCoeff = width;
-    let calcHeight = function (blockId, height, y, accN) {
-        let b = blocks[blockId];
-        accN += Math.log(b.n || 1);
-        if (b.children.length) {
-            // The leaf branch should not take a lot of space
-            // calculate the number of leaves
-            let numLeaves = b.children.filter(bid => blocks[bid].isLeaf).length;
-            // If all children are leaves, then nonLeaveHeight is useless
-            let nonLeaveHeight = numLeaves === b.children.length? 10:
-                (height - verticalGap * (b.children.length - 1.0) - numLeaves * leaveHeight) / (b.children.length - numLeaves);
-            // console.log(height, numLeaves, nonLeaveHeight, b.children);
-            let curNumLeaves = 0;
-            for (let i = 0; i < b.children.length; i++) {
-                let c = blocks[b.children[i]];
-                c.height = c.isLeaf? leaveHeight: nonLeaveHeight;
-                c.y = y + (i - curNumLeaves) * nonLeaveHeight + curNumLeaves * leaveHeight + i * verticalGap;
-                let branchPosY = (c.y + c.y + c.height) / 2;
-
-                branches[b.children[i]] = {bid: b.children[i], y1: branchPosY, y2: branchPosY, similarity: c.similarity};
-                curNumLeaves += c.isLeaf;
-                calcHeight(b.children[i], nonLeaveHeight, c.y, accN);
-            }
-        } else {
-            let k = (width - (b.level - 1) * branchLen) / accN;
-            widthCoeff = Math.min(k, widthCoeff);
-        }
-    };
-    calcHeight(rootBlockId, missingHeight? height - missingHeight - verticalGap: height, 0, 0);
-
-    let calcWidth = function (blockId, x) {
-        let b = blocks[blockId];
-        if (b.n === 0) {
-            // Add a branch to connect the children
-            // If this block does not contain any entity, it should has at least two children
-            branches[blockId + '-x'] = {bid: blockId + '-x', y1: branches[b.children[0]].y1, y2: branches[b.children[b.children.length - 1]].y1, x1: x, x2: x};
-        }
-        b.width = widthCoeff * Math.log(b.n || 1);
-        // b.width = Math.max(widthCoeff * b.n, 1);
-        for (let i = 0; i < b.children.length; i++) {
-            let c = blocks[b.children[i]];
-            c.x = x + b.width + branchLen;
-            branches[b.children[i]].x1 = x + b.width;
-            branches[b.children[i]].x2 = c.isLeaf? width: x + b.width + branchLen;
-            c.highlightWidth = c.isLeaf? Math.min((branches[b.children[i]].x2 - branches[b.children[i]].x1) * 0.67, leaveHighlightWidth): 0;
-            calcWidth(b.children[i], c.x);
-        }
-    };
-    calcWidth(rootBlockId, 0);
-    if (tree.missing) {
-        blocks[rootBlockId].children.push('missing');
-    }
-
-    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name,
-        missing: createMappingFromArray(tree.missing)};
-};
-
-let calcFrondLayout = (tree, spec) => {
-    let expansion = Object.keys(tree.expand);
-    if (expansion.length !== 2) return calcRemainderLayout(tree, spec);
-
-    let {lca, distanceToLCA} = getLCA(tree);
-
-    let {branchLen, verticalGap, size, frondLeafGap, frondLeafAngle, frondBaseLength, nestMargin} = spec;
-    let height = size, width = size;
-
-    let blocks = {};
-    let missingHeight = 0;
-    if (tree.missing) {
-        missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
-        blocks.missing = {
-            id: 'missing',
-            isMissing: true,
-            context: true,
-            height: missingHeight,
-            width, x: 0, y: height - missingHeight,
-            n: tree.missing.length,          // the number of entities this block represents
-            branches: {},
-            entities: createMappingFromArray(tree.missing)
-        };
-    }
-    let nonMissingHeight = missingHeight? height - missingHeight - verticalGap: height;
-    let blockHeight = (nonMissingHeight - 2 * verticalGap) / 3;
-
-    // A virtual root block
-    let rootBlockId = 'root';
-    blocks[rootBlockId] = {
-        id: rootBlockId,
-        n: 0,
-        entities: {},
-        children: []
-    };
-
-
-    // determine if LCA's outgroup is on top or bottom
-    // FIXME
-    //let outgroupOnTop = lca !== tree.rootBranch && tree.branches[tree.branches[lca].parent].left === lca;
-    let branches = {
-        [lca + '-vertical']: {
-            bid: lca + '-vertical',
-            x1: 0, x2: 0,
-            y1: blockHeight / 2, y2: 2 * blockHeight + 1.5 * verticalGap
-        },
-        [lca + '-in'] :{
-            bid: lca + '-in',
-            x1: 0, x2: branchLen,
-            y1: 2 * blockHeight + 1.5 * verticalGap,
-            y2: 2 * blockHeight + 1.5 * verticalGap,
-        },
-        [lca + '-out']: {
-            bid: lca + '-out',
-            x1: 0, x2: branchLen,
-            y1: blockHeight / 2, y2: blockHeight / 2
-        },
-    };
-
-
-    // Determine how many "frondified" leaves on a branch by its distance to the LCA
-    let getNumFrond = dist => {
-        return Math.floor(Math.log2(dist + 1));
-    };
-
-    // These two variables are used to determine the scale of the block width
-    let maxN = 0;           // The max number of taxa in each block
-    let branchXMax = branchLen;     // the largest x coordinate of all branches
-
-    let addFrondifyLeaves = (e, frondLevel) => {
-        let b = branches[e];
-        let isHorizontal = b.y1 === b.y2;
-        let isGoingUp = b.y1 > b.y2;
-        for (let i = 0; i < frondLevel; i++) {
-            let t = .4 + i * 0.5 / frondLevel;
-            // Find the point to "grow" two leaves on both sides
-            let x = (1 - t) * branches[e].x1 + t * branches[e].x2;
-            let y = (1 - t) * branches[e].y1 + t * branches[e].y2;
-            branches[e + '-frond-' + i] = {
-                bid: e + '-frond-' + i,
-                x1: x, x2: x + 5,
-                y1: y, y2: isHorizontal? y - 5: y
-            };
-            branches[e + '-frond-' + i + '-v'] = {
-                bid: e + '-frond-' + i + '-v',
-                x1: x, x2: isHorizontal? x + 5: x, y1: y, y2: isHorizontal? y + 5: (y + 5 * (isGoingUp? -1: 1))
-            };
-        }
-
-    };
-
-    let addIngroupContextBlock = e => {
-        let bid = e + '-in';
-        blocks[rootBlockId].children.push(bid);
-        blocks[bid] = {
-            id: bid,
-            x: branchLen, y: 1.5 * (blockHeight + verticalGap),
-            height: blockHeight, width: 50,
-            n: tree.branches[e].entities.length,
-            entities: createMappingFromArray(tree.branches[e].entities),
-            branches: getBranchesInSubtree(tree, e),
-            context: true,
-        };
-        maxN = Math.max(maxN, blocks[bid].n);
-    };
-
-    let addInGroupBlockAndBranches = (e, isCentered=false) => {
-        let frondLevel = getNumFrond(distanceToLCA[e]);
-        let isLeft = tree.branches[e].order < tree.branches[lca].order;
-        let bl = e === lca? 0: (tree.branches[e].parent === lca? branchLen: frondBaseLength + (frondLevel - 1) * frondLeafGap);
-        blocks[rootBlockId].children.push(e);
-        blocks[e] = {
-            id: e, children: [],
-            x: branchLen + bl, y: isCentered? 1.5 * (blockHeight + verticalGap): (isLeft? blockHeight + verticalGap: 2 * (blockHeight + verticalGap)),
-            height: blockHeight, width: 50,
-            n: tree.branches[e].entities.length,
-            entities: createMappingFromArray(tree.branches[e].entities),
-            branches: getBranchesInSubtree(tree, e),
-            matched: tree.expand[e].jac === 1,
-            lastExpanded: tree.lastSelected === e,
-            context: false,
-        };
-        branchXMax = Math.max(branchXMax, blocks[e].x);
-        maxN = Math.max(maxN, blocks[e].n);
-        if (e === lca) {
-        } else if (tree.branches[e].parent === lca) { // do not frondify
-            branches[e + '-vertical'] = {
-                bid: e + '-vertical',
-                x1: branchLen, x2: branchLen,
-                // y1: blocks[e].y + blocks[e].height + verticalGap / 2,
-                y1: 2 * blockHeight + 1.5 * verticalGap,
-                y2: blocks[e].y + blocks[e].height / 2
-            };
-            branches[e] = {
-                bid: e,
-                x1: branchLen, x2: blocks[e].x,
-                y1: branches[e + '-vertical'].y2,
-                y2: branches[e + '-vertical'].y2,
-            }
-        } else {
-            branches[e] = {
-                bid: e,
-                x1: branchLen, x2: blocks[e].x,
-                y1: 2 * blockHeight + 1.5 * verticalGap,
-                y2: blocks[e].y + blocks[e].height / 2
-            };
-            addFrondifyLeaves(e, frondLevel, frondLeafAngle);
-        }
-    };
-
-    let addOutgroupBlock = (e, isContext=true) => {
-        let bid = e + (isContext? '-out': '');
-        blocks[rootBlockId].children.push(bid);
-        blocks[bid] = {
-            id: bid, children: [],
-            x: branchLen, y: 0,
-            height: blockHeight, width: 50,
-            n: tree.entities.length - tree.branches[e].entities.length,
-            entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
-            branches: subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
-            matched: tree.expand.hasOwnProperty(e) && tree.expand[e].jac === 1,
-            context: isContext,
-            lastExpanded: e === tree.lastSelected,
-        };
-        maxN = Math.max(maxN, blocks[bid].n);
-    };
-
-    let addNestedBlock = (e, nestedTo, isIngroup) => {
-        let nestBlock = blocks[nestedTo];
-        let frondLevel = getNumFrond(isIngroup? distanceToLCA[e]: distanceToLCA[nestedTo]);
-        let bl = e === lca || tree.branches[e].parent === lca? 15: frondBaseLength + (frondLevel - 1) * frondLeafGap;
-        nestBlock.children.push(e);
-        blocks[e] = {
-            id: e,
-            x: nestBlock.x + bl, y: nestBlock.y + nestMargin,
-            height: nestBlock.height - 2 * nestMargin,
-            n: isIngroup? tree.branches[e].entities.length: tree.entities.length - tree.branches[e].entities.length,
-            entities: isIngroup? createMappingFromArray(tree.branches[e].entities):
-                subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
-            branches: isIngroup? getBranchesInSubtree(tree, e):
-                subtractMapping(getBranchesInSubtree(tree, tree.rootBranch), getBranchesInSubtree(tree, e)),
-            matched: tree.expand[e].jac === 1,
-            lastExpanded: tree.lastSelected === e,
-            context: false,
-            nestedTo,
-        };
-        branchXMax = Math.max(branchXMax, blocks[e].x);
-        maxN = Math.max(maxN, blocks[e].n);
-        if ((isIngroup && tree.branches[e].parent === nestedTo) || (!isIngroup && tree.branches[nestedTo] === e)) {
-            branches[e] = {
-                bid: e,
-                x1: nestBlock.x, y1: nestBlock.y + nestBlock.height / 2,
-                x2: nestBlock.x + bl, y2: nestBlock.y + nestBlock.height / 2
-            };
-        } else {
-            branches[e] = {
-                bid: e,
-                x1: nestBlock.x, x2: nestBlock.x + bl,
-                y1: nestBlock.y + nestBlock.height / 2,
-                y2: nestBlock.y + nestBlock.height / 2
-            };
-            addFrondifyLeaves(e, frondLevel);
-        }
-    };
-
-
-    if (tree.expand.hasOwnProperty(lca)) {
-        // the two expanded nodes has nesting relation
-        let expB = lca === expansion[0]? expansion[1]: expansion[0];
-        if (tree.expand[lca].in && tree.expand[expB].in) {
-            // nesting: (expA-in, expB-in)   expA-in contains expB-in
-            addInGroupBlockAndBranches(lca, true);        // FIXME: centered this block
-            addNestedBlock(expB, lca, true);
-            addOutgroupBlock(lca);
-        } else if (!tree.expand[lca].in && !tree.expand[expB].in) {
-            // nesting: (expA-out, expB-out)  expB-out contains expA-out
-            addOutgroupBlock(expB, false);
-            addNestedBlock(lca, expB, false);
-            addIngroupContextBlock(expB);
-        } else if (!tree.expand[lca].in && tree.expand[expB].in){
-            // (lca-out, expB-in)
-            addOutgroupBlock(lca, false);
-            addInGroupBlockAndBranches(expB);
-        } else {
-            // (lca-in, expB-out)       TODO: partial overlap
-            return calcRemainderLayout(tree, spec);
-        }
-    } else {
-        // The two expanded node is parallel
-        let expA = expansion[0], expB = expansion[1];
-        if (tree.expand[expA].in && tree.expand[expB].in) {
-            // (A-in, B-in)
-            addInGroupBlockAndBranches(expA);
-            addInGroupBlockAndBranches(expB);
-            addOutgroupBlock(lca, true);
-        } else if (!tree.expand[expA].in && tree.expand[expB].in) {
-            // (A-out, B-in)
-            addOutgroupBlock(expA, false);
-            addNestedBlock(expB, expA, true);
-            // addOutgroupBlock(expB, true);
-            addIngroupContextBlock(expA);
-        } else if (tree.expand[expA].in && !tree.expand[expB].in) {
-            // (A-in, B-out)
-            addOutgroupBlock(expB, false);
-            addNestedBlock(expA, expB, true);
-            // addOutgroupBlock(expA, true);
-            addIngroupContextBlock(expB);
-        } else {
-            // (A-out, B-out)
-            return calcRemainderLayout(tree, spec)
-        }
-    }
-
-    // Fill in thw width
-    let xScale = scaleLog().domain([1, maxN]).range([0, width - branchXMax]);
-    for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
-        blocks[bid].width = xScale(blocks[bid].n);
-        if (blocks[bid].nestedTo) {
-            // cap the width so that the block is truly contained
-            let nestBlock = blocks[blocks[bid].nestedTo];
-            blocks[bid].width = Math.min(blocks[bid].width, nestBlock.width - (blocks[bid].x - nestBlock.x) - nestMargin);
-        }
-    }
-
-    return {blocks, branches, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name, rootBlockId,
-        missing: createMappingFromArray(tree.missing)};
-};
-
-
-let calcFineGrainedLayout = (tree, spec) => {
-    let expansion = Object.keys(tree.expand);
-    if (expansion.length === 0) return calcRemainderLayout(tree, spec);
-
-    let {lca} = getLCA(tree);
-    // console.log('LCA = ', lca);
-
-    // FIXME: duplicate code
-    let {branchLen, verticalGap, leaveHeight, size} = spec;
-    let height = size, width = size;
-
-    let blocks = {};
-    let missingHeight = 0;
-    if (tree.missing) {
-        missingHeight = tree.missing.length / (tree.missing.length + tree.branches[tree.rootBranch].entities.length) * (height - verticalGap);
-        blocks.missing = {
-            id: 'missing',
-            isMissing: true,
-            height: missingHeight,
-            width, x: 0, y: height - missingHeight,
-            n: tree.missing.length,          // the number of entities this block represents
-            branches: {},
-            context: true,
-            entities: createMappingFromArray(tree.missing)
-        };
-    }
-    // Generate all blocks needed to display.  Blocks are indexed by their expanded branch id except the root block.
-    // Create a seudo root with id rootBranchId + "-a"
-    let rootBlockId = tree.rootBranch + '-a';
-    let allEntities = tree.branches[tree.rootBranch].entities;
-    let lcaEntities = tree.branches[lca].entities;
-    // let rootBlockWidth = width - lcaEntities.length / allEntities.length * (width - branchLen);
-    let rootBlockWidth = width / 2;
-    let nonMissingHeight = missingHeight? height - missingHeight - verticalGap: height;
-    blocks[rootBlockId] = {
-        id: rootBlockId,
-        height: nonMissingHeight, width: rootBlockWidth,
-        x: 0, y: 0,
-        n: allEntities.length - lcaEntities.length,
-        context: true,
-        branches: subtractMapping(createMappingFromArray(Object.keys(tree.branches)), getBranchesInSubtree(tree, lca)),
-        entities: subtractMapping(createMappingFromArray(allEntities), createMappingFromArray(lcaEntities))
-    };
-    let maxN = blocks[rootBlockId].n;
-
-    let tmpExp = {};
-    for (let i = 0; i < expansion.length; i++) {
-        let e = expansion[i];
-        if (e) {
-            while (e !== lca) {
-                e = tree.branches[e].parent;
-                tmpExp[tree.branches[e].left] = 1;
-                tmpExp[tree.branches[e].right] = 1;
-            }
-        }
-    }
-    tmpExp[lca] = 1;
-
-    let branches = {};
-    let numBlocks = 0;
-    let numLeaves = 0;
-    let traverse = (bid, curX) => {
-        let b = tree.branches[bid];
-        branches[bid] = {bid, x1: curX, x2: curX + branchLen, expanded: tree.expand.hasOwnProperty(bid)};
-        if (!b.isLeaf) {
-            if (tmpExp.hasOwnProperty(b.left)) {
-                branches[bid + '-x'] = {bid: bid + '-x', x1: curX + branchLen, x2: curX + branchLen};
-                traverse(b.left, curX + branchLen);
-                traverse(b.right, curX + branchLen);
-            } else {
-                // Generate a block because it is the "end" side of expansion
-                numBlocks += 1;
-                blocks[bid] = {
-                    id: bid,
-                    width: 20, x: curX + branchLen,
-                    matched: tree.expand[bid],
-                    context: !tree.expand[bid],
-                    lastExpanded: bid === tree.lastSelected,
-                    branches: getBranchesInSubtree(tree, bid),
-                    isLeaf: !!b.isLeaf, n: b.entities.length, entities: createMappingFromArray(b.entities)
-                };
-                maxN = Math.max(maxN, blocks[bid].n);
-            }
-        } else {
-            numLeaves += 1;
-        }
-    };
-    traverse(lca, rootBlockWidth);
-
-    // let xScale = scaleLog().domain([1, maxN + 1]).range([0, width / 2]);
-    // for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== 'missing') {
-    //     blocks[bid].width = xScale(blocks[bid].n + 1);
-    // }
-
-    let blockHeight = (nonMissingHeight - verticalGap * (numBlocks - 1) - numLeaves * leaveHeight) / numBlocks;
-    let noBlocks = 0, noLeaves = 0;
-    let traverse2 = (bid) => {
-        let b = tree.branches[bid];
-        if (!b.isLeaf) {
-            if (tmpExp.hasOwnProperty(b.left)) {
-                traverse2(b.left);
-                traverse2(b.right);
-                branches[bid].y1 = (branches[b.left].y1 + branches[b.right].y1) / 2;
-                branches[bid].y2 = (branches[b.left].y1 + branches[b.right].y1) / 2;
-                branches[bid + '-x'].y1 = branches[b.left].y1;
-                branches[bid + '-x'].y2 = branches[b.right].y1;
-            } else {
-                blocks[bid].y = noBlocks * (blockHeight + verticalGap) + noLeaves * leaveHeight;
-                blocks[bid].height = blockHeight;
-                noBlocks += 1;
-                branches[bid].y1 = (blocks[bid].y * 2 + blockHeight) / 2;
-                branches[bid].y2 = (blocks[bid].y * 2 + blockHeight) / 2;
-            }
-        } else {
-            branches[bid].y1 = noBlocks * (blockHeight + verticalGap) + noLeaves * leaveHeight + leaveHeight / 2;
-            branches[bid].y2 = noBlocks * (blockHeight + verticalGap) + noLeaves * leaveHeight + leaveHeight / 2;
-            noLeaves += 1;
-        }
-    };
-    traverse2(lca);
-
-    return {blocks, branches, rootBlockId, tid: tree.tid, lastSelected: tree.lastSelected, name: tree.name,
-        missing: createMappingFromArray(tree.missing)};
-};
-
-let getLayouts = createSelector(
-    [trees => trees, (_, spec) => spec, (_, spec, mode) => mode],
-    (trees, spec, mode) => {
-        let layout = calcFrondLayout;
-        if (mode === 'remainder') layout = calcRemainderLayout;
-        if (mode === 'fine-grained') layout = calcFineGrainedLayout;
-        return trees.map(t => layout(t, spec));
+        return filteredLayouts;
     }
 );
 
-let getHash = (blocks, rootBlockId, mode) => {
-    if (mode === 'taxa-cluster') {
-        // Only consider the most-recent expanded block
-        for (let bid in blocks) if (blocks.hasOwnProperty(bid) && blocks[bid].lastExpanded) {
-            return Object.keys(blocks[bid].entities).sort().join();
-        }
-        // if not found
-        return 'NA';
-    }
-
-    let getBlockRep = b => {
-        if (mode === 'supercluster') return b.n === 0? '0': 'x'; // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
-        if (mode === 'topo-cluster') return b.n.toString();
-        // if (mode === 'taxa-cluster') return Object.keys(b.entities).sort().join();
-    };
-    let traverse = (bid) => {
-        let b = blocks[bid];
-        if (b.children && b.children.length > 0) {
-            return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
-        } else {
-            return getBlockRep(b);
-        }
-    };
-    return traverse(rootBlockId);
-};
-
-
-// Cluster trees by visual representations
-// trees is an array of tree objects {tid, blocks, rootBlockId, branches}
-// Return an array of clusters, with each one {blockArr, branchArr, num}
+// Cluster trees by topology of the aggregated dendrogram
+// layouts is an array of tree objects {tid, blocks, rootBlockId, branches}
+// Return a dictionary of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
-let getClusters = createSelector(
-    [trees => trees, (_, mode) => mode,  (_, mode, withoutMissing) => withoutMissing],
-    (trees, mode, withoutMissing) => {
-        console.log('Clustering trees... mode: ', mode, 'without missing taxa: ', withoutMissing);
+let clusterLayoutsByTopology = createSelector(
+    [state => state.aggregatedDendrogram.mode === 'supercluster',
+        (_, layouts) => layouts],
+    (isSuperCluster, layouts) => {
+        console.log('Clustering layouts by topology...');
+        let numLayouts = Object.keys(layouts).length;
 
-        // FIXME: if they don't share the same topo, this won't work!!!
+        let getHash = (blocks, rootBlockId) => {
+            // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
+            let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
+            let traverse = (bid) => {
+                let b = blocks[bid];
+                if (b.children && b.children.length > 0) {
+                    return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
+                } else {
+                    return getBlockRep(b);
+                }
+            };
+            return traverse(rootBlockId);
+        };
+
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
             let traverse = (clusterBid, addingBid) => {
                 let b = clusterBlocks[clusterBid];
@@ -829,7 +235,7 @@ let getClusters = createSelector(
         let createEmptyClusterFromTree = (t) => {
             let c = {...t, blocks: {...t.blocks}, branches: {...t.branches},
                 tid: t.tid + '-c',
-                num: 0, trees: [], total: trees.length};
+                num: 0, trees: [], total: numLayouts};
             let traverse = (bid) => {
                 // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
                 c.blocks[bid] = {
@@ -848,66 +254,46 @@ let getClusters = createSelector(
             return c;
         };
 
-        let clusters = [];
-        let c, t;
-        if (mode === 'taxa-cluster' && withoutMissing) {
-            let taxaSetByTree = {};
-            let treeMapping = {};
-            for (let i = 0; i < trees.length; i++) {
-                t = trees[i];
-                taxaSetByTree[t.tid] = t.lastSelected? t.blocks[t.lastSelected].entities: {};
-                treeMapping[t.tid] = t;
+        // Hash the layouts
+        let clusters = {};
+        for (let tid in layouts) if (layouts.hasOwnProperty(tid)) {
+            let t = layouts[tid];
+            let h = getHash(t.blocks, t.rootBlockId);
+            if (!clusters.hasOwnProperty(h)) {
+                clusters[h] = createEmptyClusterFromTree(t);
             }
-
-            for (let i = 0; i < trees.length; i++) {
-                t = trees[i];
-                c = null;
-                for (let j = 0; j < clusters.length; j++) {
-                    let s = clusters[j];
-                    if (areSetsEqual(subtractMapping(taxaSetByTree[s.trees[0]], treeMapping[t.tid].missing),
-                            subtractMapping(taxaSetByTree[t.tid], treeMapping[s.trees[0]].missing))) {
-                        c = s;
-                        break;
-                    }
-                }
-                if (!c) {
-                    c = createEmptyClusterFromTree(t);
-                    clusters.push(c);
-                }
-                c.num += 1;
-                c.trees.push(t.tid);
-                addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
-            }
-        } else {
-            // Get the tree hashes
-            for (let i = 0; i < trees.length; i++) {
-                trees[i].hash = getHash(trees[i].blocks, trees[i].rootBlockId, mode);
-            }
-
-            // Sort the trees according to their hashes
-            trees.sort((a, b) => {
-                if (a.hash > b.hash) return 1;
-                if (a.hash < b.hash) return -1;
-                return 0;
-            });
-
-            // Scan the array to construct cluster
-            for (let i = 0; i < trees.length; i++) {
-                let t = trees[i];
-                if (i === 0 || t.hash !== trees[i - 1].hash) {
-                    // create a new cluster
-                    c = createEmptyClusterFromTree(t);
-                    clusters.push(c);
-                }
-                c.num += 1;
-                c.trees.push(t.tid);
-                addRepresent(c.blocks, c.rootBlockId, t.blocks, t.tid, t.rootBlockId);
-            }
-
+            clusters[h].num += 1;
+            clusters[h].trees.push(tid);
+            addRepresent(clusters[h].blocks, clusters[h].rootBlockId, t.blocks, tid, t.rootBlockId);
         }
+        return clusters;
+    }
+);
 
-        return clusters.sort((a, b) => b.num - a.num);
-    });
+let sortLayouts = createSelector(
+    [state => state.aggregatedDendrogram.treeOrder,
+        state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
+        (_, layouts) => layouts
+    ],
+    (order, _, layouts) => {
+        console.log('Sorting layouts...');
+
+        let res = [];
+        for (let x in layouts) if (layouts.hasOwnProperty(x)) {
+            res.push(layouts[x]);
+        }
+        return res;
+
+        // TODO implement sorting
+        // let sortFunc;
+        // if (order.static || !bid || typeof bid === 'object') {
+        //     sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
+        // } else {
+        //     let corr = ref.branches[bid][cb];
+        //     sortFunc = (t1, t2) => (t2 in corr? corr[t2].jac: 1.1) - (t1 in corr? corr[t1].jac: 1.1)
+        // }
+    }
+);
 
 
 let getKDEBins = (n, values, kernel) => {
@@ -932,6 +318,58 @@ let getKDEBins = (n, values, kernel) => {
     let colorBins = bins.map(scale).map(l => hsl(207, .44, l).toString());
     return colorBins;
 };
+
+let fillLayouts = createSelector(
+    [(_, layouts) => layouts,
+        state => state.highlight,
+        state => state.aggregatedDendrogram.mode,
+        state => state.aggregatedDendrogram.shadedHistogram],
+    (layouts, highlight, mode, shadedHistogramSpec) => {
+        let isClusterMode = mode.indexOf('cluster') !== -1;
+        let filledLayouts = layouts.slice();
+        if (isClusterMode) {
+
+        } else {
+            let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
+
+            for (let i = 0; i < filledLayouts.length; i++) {
+                let t = filledLayouts[i];
+                for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+                    let b = t.blocks[bid];
+                    let intersections = highlightEntities
+                        .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlight.colorScheme(highlight.bids[i].color)}))
+                        .filter(a => Object.keys(a.entities).length > 0)
+                        .sort((a, b) => Object.keys(b.entities).length - Object.keys(a.entities).length);
+                    // Check for overlap.  For now, subset relationship is the only possible overlap relation
+                    b.fill = [];
+                    let curEnd = 0;
+                    for (let i = 0; i < intersections.length; i++) {
+                        let j;
+                        for (j = 0; j < i; j++) {
+                            if (isSubset(intersections[i].entities, intersections[j].entities)) break;
+                        }
+                        let proportion = Object.keys(intersections[i].entities).length / Object.keys(b.entities).length;
+                        b.fill.push({
+                            start: i === j? curEnd: b.fill[j].start,
+                            width: proportion,
+                            color: intersections[i].color
+                        });
+                        curEnd += i === j? proportion: 0;
+                    }
+
+                }
+            }
+        }
+        return filledLayouts;
+    }
+);
+
+let selectLayoutsByAttribute = createSelector(
+    [(_, layouts) => layouts],
+    (layouts) => {
+        return layouts;
+    }
+);
 
 // Get the highlight portion of each block
 // Also determine whether there is branch that falls into the range selection
@@ -967,43 +405,6 @@ let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, trees, s
         //     }
         // }
     } else {
-        let highlightEntities = highlightGroups.bids.map(h => createMappingFromArray(h.entities));
-
-        // Check if a is a subset of b.  a and b are both objects
-        let isSubset = (a, b) => {
-            for (let x in a) {
-                if (!b.hasOwnProperty(x)) return false;
-            }
-            return true;
-        };
-
-        for (let tid in dendroMapping) if (dendroMapping.hasOwnProperty(tid)) {
-            let t = dendroMapping[tid];
-            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-                let b = t.blocks[bid];
-                let intersections = highlightEntities
-                    .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlightGroups.colorScheme(highlightGroups.bids[i].color)}))
-                    .filter(a => Object.keys(a.entities).length > 0)
-                    .sort((a, b) => Object.keys(b.entities).length - Object.keys(a.entities).length);
-                // Check for overlap.  For now, subset relationship is the only possible overlap relation
-                b.fill = [];
-                let curEnd = 0;
-                for (let i = 0; i < intersections.length; i++) {
-                    let j;
-                    for (j = 0; j < i; j++) {
-                        if (isSubset(intersections[i].entities, intersections[j].entities)) break;
-                    }
-                    let proportion = Object.keys(intersections[i].entities).length / Object.keys(b.entities).length;
-                    b.fill.push({
-                        start: i === j? curEnd: b.fill[j].start,
-                        width: proportion,
-                        color: intersections[i].color
-                    });
-                    curEnd += i === j? proportion: 0;
-                }
-
-            }
-        }
     }
 };
 
@@ -1058,52 +459,34 @@ let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) =>
     }
 };
 
-// the highlight monophyly is prone to change, so to make it faster, need to extract the part calculating the fillPercentage
-let getDendrograms = createSelector(
-    [state => state.aggregatedDendrogram.mode,
-        (_, trees) => trees,
-        state => state.highlight,
-        state => state.aggregatedDendrogram.spec,
-        state => state.inputGroupData.trees,
-        state => state.attributeExplorer.activeSelectionId !== null?
-            state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId]: null,
-        state => state.attributeExplorer.activeSelectionId !== null &&
-        state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb? state.referenceTree: null,
-        state => state.cb,
-        state => state.aggregatedDendrogram.shadedHistogram],
-    (mode, trees, highlight, spec, rawTrees, rangeSelection, refTree, cb, shadedHistogram) => {
-        let dendros = getLayouts(trees, spec, mode);
-        let isClusterMode = mode.indexOf('cluster') !== -1;
-        let clusters = isClusterMode? getClusters(dendros, mode, cb === 'cb2').slice(): [];
-        dendros = dendros.slice();
-        let dendroMapping = {};
-        for (let i = 0; i < dendros.length; i++) {
-            dendroMapping[dendros[i].tid] = dendros[i];
-        }
-
-        getFill(dendroMapping, clusters, isClusterMode, highlight, rawTrees, shadedHistogram);
-        checkRangeSelection(dendroMapping, rangeSelection, refTree, rawTrees, cb);
-        return isClusterMode? clusters: dendros;
-    }
-);
-
 
 let mapStateToProps = (state) => {
-    let trees = getTrees(state);
+    let mode = state.aggregatedDendrogram.mode;
+    let layouts = getLayouts(state);
+    let filteredLayouts = filterLayouts(state, layouts);
+    let layoutArray;
+    if (mode.indexOf('cluster') !== -1) {
+        let clusteredLayouts = clusterLayoutsByTopology(state, filteredLayouts);
+        layoutArray = sortLayouts(state, clusteredLayouts);
+    } else {
+        layoutArray = sortLayouts(state, filteredLayouts);
+    }
+    let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray));
+
     return {
         ...state.aggregatedDendrogram,
         referenceTid: state.referenceTree.id,
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
-        dendrograms: getDendrograms(state, trees),
+        dendrograms,
         rangeSelection: state.attributeExplorer.activeSelectionId === 0? {
             attrName: 'support',
             range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
         }: null,
         selectedTrees: state.selectedTrees,
-        expandedBranches: state.referenceTree.selected,
-        hoveredTrees: state.hoveredTrees
+        hoveredTrees: state.hoveredTrees,
+        expandedBranches: state.referenceTree.expanded,
     }
 };
 

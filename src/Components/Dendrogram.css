@@ -25,11 +25,7 @@
 .block {
     fill: #fff;
     stroke-width: 1px;
-    stroke: black;
-}
-.block.range-selected {
-    stroke-width: 2px;
-    stroke: #984ea3 !important;
+    stroke: #888;
 }
 .block.fuzzy {
     stroke-width: 1px;
@@ -40,12 +36,9 @@
     stroke-dasharray: 6 2;
 }
 .block.expanded {
-    stroke-width: 1px;
-    stroke: #e41a1c;
-}
-.block.last-expanded {
-    stroke: #AEAE39;
     stroke-width: 2px;
+    /*stroke: #e41a1c;*/
+    stroke: black;
 }
 .respond-box {
     opacity: 0;
@@ -129,10 +122,6 @@
     margin-left: 2px;
 }
 
-.agg-dendro-box line.last-selected-indicator {
-    stroke: #1a9641;
-    stroke-width: 2px;
-}
 
 rect.range-selected-cb-indicator {
     fill: #984ea3;

@@ -17,7 +17,7 @@ class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
              entities, rangeSelection, cb} = this.props;
-        let {selected, highlightEntities, highlightUncertainEntities} = referenceTree;
+        let {expanded, highlightEntities, highlightUncertainEntities} = referenceTree;
         let isComparing = comparingTree !== null;
 
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
@@ -34,13 +34,13 @@ class FullDendrogram extends Component {
             && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
 
             let cbInRange = false;
-            if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
-                let corr = this.props.tree.branches[selected[0]][cb][tree.tid];
-                if (corr) {
-                    let v = attribute === 'similarity'? corr.jac: tree.branches[corr.bid][attribute];
-                    cbInRange = range[0] <= v && v <= range[1];
-                }
-            }
+            // if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
+            //     let corr = this.props.tree.branches[selected[0]][cb][tree.tid];
+            //     if (corr) {
+            //         let v = attribute === 'similarity'? corr.jac: tree.branches[corr.bid][attribute];
+            //         cbInRange = range[0] <= v && v <= range[1];
+            //     }
+            // }
 
             let highlightBoxes = [];
             for (let i = 0; i < highlight.bids.length; i++) {
@@ -91,20 +91,15 @@ class FullDendrogram extends Component {
                    <g className="topology">
                        {branchSpecs.map((d, i) =>
                            (<g key={d.bid}>
-                               <line className={cn('branch-line', {selected: expandedBranches.indexOf(d.bid) !== -1,
+                               <line className={cn('branch-line', {expanded: expandedBranches.hasOwnProperty(d.bid),
                                    'range-selected': inRange(d),
                                    'checking': tree.tid === referenceTree.id && referenceTree.checkingBranch === d.bid})}
                                      x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                                {tree.tid === referenceTree.id && this.props.metricBranch === d.bid && d.bid != null &&
                                <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
-                               {expandedBranches.length && expandedBranches[0] === d.bid &&
-                               <g>
-                                   <use xlinkHref="#icon-triangle-up" x={(d.x1 + d.x2) / 2 - 4} y={d.y1 + 2} width="10" height="10" style={{fill: '#e41a1c'}} />
-                               </g>
-                               }
-                               {expandedBranches.length && expandedBranches.indexOf(d.bid) !== -1 &&
+                               {expandedBranches.hasOwnProperty(d.bid) &&
                                <text x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy="-4" style={{fill: '#e41a1c', fontSize: '12px', fontWeight: 'bold'}}>
-                                   {expandedBranches.length - expandedBranches.indexOf(d.bid)}
+                                   {expandedBranches[d.bid]}
                                </text>
                                }
                            </g>))}
@@ -159,19 +154,15 @@ class FullDendrogram extends Component {
                     {isComparing &&
                         <g>
                             <g>
-                                {renderDendrogram(tree, dendrogram[0], 'right', selected)}
+                                {renderDendrogram(tree, dendrogram[0], 'right', expanded)}
                             </g>
                             <g transform={`translate(${dendrogram[0].treeBoundingBox.width}, 0)`}>
                                 {renderDendrogram(this.props.comparingTree, dendrogram[1], 'left', this.props.comparingTreeExpansion)}
                             </g>
                         </g>
                     }
-                    {!isComparing && renderDendrogram(tree, dendrogram, 'right', selected)}
+                    {!isComparing && renderDendrogram(tree, dendrogram, 'right', expanded)}
                 </g>
-                <symbol id="icon-triangle-up" viewBox="0 0 12 16">
-                    <title>triangle-up</title>
-                    <path d="M5.996 4l-5.996 5.996h11.992l-5.996-5.996z"></path>
-                </symbol>
             </svg>
         )
     }
@@ -319,14 +310,25 @@ let getDendrogramSpecs = createSelector(
 
 
 function mapStateToProps(state) {
+    let ref = state.inputGroupData.referenceTree;
     let c = state.pairwiseComparison;
     let den, den1, den2;
     let compExp = [];
     if (c.tid) {
         den1 = getDendrogramSpecs(state, null, 'right', state.referenceTree.universalBranchLen);
         den2 = getDendrogramSpecs(state, c.tid, 'left', state.referenceTree.universalBranchLen);
-        let tree = state.inputGroupData.referenceTree;
-        compExp = state.referenceTree.selected.map(s => tree.branches[s][state.cb][c.tid].bid);
+        let compExp = {};
+
+        // Get the corresponding branches in the comparing tree
+        let refExp = state.referenceTree.expanded;
+        for (let bid in refExp) if (refExp.hasOwnProperty(bid)) {
+            let corr = ref.branches[bid][state.cb];
+            if (corr.hasOwnProperty(c.tid) && corr[c.tid].bid) {
+                let corrBid = corr[c.tid].bid;
+                // It is possible that two different branches in the reference tree correspond to the same branch in the comparing tree
+                compExp[corrBid] = compExp.hasOwnProperty(corrBid)? compExp[corrBid] + ',' + refExp[bid]: refExp[bid];
+            }
+        }
     } else {
         den = getDendrogramSpecs(state, null, null, state.referenceTree.universalBranchLen);
     }
@@ -334,7 +336,7 @@ function mapStateToProps(state) {
         dendrogram: c.tid? [den1, den2]: den,
         highlight: state.highlight,
         referenceTree: state.referenceTree,
-        tree: state.inputGroupData.referenceTree,
+        tree: ref,
         comparingTree: c.tid? state.inputGroupData.trees[c.tid]: null,
         comparingTreeExpansion: c.tid? compExp: null,
         spec: state.dendrogramSpec,

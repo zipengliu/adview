@@ -14,11 +14,14 @@ class BipartitionDistribution extends Component {
     render() {
         let {expandedBranches, distributions, numBips} = this.props;
         let {tooltipMsg} = this.props.bipartitionDistribution;
+        let expandedArr = Object.keys(expandedBranches);
 
-        let renderBars = (d, bid, branchNo) => {
+        let renderBars = (d, bid) => {
+            let branchNo = expandedBranches[bid];
             let numBips = d.bipBins.reduce((acc, x) => (acc + x), 0);
             let x = scaleLinear().domain([0, numBips]).range([0, 100]);
             let curN = 0;
+
             return (
                 <div style={{position: 'relative', height: '100%', width: '100%', border: '1px solid #000'}}>
                     {d.bipBins.map((b, i) => {
@@ -62,11 +65,11 @@ class BipartitionDistribution extends Component {
                     </tr>
                     </thead>
                     <tbody>
-                    {expandedBranches.map((bid, i) =>
+                    {expandedArr.map((bid, i) =>
                         <tr key={i}>
-                            <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{i + 1}</td>
+                            <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{expandedBranches[bid]}</td>
                             <td style={{height: '100%', padding: 0}}>
-                                {renderBars(distributions[i], bid, i + 1)}
+                                {renderBars(distributions[bid], bid)}
                             </td>
                         </tr>
                     )}
@@ -92,18 +95,18 @@ let getDistribution = clusterSelector(
 
 
 let mapStateToProps = state => {
-    let distributions = [];
-    for (let i = state.referenceTree.selected.length - 1; i >= 0; i--) {
-        let bid = state.referenceTree.selected[i];
+    let expanded = state.referenceTree.expanded;
+    let distributions = {};
+    for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
         let d = getDistribution(state, bid);
         d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
         d.selectCnt = getHighlightProportion(d, state.selectedTrees);
-        distributions.push(d);
+        distributions[bid] = d;
     }
     // console.log(distributions);
 
     return {
-        expandedBranches: state.referenceTree.selected,
+        expandedBranches: state.referenceTree.expanded,
         numBips: state.bipartitions.numBips,
         bipartitionDistribution: state.bipartitionDistribution,
         distributions

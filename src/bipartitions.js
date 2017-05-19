@@ -224,7 +224,7 @@ class BipartitionList {
         for (let i = 0; i < this.entriesArray.length; i++) {
             let e = this.entriesArray[i];
 
-            if (!rEntry || BipartitionList.isCompatible(rEntry, e)) {
+            if (!rEntry || !BipartitionList.isCompatible(rEntry, e)) {
                 let j;
                 for (j = 0; j < conflictEntries.length; j++) {
                     if (BipartitionList.isCompatible(e, conflictEntries[j])) {
@@ -239,12 +239,14 @@ class BipartitionList {
                 }
             }
         }
+        console.log('conflict entries= ');
+        console.log(conflictEntries.slice());
+        console.log(rEntry);
 
         let sortedEntries = conflictEntries.sort((a, b) => (b.numBips - a.numBips));
         if (rEntry) {
-            sortedEntries = conflictEntries.unshift(rEntry);
+            sortedEntries.unshift(rEntry);
         }
-        console.log(sortedEntries);
         d.bipBins = sortedEntries.map(e => e.numBips);
         d.bins = sortedEntries.map(e => BipartitionList.getTidsFromTreeVector(e.treeVector));
         for (let i = 0; i < d.bins.length; i++) {

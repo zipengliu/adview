@@ -1,6 +1,6 @@
 #global-toolkit {
     min-width: 200px;
-    z-index: 1000;
+    z-index: 100;
 }
 #global-toolkit .panel-heading{
     position: relative;

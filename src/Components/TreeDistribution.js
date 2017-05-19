@@ -16,11 +16,12 @@ class TreeDistribution extends Component {
         let {expandedBranches, sets, distributions} = this.props;
         let {showSubsets, tooltipMsg} = this.props.treeDistribution;
         let numTrees = sets[0].tids.length;
+        let expandedArr = Object.keys(expandedBranches);
 
-
-        let renderBars = (d, sid, bid, branchNo) => {
+        let renderBars = (d, bid) => {
             let fullLength = Math.floor(d.n / numTrees * 100);
             let x = scaleLinear().domain([0, d.n]).range([0, 100]);
+            let branchNo = expandedBranches[bid];
             let curN = 0;
             return (
                 <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #000'}}>
@@ -60,23 +61,23 @@ class TreeDistribution extends Component {
                 <Table condensed bordered>
                     <thead>
                     <tr>
-                        <th style={{width: '100px'}}>Tree set</th>
+                        <th style={{width: '100px'}}>Tree collection</th>
                         <th style={{width: '50px'}}>Partition</th>
                         <th>Distribution</th>
                     </tr>
                     </thead>
                     <tbody>
                     {distributions.map((s, i) =>
-                        (expandedBranches.map((bid, j) =>
+                        (expandedArr.map((bid, j) =>
                             <tr key={`${i}-${j}`}>
                                 {j === 0 &&
-                                <td rowSpan={expandedBranches.length}>
-                                    {sets[i].title} {expandedBranches.length > 1 && <br/>}
+                                <td rowSpan={expandedArr.length}>
+                                    {sets[i].title} {expandedArr.length > 1 && <br/>}
                                     <Badge style={{backgroundColor: sets[i].color}}>{sets[i].tids.length}</Badge>
                                 </td>}
-                                <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{j + 1}</td>
+                                <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{expandedBranches[bid]}</td>
                                 <td style={{height: '100%', padding: 0}}>
-                                    {renderBars(distributions[i][j], i, bid, j + 1)}
+                                    {renderBars(s[bid], bid)}
                                 </td>
                             </tr>
                         ))
@@ -88,7 +89,7 @@ class TreeDistribution extends Component {
                         <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
                         <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
                     </ButtonGroup>
-                    <span> distribution for subsets. </span>
+                    <span> distribution for sub-collections. </span>
                     {!!tooltipMsg && <span>{tooltipMsg}</span>}
                 </div>
             </div>
@@ -119,6 +120,7 @@ let memoizeDistribution = (func) => {
 export let clusterSelector = createSelectorCreator(memoizeDistribution);
 
 let binSortFunc = (a, b) => (b.length - a.length);
+
 let clusterTreesByBranch = clusterSelector(
     state => state.inputGroupData.trees,
     state => state.inputGroupData.referenceTree,
@@ -154,7 +156,6 @@ let clusterTreesByBranch = clusterSelector(
             }
         }
 
-        bins.push();
 
         // Bin all other the trees
         for (let tid in trees) if (trees.hasOwnProperty(tid) && taxaSetByTree.hasOwnProperty(tid)) {
@@ -212,9 +213,9 @@ let getSubsetDistribution = createSelector(
     (fullDistribution, sets) => {
         let s = [];
         for (let i = 1; i < sets.length; i++) {         // The first set is the full set, so skip it
-            s.push([]);
-            for (let j = 0; j < fullDistribution.length; j++) {
-                let fd = fullDistribution[j];
+            s.push({});
+            for (let bid in fullDistribution) if (fullDistribution.hasOwnProperty(bid)) {
+                let fd = fullDistribution[bid];
 
                 // Init the bins for subset[i] and bipartition j
                 let bins = [];
@@ -246,7 +247,11 @@ let getSubsetDistribution = createSelector(
                 }
 
                 // Store the distribution data
-                s[i - 1].push({bins: filteredBins, treeToBin, hasCompatibleTree, n: sets[i].tids.length});
+                s[i - 1][bid] = {
+                    bins: filteredBins,
+                    treeToBin,
+                    hasCompatibleTree,
+                    n: sets[i].tids.length};
             }
         }
         console.log('subset distribution:',  s);
@@ -255,28 +260,29 @@ let getSubsetDistribution = createSelector(
 );
 
 let mapStateToProps = state => {
-    let distributions = [[]];
-    for (let i = state.referenceTree.selected.length - 1; i >= 0; i--) {
-        let bid = state.referenceTree.selected[i];
+    let expanded = state.referenceTree.expanded;
+    let distributions = [{}];
+    for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
         let d = clusterTreesByBranch(state, bid);
         d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
         d.selectCnt = getHighlightProportion(d, state.selectedTrees);
-        distributions[0].push(d);
+        distributions[0][bid] = d;
     }
 
     let sets = state.sets;
     if (state.treeDistribution.showSubsets) {
         distributions = distributions.concat(getSubsetDistribution(distributions[0], sets));
         for (let i = 1; i < sets.length; i++) {
-            for (let j = 0; j < state.referenceTree.selected.length; j++) {
-                distributions[i][j].highlightCnt = getHighlightProportion(distributions[i][j], state.hoveredTrees);
-                distributions[i][j].selectCnt = getHighlightProportion(distributions[i][j], state.selectedTrees);
+            for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
+                distributions[i][bid].highlightCnt = getHighlightProportion(distributions[i][bid], state.hoveredTrees);
+                distributions[i][bid].selectCnt = getHighlightProportion(distributions[i][bid], state.selectedTrees);
             }
         }
     }
+    console.log(distributions);
 
     return {
-        expandedBranches: state.referenceTree.selected,
+        expandedBranches: state.referenceTree.expanded,
         sets: state.sets,
         treeDistribution: state.treeDistribution,
         distributions

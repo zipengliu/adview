@@ -4,7 +4,7 @@
 
 import React, { Component } from 'react';
 import cn from 'classnames';
-import {scaleLog, path as d3Path} from 'd3';
+import {scaleLog} from 'd3';
 import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -20,18 +20,6 @@ class AggregatedDendrogram extends Component {
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
         let highlightTreeCnt = isClusterMode? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
             hoveredTrees.hasOwnProperty(this.props.data.tid);
-
-        let hasUncertainty = block => {
-            if (!block) return false;
-            if (isClusterMode) {
-                for (let i = 0; i < block.similarity.length; i++) {
-                    if (block.matched === false) return true;
-                }
-                return false;
-            } else {
-                return block.matched ===  false;
-            }
-        };
 
         let getCertainEntities = block =>
             isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] === num): Object.keys(block.entities);
@@ -52,16 +40,6 @@ class AggregatedDendrogram extends Component {
             } else {
                 setTimeout(() => {onToggleBlock([], [])}, 0);
             }
-        };
-
-        let getLastExpandedGlyph = (blk) => {
-            let w = Math.min(8, Math.max(blk.height, blk.width));
-            let p = d3Path();
-            p.moveTo(blk.x, blk.y + blk.height);
-            p.lineTo(blk.x + w, blk.y + blk.height);
-            p.lineTo(blk.x, blk.y + blk.height - w);
-            p.closePath();
-            return <path d={p.toString()} style={{stroke: 'none', fill: '#e41a1c'}}></path>;
         };
 
         let svgWidth = size + margin.left + margin.right;
@@ -90,12 +68,11 @@ class AggregatedDendrogram extends Component {
                        <g className="blocks" >
                             {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
-                                    <rect className={cn('block', {'range-selected': b.rangeSelected > 0,
-                                        expanded: !b.context && b.id !== 'missing', fuzzy: !b.context && !b.matched,
-                                        'is-missing': b.isMissing})} rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
+                                    <rect className={cn('block', {expanded: !b.context && b.id !== 'missing',
+                                        fuzzy: !b.context && !b.matched, 'is-missing': b.isMissing})}
+                                          rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                     />
-                                    {!b.context && b.lastExpanded && b.n > 0 && getLastExpandedGlyph(b)}
 
                                     {!isClusterMode && b.fill &&
                                         b.fill.map((f, i) => <rect key={i} className="highlight-block"
@@ -122,6 +99,7 @@ class AggregatedDendrogram extends Component {
                                     />
 
                                     {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>}
+                                    {b.no && <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
                                 </g>
                             )}
                         </g>

@@ -61,8 +61,8 @@ class GlobalToolkit extends Component {
                     <div></div>
 
                     <ButtonGroup bsSize="xsmall">
-                        <Button onClick={this.props.onCreateNewSet} disabled={!selectedTrees.length}>create new set</Button>
-                        <DropdownButton bsSize="xsmall" title="add to set" id="add-to-set"
+                        <Button onClick={this.props.onCreateNewSet} disabled={!selectedTrees.length}>create sub-collection</Button>
+                        <DropdownButton bsSize="xsmall" title="add to sub-collection" id="add-to-set"
                                         onSelect={this.props.onAddToSet}
                                         disabled={!selectedTrees.length || this.props.sets.length === 0}>
                             {this.props.sets.map((d, i) =>
@@ -76,15 +76,15 @@ class GlobalToolkit extends Component {
                                 </MenuItem>
                             )}
                         </DropdownButton>
-                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-from-set">Remove selected trees from the current set</Tooltip>}>
+                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-from-set">Remove selected trees from the current sub-collection</Tooltip>}>
                             <Button disabled={!selectedTrees.length} onClick={this.props.onRemoveFromSet.bind(null, selectedTrees, this.props.activeSetIndex)}>
-                                <Glyphicon glyph="trash"/><span className="glyph-text">remove trees from set</span>
+                                <Glyphicon glyph="trash"/><span className="glyph-text">remove trees from sub-collection</span>
                             </Button>
                         </OverlayTrigger>
-                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-set">Remove the current open set</Tooltip>}>
+                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-set">Remove the current sub-collection</Tooltip>}>
                             <Button disabled={this.props.activeSetIndex === 0}
                                     onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
-                                <Glyphicon glyph="trash"/><span className="glyph-text">remove set</span>
+                                <Glyphicon glyph="trash"/><span className="glyph-text">remove sub-collection</span>
                             </Button>
                         </OverlayTrigger>
                     </ButtonGroup>

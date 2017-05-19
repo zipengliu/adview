@@ -12,13 +12,13 @@ class PopupWindow extends Component {
         return (
             <Modal show={this.props.showWindow} onHide={this.props.onHide}>
                 <Modal.Header>
-                    <Modal.Title>Creating New Set</Modal.Title>
+                    <Modal.Title>Creating New Sub-collection</Modal.Title>
                 </Modal.Header>
 
                 <form onSubmit={this.props.onSubmit}>
                     <Modal.Body>
                         <FormGroup controlId="create-new-set-form">
-                            <ControlLabel>Set title:</ControlLabel>
+                            <ControlLabel>Sub-collection title:</ControlLabel>
                             <FormControl type="text" value={this.props.title} placeholder={this.props.placeholder}
                                          onChange={this.props.onChange}/>
                         </FormGroup>
@@ -41,7 +41,7 @@ function mapStateToProps(state) {
         showWindow: state.overview.createWindow,
         sets: state.sets,
         title: state.overview.currentTitle,
-        placeholder: 'Enter set title',
+        placeholder: 'Enter sub-collection title',
         numTrees: Object.keys(state.selectedTrees).length
     }
 }

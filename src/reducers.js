@@ -47,7 +47,7 @@ let initialState = {
     referenceTree: {
         id: null,
         checkingBranch: null,           // the branch that is being displayed in details
-        selected: [],                   // expanded branches
+        expanded: {},
         isFetching: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
@@ -234,7 +234,18 @@ let getEntitiesByBid = (tree, bid) => {
 
 let getTreeByTid = (state, tid) => {
     return tid === state.referenceTree.id? state.inputGroupData.referenceTree: state.inputGroupData.trees[tid];
-}
+};
+
+let createExpandedBranchID = exps => {
+    let usedID = {};
+    for (let bid in exps) if (exps.hasOwnProperty(bid))
+        usedID[exps[bid]] = true;
+    for (let i = 0; i < 26; i++) {
+        let id = String.fromCharCode(i + 65);
+        if (!usedID.hasOwnProperty(id)) return id;
+    }
+    return 'BOOM';
+};
 
 // let ladderize = (branches, rootBranch) => {
 //    let traverse = bid => {
@@ -472,7 +483,7 @@ function visphyReducer(state = initialState, action) {
                 },
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: [],
+                    expanded: {},
                     isFetching: true,
                 }
             });
@@ -521,33 +532,36 @@ function visphyReducer(state = initialState, action) {
             });
 
         case TYPE.SELECT_BRANCH:
-            let newSelected = state.referenceTree.selected.indexOf(action.bid) !== -1?
-                        state.referenceTree.selected.filter(bid => bid !== action.bid):
-                        [action.bid, ...state.referenceTree.selected];
+            let newExpanded = {...state.referenceTree.expanded};
+            if (newExpanded.hasOwnProperty(action.bid)) {
+                delete newExpanded[action.bid];
+            } else {
+                newExpanded[action.bid] = createExpandedBranchID(newExpanded);
+            }
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: newSelected
+                    expanded: newExpanded
                 },
-                attributeExplorer: newSelected.length === 0 && state.attributeExplorer.activeSelectionId !== null &&
-                state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb?
-                    {   // if there is no selection and cb range selection is activated, deactivate it
-                        ...state.attributeExplorer,
-                        activeSelectionId: null
-                    }: state.attributeExplorer,
-                aggregatedDendrogram: {
-                    ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        static: newSelected.length === 0? true: state.aggregatedDendrogram.treeOrder.static
-                    }
-                }
+                // attributeExplorer: newSelected.length === 0 && state.attributeExplorer.activeSelectionId !== null &&
+                // state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb?
+                //     {   // if there is no selection and cb range selection is activated, deactivate it
+                //         ...state.attributeExplorer,
+                //         activeSelectionId: null
+                //     }: state.attributeExplorer,
+                // aggregatedDendrogram: {
+                //     ...state.aggregatedDendrogram,
+                //     treeOrder: {
+                //         ...state.aggregatedDendrogram.treeOrder,
+                //         static: newSelected.length === 0? true: state.aggregatedDendrogram.treeOrder.static
+                //     }
+                // }
             });
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    selected: []
+                    expanded: {}
                 },
                 highlight: {
                     ...state.highlight,
@@ -581,7 +595,7 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     createWindow: true,
-                    currentTitle: `Set ${state.sets.length}`
+                    currentTitle: `Sub-collection ${state.sets.length}`
                 }
             });
         case TYPE.CLOSE_CREATE_NEW_SET_WINDOW:
@@ -1058,9 +1072,9 @@ function visphyReducer(state = initialState, action) {
                     }
                     return true;
                 }).map(h => (
-                    {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
-                            getTreeByTid(state, action.tid))}
+                    {...h, tgt: comparingTid,
+                        [comparingTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                            getTreeByTid(state, comparingTid))}
                 ));
                 return {
                     ...state,

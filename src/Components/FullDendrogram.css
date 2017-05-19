@@ -10,7 +10,7 @@
     stroke-width: 5px;
     stroke: yellow;
 }
-.branch-line.selected {
+.branch-line.expanded {
     stroke-width: 3;
     stroke: #e41a1c;
 }
@@ -49,10 +49,6 @@
 
 circle.metric-branch-indicator {
     fill: grey;
-}
-line.last-selected-indicator {
-    stroke: #AEAE39;
-    stroke-width: 3px;
 }
 
 

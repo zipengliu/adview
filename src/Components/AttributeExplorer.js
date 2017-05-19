@@ -64,38 +64,38 @@ class AttributeExplorer extends Component {
 
                     <div className="attribute-section-divider"></div>
 
-                    <OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>
-                        <div className="attribute-heading">&diams; Corresponding branches to
-                            {referenceTree.checkingBranch? ' hovered reference branch':
-                                (referenceTree.selected.length? ` branch ${referenceTree.selected.length}`: ' none')}</div>
-                    </OverlayTrigger>
-                    <div style={{marginLeft: '18px'}}>
-                        <ButtonGroup bsSize="xsmall">
-                            <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-all-trees">
-                                Show distribution of attributes of corresponding branches from all trees in this dataset.</Tooltip>}>
-                                <Button active={modes.corr.scope === 'all'} onClick={onChangeMode.bind(null, 'corr', 'all', null)}>all trees</Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-current-set">
-                                Show distribution of attributes of corresponding branches from trees of the current subset.</Tooltip>}>
-                                <Button active={modes.corr.scope === 'set'}
-                                        onClick={onChangeMode.bind(null, 'corr', 'set', null)}>cur. set</Button>
-                            </OverlayTrigger>
-                        </ButtonGroup>
-                        <FormGroup>
-                            <OverlayTrigger placement="right" overlay={<Tooltip id="att-corr-in-context">
-                                Show the global distribution as background and partial one as foreground</Tooltip>}>
-                                <Radio inline disabled={modes.corr.scope === 'all' || !shownAsHistogram} checked={modes.corr.context}
-                                       onChange={onChangeMode.bind(null, 'corr', null, !modes.corr.context)}>show in context</Radio>
-                            </OverlayTrigger>
-                        </FormGroup>
+                    {/*<OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>*/}
+                        {/*<div className="attribute-heading">&diams; Corresponding branches to*/}
+                            {/*{referenceTree.checkingBranch? ' hovered reference branch':*/}
+                                {/*(referenceTree.selected.length? ` branch ${referenceTree.selected.length}`: ' none')}</div>*/}
+                    {/*</OverlayTrigger>*/}
+                    {/*<div style={{marginLeft: '18px'}}>*/}
+                        {/*<ButtonGroup bsSize="xsmall">*/}
+                            {/*<OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-all-trees">*/}
+                                {/*Show distribution of attributes of corresponding branches from all trees in this dataset.</Tooltip>}>*/}
+                                {/*<Button active={modes.corr.scope === 'all'} onClick={onChangeMode.bind(null, 'corr', 'all', null)}>all trees</Button>*/}
+                            {/*</OverlayTrigger>*/}
+                            {/*<OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-current-set">*/}
+                                {/*Show distribution of attributes of corresponding branches from trees of the current subset.</Tooltip>}>*/}
+                                {/*<Button active={modes.corr.scope === 'set'}*/}
+                                        {/*onClick={onChangeMode.bind(null, 'corr', 'set', null)}>cur. set</Button>*/}
+                            {/*</OverlayTrigger>*/}
+                        {/*</ButtonGroup>*/}
+                        {/*<FormGroup>*/}
+                            {/*<OverlayTrigger placement="right" overlay={<Tooltip id="att-corr-in-context">*/}
+                                {/*Show the global distribution as background and partial one as foreground</Tooltip>}>*/}
+                                {/*<Radio inline disabled={modes.corr.scope === 'all' || !shownAsHistogram} checked={modes.corr.context}*/}
+                                       {/*onChange={onChangeMode.bind(null, 'corr', null, !modes.corr.context)}>show in context</Radio>*/}
+                            {/*</OverlayTrigger>*/}
+                        {/*</FormGroup>*/}
 
-                        {withSupport && renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}
-                        {withSupport && getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}
+                        {/*{withSupport && renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}*/}
+                        {/*{withSupport && getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}*/}
 
-                        {renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}
-                        {getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}
+                        {/*{renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}*/}
+                        {/*{getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}*/}
 
-                    </div>
+                    {/*</div>*/}
 
                     {/*<div className="attribute-section-divider"></div>*/}
 
