@@ -57,7 +57,8 @@ let initialState = {
             show: true,
             float: false,
             floatPosition: {left: 500, top: 100},
-            attributes: [{propertyName: 'support', displayName: 'support'},
+            attributes: [
+                {propertyName: 'support', displayName: 'support'},
                 {propertyName: 'gsf', displayName: '%exact match (GSF)'}],
             activeSelectionId: null,
             selection: [
@@ -988,7 +989,14 @@ function visphyReducer(state = initialState, action) {
                 },
                 referenceTree: {
                     ...state.referenceTree,
-                    id: action.data.referenceTree.tid
+                    id: action.data.referenceTree.tid,
+                    charts: {
+                        ...state.referenceTree.charts,
+                        attributes: state.referenceTree.charts.attributes.slice(!!action.data.supportRange? 0: 1),
+                        selection: state.referenceTree.charts.selection.slice(!!action.data.supportRange? 0: 1)
+                    },
+                    tooltip: !!action.data.supportRange? state.referenceTree.tooltip:
+                        [{attribute: 'support', accessor: b => 'NA'}, ...state.referenceTree.tooltip.slice(1)]
                 },
                 sets: [{
                     sid: guid(),
@@ -999,14 +1007,6 @@ function visphyReducer(state = initialState, action) {
                 overview: {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.referenceTree, action.data.trees, newCB, true, null)
-                },
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    withSupport: !!action.data.supportRange,
-                    branchAttributes: !!action.data.supportRange? state.attributeExplorer.branchAttributes:
-                        [{attribute: 'support', accessor: b => 'NA'},
-                            ...state.attributeExplorer.branchAttributes.slice(1)
-                        ]
                 },
                 cb: newCB
             });

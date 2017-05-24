@@ -5,7 +5,7 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {scaleLinear} from 'd3';
-import {Button, ButtonGroup, OverlayTrigger, Tooltip, Table, Badge} from 'react-bootstrap';
+import {Table, Glyphicon} from 'react-bootstrap';
 import {toggleHighlightTrees, toggleSelectTrees} from '../actions';
 import {getHighlightProportion, clusterSelector} from './TreeDistribution';
 
@@ -29,13 +29,16 @@ class BipartitionDistribution extends Component {
                         curN += b;
                         return (
                             <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #000': 'none',
-                                backgroundColor: d.hasCompatibleTree && i === 0? 'rgba(128, 128, 128, .3)': 'none',
                                 top: 0, left: leftPos + '%', width: x(b) + '%'}}
                                  onMouseEnter={this.props.onHighlightTrees.bind(null, d.bins[i],
                                      `This cluster (#bips = ${b}, #trees=${d.bins[i].length}) ${d.hasCompatibleTree && i === 0? 'is': 'is not'} compatible with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightTrees.bind(null, [], null)}
                                  onClick={(e) => {this.props.onSelectTrees(d.bins[i], e.shiftKey)}}
                             >
+                                {d.hasCompatibleTree && i == 0 &&
+                                <div style={{fontSize: '16px', position: 'relative', top: '50%', left: '2px', transform: 'translateY(-50%)'}}>
+                                    <Glyphicon glyph="registration-mark" />
+                                </div>}
                                 {d.highlightCnt && d.highlightCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
                                     backgroundColor: 'rgba(31, 119, 180, .3)',

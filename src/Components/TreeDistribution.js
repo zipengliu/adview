@@ -6,7 +6,7 @@ import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector, createSelectorCreator} from 'reselect';
 import {scaleLinear} from 'd3';
-import {Button, ButtonGroup, OverlayTrigger, Tooltip, Table, Badge} from 'react-bootstrap';
+import {Button, ButtonGroup, Table, Badge, Glyphicon} from 'react-bootstrap';
 import {toggleSubsetDistribution, toggleHighlightTrees, toggleSelectTrees} from '../actions';
 import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
@@ -30,13 +30,16 @@ class TreeDistribution extends Component {
                         curN += b.length;
                         return (
                             <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #000': 'none',
-                                backgroundColor: d.hasCompatibleTree && i === 0? 'rgba(128, 128, 128, .3)': 'none',
                                 top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
                                  onMouseEnter={this.props.onHighlightTrees.bind(null, b,
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightTrees.bind(null, [], null)}
                                  onClick={(e) => {this.props.onSelectTrees(b, e.shiftKey)}}
                             >
+                                {d.hasCompatibleTree && i == 0 &&
+                                <div style={{fontSize: '16px', position: 'relative', top: '50%', left: '2px', transform: 'translateY(-50%)'}}>
+                                    <Glyphicon glyph="registration-mark" />
+                                </div>}
                                 {d.highlightCnt && d.highlightCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
                                     backgroundColor: 'rgba(31, 119, 180, .3)',

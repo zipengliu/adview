@@ -3,8 +3,7 @@
  */
 
 
-import {scaleLinear} from 'd3-scale';
-import {extent, deviation} from 'd3-array';
+import {scaleLinear, extent, deviation, forceSimulation, forceCollide} from 'd3';
 import tSNE from './tsne';
 
 
@@ -35,7 +34,6 @@ export function runTSNE(dist) {
     xExtent[1] += relaxCoefficient * xDeviation;
     yExtent[0] -= relaxCoefficient * yDeviation;
     yExtent[1] += relaxCoefficient * yDeviation;
-    console.log('extents: ' + xExtent + ' ' + yExtent);
 
     let xScale = scaleLinear().domain(xExtent);
     let yScale = scaleLinear().domain(yExtent);
@@ -173,10 +171,22 @@ export function getCoordinates(ref, trees, cb, isGlobal, bid) {
         dist.push(cur);
     }
 
-    // Second run t-SNE
+    // Second run t-SNE and normalize
     let coords = runTSNE(dist);
 
-    return coords.map((d, i) => ({...d, treeId: !isGlobal? order[i].tid: order[i]}))
+    // Third avoid collision of points
+    coords = avoidOverlap(coords, 0.01);
+
+    return coords.map((d, i) => ({...d, tid: !isGlobal? order[i].tid: order[i]}))
+}
+
+function avoidOverlap(coords, r) {
+    let nodes = coords.map((d, i) => ({...d, index: i}));
+    let simulation = forceSimulation(nodes).force('collide', forceCollide(r)).stop();
+    for (let i = 0; i < 100; i++) {
+        simulation.tick();
+    }
+    return nodes.map(d => ({x: d.x, y: d.y}));
 }
 
 

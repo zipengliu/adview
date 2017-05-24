@@ -29,21 +29,40 @@ class Dotplot extends Component {
 
         let scale = scaleLinear().range([0, s]);
         let getDotsWithinBox = (coordinates, box) => {
-            return coordinates.filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, box)).map(d => d.treeId);
+            return coordinates.filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, box)).map(d => d.tid);
         };
+
+        // Reorder the coordinates array so that reference tree dot is rendered at last
+        let i;
+        for (i = 0; i < coordinates.length; i++) {
+            if (coordinates[i].tid === this.props.rid) break;
+        }
+        let t = coordinates[coordinates.length - 1];
+        coordinates[coordinates.length - 1] = coordinates[i];
+        coordinates[i] = t;
+
+        let refGlyphSize = 16;
 
         // Transform the coordinates from [0, 1] to [s, s]
         return <svg width={s} height={s} style={{border: '1px solid black'}}
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
-            {coordinates.map(d => <circle className={cn('dot',
-                {selected: selectedTrees.hasOwnProperty(d.treeId),
-                    'reference-tree-indicator': d.treeId === this.props.rid,
-                    highlight:  hoveredTrees.hasOwnProperty(d.treeId)})}
-                                          style={{fill: colors[d.treeId] || 'black'}}
-                                          r={3} cx={scale(d.x)} cy={scale(d.y)} key={d.treeId} />)}
+            {coordinates.map(d => d.tid === this.props.rid?
+                <use xlinkHref="#reference-tree-glyph" key={d.tid} x={scale(d.x) - refGlyphSize / 2} y={scale(d.y) - refGlyphSize / 2}
+                     width={refGlyphSize} height={refGlyphSize} style={{stroke: 'grey'}} /> :
+                <circle className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid),
+                    highlight:  hoveredTrees.hasOwnProperty(d.tid)})}
+                                          style={{fill: colors[d.tid] || 'black'}}
+                                          r={3} cx={scale(d.x)} cy={scale(d.y)} key={d.tid} />)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
+
+            <defs>
+                <symbol id="reference-tree-glyph" viewBox="0 0 14 14">
+                    <title>registered</title>
+                    <path d="M8.141 5.492c0-0.453-0.156-0.773-0.469-0.945-0.156-0.086-0.375-0.141-0.914-0.141h-0.961v2.195h1.266c0.688 0 1.078-0.406 1.078-1.109zM8.547 7.719l1.602 2.914c0.039 0.078 0.039 0.172-0.008 0.242-0.039 0.078-0.125 0.125-0.211 0.125h-1.187c-0.094 0-0.18-0.047-0.219-0.133l-1.516-2.852h-1.211v2.734c0 0.141-0.109 0.25-0.25 0.25h-1.047c-0.141 0-0.25-0.109-0.25-0.25v-7.5c0-0.141 0.109-0.25 0.25-0.25h2.297c0.82 0 1.18 0.070 1.484 0.187 0.883 0.328 1.43 1.195 1.43 2.258 0 0.961-0.477 1.773-1.234 2.148 0.023 0.039 0.047 0.078 0.070 0.125zM7 1.25c-3.172 0-5.75 2.578-5.75 5.75s2.578 5.75 5.75 5.75 5.75-2.578 5.75-5.75-2.578-5.75-5.75-5.75zM14 7c0 3.867-3.133 7-7 7s-7-3.133-7-7 3.133-7 7-7v0c3.867 0 7 3.133 7 7z"></path>
+                </symbol>
+            </defs>
         </svg>
     }
 };
