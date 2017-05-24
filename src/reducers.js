@@ -175,10 +175,18 @@ let initialState = {
 
 
 
-
-let colorPallete = scaleOrdinal(schemeCategory10);
-let getColor = idx => idx < 10? colorPallete(idx): 'black';
-
+let subCollectionGlyphs = ['circle', 'plus', 'triangle-right', 'square', 'diamond'];
+let getAvailableGlyph = sets => {
+    if (!sets || sets.length == 0) return subCollectionGlyphs[0];
+    for (let i = 0; i < subCollectionGlyphs.length; i++) {
+        let j;
+        for (j = 0; j < sets.length; j++) {
+            if (sets[j].glyph === subCollectionGlyphs[i]) break;
+        }
+        if (j === sets.length) return subCollectionGlyphs[i];
+    }
+    return null;
+};
 
 let findMissing = (geneTree, allEntities) => {
     let geneEntities = geneTree.entities;
@@ -614,12 +622,27 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.CREATE_NEW_SET:
             let newSetIndex = state.sets.length;
+            // TODO: LIMIT the number of sub-collections!
+            if (newSetIndex > 4) {
+                return {
+                    ...state,
+                    overview: {
+                        ...state.overview,
+                        currentTitle: '',
+                        createWindow: false
+                    },
+                    toast: {
+                        ...state.toast,
+                        msg: 'Maximum number of sub-collection exceeded.  Please try to remove a sub-collection before creating a new one.'
+                    }
+                }
+            }
             return Object.assign({}, state, {
                 sets: [...state.sets, {
                     sid: guid(),
                     title: state.overview.currentTitle,
                     tids: Object.keys(state.selectedTrees),
-                    color: getColor(state.sets.length)
+                    glyph: getAvailableGlyph(state.sets)
                 }],
                 overview: {
                     ...state.overview,
@@ -1002,7 +1025,7 @@ function visphyReducer(state = initialState, action) {
                     sid: guid(),
                     title: 'All Trees',
                     tids: Object.keys(action.data.trees),
-                    color: 'black'
+                    glyph: getAvailableGlyph()
                 }],
                 overview: {
                     ...state.overview,

@@ -10,7 +10,8 @@ import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Toolti
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
-import {createMappingFromArray, subtractMapping, getIntersectionSet, areSetsEqual, isSubset} from '../utils';
+import {createMappingFromArray, getIntersectionSet, isSubset} from '../utils';
+import {renderSubCollectionGlyph} from './Commons';
 import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
 
@@ -51,6 +52,17 @@ class DendrogramContainer extends Component {
                 )
             }
         };
+
+        // let renderSubCollectionGlyph = glyph => {
+        //     switch (glyph) {
+        //         case 'circle': return <div className="sub-col-glyph" style={{borderRadius: '5px', backgroundColor: 'grey'}} />;
+        //         case 'plus':
+        //         case 'triangle-right': return <Glyphicon className="sub-col-glyph" glyph={glyph} />;
+        //         case 'square': return <div className="sub-col-glyph" style={{backgroundColor: 'grey'}} />;
+        //         case 'diamond': return <div className="sub-col-glyph"
+        //                                     style={{backgroundColor: 'grey', marginRight: '4px', transform: 'rotate(45deg)'}} />;
+        //     }
+        // };
 
         return (
             <div className="view panel panel-default" id="aggregated-dendrograms">
@@ -106,8 +118,8 @@ class DendrogramContainer extends Component {
                                                          {isClusterMode? `# Clusters: ${dendrograms.length}; ` :''}
                                                          # Trees: {s.tids.length}</Tooltip>}>
                                          <div>
-                                             <div className="color-block" style={{backgroundColor: s.color}}></div>
-                                             {s.title}
+                                             {renderSubCollectionGlyph(s.glyph)}
+                                             <span>{s.title}</span>
                                              {i === this.props.activeSetIndex &&
                                              <Badge style={{marginLeft: '5px'}}>{dendrograms.length}</Badge>
                                              }

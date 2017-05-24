@@ -5,8 +5,9 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
-import {toggleGlobalToolkit, clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet, changeReferenceTree,
+import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
     removeFromSet, removeSet, compareWithReference, toggleJaccardMissing} from '../actions';
+import {renderSubCollectionGlyph} from './Commons';
 
 class GlobalToolkit extends Component {
     render() {
@@ -56,12 +57,9 @@ class GlobalToolkit extends Component {
                                             disabled={!selectedTrees.length || this.props.sets.length === 0}>
                                 {this.props.sets.map((d, i) =>
                                     <MenuItem eventKey={i} key={i}>
-                                        {d.title}
+                                        {renderSubCollectionGlyph(d.glyph)}
+                                        <span>{d.title}</span>
                                         <Badge style={{marginLeft: '5px'}}>{d.tids.length}</Badge>
-                                        <div style={{
-                                            display: 'inline-block', background: d.color,
-                                            width: '10px', height: '10px', float: 'right', marginTop: '5px'
-                                        }}></div>
                                     </MenuItem>
                                 )}
                             </DropdownButton>
@@ -94,7 +92,6 @@ let mapStateToProps = state => ({
 });
 
 let mapDispatchToProps = dispatch => ({
-    onToggleGlobalToolkit: () => {dispatch(toggleGlobalToolkit())},
     onClearAll: () => {dispatch(clearAll())},
     onClearSelectedTrees: () => {dispatch(clearSelectedTrees())},
 
@@ -102,9 +99,6 @@ let mapDispatchToProps = dispatch => ({
     onAddToSet: (idx) => {dispatch(addToSet(idx))},
     onRemoveFromSet: (tid, setIndex) => {dispatch(removeFromSet(tid, setIndex))},
     onRemoveSet: setIndex => {dispatch(removeSet(setIndex))},
-
-    onChangeReferenceTree: (iid, tid) => {dispatch(changeReferenceTree(iid, tid))},
-
 
     onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
 
