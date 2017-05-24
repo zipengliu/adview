@@ -3,11 +3,12 @@
  */
 
 import React, {Component} from 'react';
-import {OverlayTrigger, ButtonGroup, Button, Tooltip, Glyphicon} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip, Glyphicon, Badge} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
-import {compareWithReference, toggleUniversalBranchLength} from '../actions';
-import {textEllipsis, createMappingFromArray} from '../utils';
+import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
+import {compareWithReference, toggleUniversalBranchLength, toggleTaxaList, toggleRefAttributeExplorer} from '../actions';
+import {createMappingFromArray} from '../utils';
 
 class ReferenceTreeContainer extends Component {
     render() {
@@ -16,22 +17,41 @@ class ReferenceTreeContainer extends Component {
 
         return (
             <div className="view panel panel-default" style={{height: '100%'}} id="reference-tree">
-                <div className="view-header panel-heading">
-                    <OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +
-                    (props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>
-                        <div className="view-title" style={{textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'}}>
-                            Reference Tree ({props.tree.name})
-                            {props.comparingTree? ` vs. ${props.comparingTree.name}`: ''}
-                        </div>
-                    </OverlayTrigger>
-                </div>
+                {/*<div className="view-header panel-heading">*/}
+                    {/*<OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +*/}
+                    {/*(props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>*/}
+                        {/*<div className="view-title" style={{textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'}}>*/}
+                            {/*Reference Tree ({props.tree.name})*/}
+                            {/*{props.comparingTree? ` vs. ${props.comparingTree.name}`: ''}*/}
+                        {/*</div>*/}
+                    {/*</OverlayTrigger>*/}
+                {/*</div>*/}
                 <div className="view-body panel-body" ref={v => {this.viewBody = v}}>
+                    {props.charts.show && !props.charts.float && <ReferenceTreeAttributeExplorer/>}
                     <div>
                         <ButtonGroup bsSize="xsmall">
-                            <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-toggle-ref-attr-explorer">
+                                {(props.charts.show? 'show': 'hide') + 'distribution of branch attributes'} </Tooltip>}>
+                                <Button onClick={props.toggleAE} active={props.charts.show}>
+                                    Attributes <Glyphicon glyph="signal"/>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-toggle-taxa-list">
+                                {props.taxaList.show? 'close taxa list': 'open taxa list'} </Tooltip>}>
+                                <Button onClick={props.toggleTaxaList} active={props.taxaList.show}>
+                                    <span>All taxa</span>
+                                    <Badge style={{marginLeft: '5px'}}>{props.numAllEntities}</Badge>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
                                 {props.universalBranchLen? 'Encode branch length': 'Use uniform branch length'} </Tooltip>}>
                                 <Button onClick={props.toggleBranchLen}>
-                                    use {props.universalBranchLen? 'encoded': 'uniform'} branch length
+                                    {props.universalBranchLen? 'encoded': 'uniform'} branch length
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
+                                <Button disabled>
+                                    import
                                 </Button>
                             </OverlayTrigger>
                         </ButtonGroup>
@@ -45,9 +65,8 @@ class ReferenceTreeContainer extends Component {
                         }
                         {props.tree.missing &&
                         <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
-                            {Object.keys(createMappingFromArray(props.tree.entities)).length}
+                            #Taxa: {Object.keys(createMappingFromArray(props.tree.entities)).length}
                             {props.comparingTree? ` vs. ${Object.keys(createMappingFromArray(props.comparingTree.entities)).length} `: ''}
-                            / {props.allEntities} taxa are present
                         </div>
                         }
                     </div>
@@ -56,7 +75,7 @@ class ReferenceTreeContainer extends Component {
 
                     {props.checkingBranch &&
                     <div className="checking-branch-tooltip" style={{top: viewBodyPos.bottom + 'px', left: viewBodyPos.left + 'px'}}>
-                        {props.branchAttributes.map((a, i) =>
+                        {props.tooltip.map((a, i) =>
                             <div key={i}>
                                 {a.attribute}: {a.accessor(props.tree.branches[props.checkingBranch])}
                             </div>)}
@@ -115,19 +134,23 @@ class ReferenceTreeContainer extends Component {
 }
 
 let mapStateToProps = state => ({
-    allEntities: Object.keys(state.inputGroupData.entities).length,
+    numAllEntities: Object.keys(state.inputGroupData.entities).length,
     tree: state.inputGroupData.referenceTree,
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
     universalBranchLen: state.referenceTree.universalBranchLen,
 
     checkingBranch: state.referenceTree.checkingBranch,
-    branchAttributes: state.attributeExplorer.branchAttributes
+    tooltip: state.referenceTree.tooltip,
+    charts: state.referenceTree.charts,
+    taxaList: state.taxaList,
 });
 
 let mapDispatchToProps = dispatch => ({
     cancelCompare: () => {dispatch(compareWithReference(null))},
     toggleBranchLen: () => {dispatch(toggleUniversalBranchLength())},
+    toggleTaxaList: () => {dispatch(toggleTaxaList())},
+    toggleAE: () => {dispatch(toggleRefAttributeExplorer())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

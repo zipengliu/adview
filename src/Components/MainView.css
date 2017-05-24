@@ -11,31 +11,33 @@
 }
 .left-column {
     flex: 0 0 auto;
-    width: 200px;
     height: 100%;
-    display: flex;
-    display: -webkit-flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 0 5px;
 }
 .right-column {
     flex: 1 1 auto;
     margin: 0 5px;
     height: 100%;
-    max-height: 100%;
 
     display: flex;
     display: -webkit-flex;
-    flex-direction: column;
+    flex-flow: column nowrap;
     justify-content: flex-start;
-    padding: 0 5px;
-}
-.middle-column {
-    flex: 0 0 auto;
-    height: 100%;
 }
 
+.chapter-title {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+}
+
+.views-column {
+    /*height: 100%;*/
+
+    display: flex;
+    display: -webkit-flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+}
 
 .panel {
     margin-bottom: 10px;
@@ -69,32 +71,30 @@
     display: flex;
     display: -webkit-flex;
     flex-direction: column;
-    /*border: 1px solid grey;*/
-    /*border-radius:4px;*/
-    /*background-color: #fff;*/
 }
 .view .view-header {
     flex: 0 0 auto;
-    /*background-color: #ddd;*/
-    /*border-top-left-radius: 4px;*/
-    /*border-top-right-radius: 4px;*/
-    /*border-bottom: 1px solid transparent;*/
     text-wrap: none;
+}
+.view-header .close-btn {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 16px;
+    z-index: 1000;
+    cursor: pointer;
 }
 
 .view .view-title {
-    /*font-size: 18px;*/
-    /*text-align: left;*/
-    /*font-weight: bold;*/
 }
 .view .view-body {
-    flex: 1 0 content;
+    flex: 1 1 auto;
     font-size: 12px;
     overflow-y: scroll;
     /*height: 85%;*/
 }
 .view .view-footer {
-    /*flex: 0 0 auto;*/
+    flex: 0 0 auto;
 }
 
 #overview {
@@ -107,8 +107,13 @@
 }
 
 #taxa-list {
-    flex: 0 0 auto;
-    max-height: 250px;
+    width: 200px;
+    height: 300px;
+    z-index: 100;
+}
+
+#reference-tree-attribute-explorer {
+    z-index: 500;
 }
 
 #tree-list {
@@ -118,11 +123,12 @@
 
 #reference-tree {
     margin-bottom: 0;
+    position: relative;
 }
 
 #aggregated-dendrograms {
     flex: 1 1 auto;
-    height: 100px;
+    min-height: 200px;
 }
 #tree-distribution {
     flex: 0 0 auto;

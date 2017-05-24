@@ -44,7 +44,7 @@ class AttributeExplorer extends Component {
             <div id="attribute-explorer" className="view panel panel-default">
 
                 <div className="view-header panel-heading">
-                    <div className="view-title">Attribute Explorer</div>
+                    <div className="view-title">Corresponding Branch Attributes</div>
                     {/*<FormGroup style={{textAlign: 'center'}}>*/}
                         {/*<span style={{marginRight: '2px'}}>as</span>*/}
                         {/*<Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>*/}
@@ -53,14 +53,6 @@ class AttributeExplorer extends Component {
                 </div>
 
                 <div className="view-body panel-body">
-                    <div className="attribute-heading">&diams; Reference Tree</div>
-                    <div style={{marginLeft: '18px'}}>
-                        {renderChart(data.ref.gsf.fg, null, '%exact matches (GSF)', 3)}
-                        {getSelectionButton(3, false)}
-
-                        {withSupport && renderChart(data.all[attrName].fg, data.all[attrName].bg, attrName, 0)}
-                        {withSupport && getSelectionButton(0, !data.all[attrName].fg && !data.all[attrName].bg)}
-                    </div>
 
                     <div className="attribute-section-divider"></div>
 
@@ -291,10 +283,8 @@ let mapStateToProps = state => {
 };
 
 let mapDispatchToProps = dispatch => ({
-    onChangeMode: (section, scope, context) => {dispatch(changeAttributeExplorerMode(section, scope, context))},
     toggleMoveHandle: (h) => {dispatch(toggleMoveHandle(h))},
     moveControlHandle: (v) => {dispatch(moveControlHandle(v))},
-    toggleHistogram: (a) => {dispatch(toggleHistogramOrCDF(a))},
     onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))},
     onChangeSelectionRange: (l, r, c) => {dispatch(changeSelectionRange(l, r, c))}
 });

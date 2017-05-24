@@ -52,6 +52,23 @@ let initialState = {
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
         universalBranchLen: false,
+
+        charts: {
+            show: true,
+            float: false,
+            floatPosition: {left: 500, top: 100},
+            attributes: [{propertyName: 'support', displayName: 'support'},
+                {propertyName: 'gsf', displayName: '%exact match (GSF)'}],
+            activeSelectionId: null,
+            selection: [
+                {isMoving: false, range: [0, 1], attribute: 'support'},
+                {isMoving: false, range: [0, 1], attribute: 'gsf'},
+            ]
+        },
+        tooltip: [             // for showing a tooltip of branch attributes of the current focal branch
+            {attribute: 'support', accessor: b => b.hasOwnProperty('support')? Math.floor(b.support * 100): 'NA' },
+            {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' }
+        ],
     },
     highlight: {
         colorScheme: scaleOrdinal(schemeCategory10),
@@ -81,7 +98,7 @@ let initialState = {
         activeSetIndex: 0,
         mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
-            size: 100,
+            size: 80,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 5,
             branchLen: 6,
@@ -110,12 +127,14 @@ let initialState = {
             kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
         }
     },
+    attributeChartSpec: {
+        width: 154,
+        chartHeight: 50,
+        sliderHeight: 18,
+        margin: {left: 25, right: 8, top: 20, bottom: 2}
+    },
     attributeExplorer: {
         withSupport: true,
-        branchAttributes: [             // for showing a tooltip of branch attributes of the current focal branch
-            {attribute: 'support', accessor: b => b.hasOwnProperty('support')? Math.floor(b.support * 100): 'NA' },
-            {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' }
-        ],
         modes: {
             all: {
                 scope: 'tree',           // could be 'all', 'set', 'tree'
@@ -129,19 +148,10 @@ let initialState = {
 
             }
         },
-        shownAsHistogram: true,
-        spec: {
-            width: 154,
-            chartHeight: 50,
-            sliderHeight: 18,
-            margin: {left: 25, right: 8, top: 20, bottom: 2}
-        },
         attributeNames: ['support'],
         selection: [
-            {isMoving: false, range: [0, 1], cb: false, attribute: 'support'},      // for the support in the all branches section
             {isMoving: false, range: [0, 1], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
             {isMoving: false, range: [0, 1], cb: true, attribute: 'similarity'},   // for the similarity in the cb section
-            {isMoving: false, range: [0, 1], cb: false, attribute: 'gsf'},
             ],
         activeSelectionId: null,
     },
@@ -149,7 +159,8 @@ let initialState = {
         collapsed: true
     },
     taxaList: {
-        collapsed: true,
+        show: false,
+        position: {left: 400, top: 10},
         selected: {}
     },
     treeDistribution: {
@@ -158,11 +169,6 @@ let initialState = {
     },
     bipartitionDistribution: {
         tooltipMsg: null,
-    },
-    globalToolkit: {
-        show: true,
-        position: {left: 400, top: 10},
-        isMoving: false
     }
 };
 
@@ -373,7 +379,7 @@ let getNextColor = (colors) => {
 };
 
 function visphyReducer(state = initialState, action) {
-    let newBids, newColors;
+    let newBids, newColors, curAE, updatedSelection;
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             // Check if this branch is already highlighted
@@ -842,30 +848,60 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_MOVE_HANDLE:
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId?
-                        {...s, isMoving: action.handle? true: false, movingHandle: action.handle}: s)
+            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            updatedSelection = curAE.selection.map((s, i) => i === curAE.activeSelectionId?
+                                {...s, isMoving: action.handle? true: false, movingHandle: action.handle}: s);
+            if (action.isRef) {
+                return {
+                    ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        charts: {
+                            ...state.referenceTree.charts,
+                            selection: updatedSelection
+                        }
+                    }
                 }
-            };
+            } else {
+                return {
+                    ...state,
+                    attributeExplorer: {
+                        ...state.attributeExplorer,
+                        selection: updatedSelection
+                    }
+                };
+            }
         case TYPE.MOVE_CONTROL_HANDLE:
-            let sel = state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId];
+            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            let sel = curAE.selection[curAE.activeSelectionId];
             let newRange;
             if (sel.movingHandle === 'left') {
                 newRange = [Math.min(action.value, sel.range[1]), sel.range[1]];
             } else {
                 newRange = [sel.range[0], Math.max(action.value, sel.range[0])];
             }
+            updatedSelection = curAE.selection.map((s, i) => i === curAE.activeSelectionId? {...s, range: newRange}: s);
 
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    selection: state.attributeExplorer.selection.map((s, i) => i === state.attributeExplorer.activeSelectionId? {...s, range: newRange}: s),
+            if (action.isRef) {
+                return {
+                    ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        charts: {
+                            ...state.referenceTree.charts,
+                            selection: updatedSelection
+                        }
+                    }
                 }
-            };
+            } else {
+                return {
+                    ...state,
+                    attributeExplorer: {
+                        ...state.attributeExplorer,
+                        selection: updatedSelection
+                    }
+                };
+            }
         case TYPE.TOGGLE_HISTOGRAM_OR_CDF:
             return {
                 ...state,
@@ -875,22 +911,51 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.CHANGE_ACTIVE_RANGE_SELECTION:
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    activeSelectionId: action.id,
+            if (action.isRef) {
+                return {
+                    ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        charts: {
+                            ...state.referenceTree.charts,
+                            activeSelectionId: action.id
+                        }
+                    }
                 }
-            };
+            } else {
+                return {
+                    ...state,
+                    attributeExplorer: {
+                        ...state.attributeExplorer,
+                        activeSelectionId: action.id,
+                    }
+                };
+            }
         case TYPE.CHANGE_SELECTION_RANGE:
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    selection: state.attributeExplorer.selection.map((s, i) => i === action.sid? {...s, range: [action.l, action.r]}: s),
-                    activeSelectionId: action.sid
+            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            updatedSelection = curAE.selection.map((s, i) => i === action.sid? {...s, range: [action.l, action.r]}: s);
+            if (action.isRef) {
+                return {
+                    ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        charts: {
+                            ...state.referenceTree.charts,
+                            selection: updatedSelection,
+                            activeSelectionId: action.sid
+                        }
+                    }
                 }
-            };
+            } else {
+                return {
+                    ...state,
+                    attributeExplorer: {
+                        ...state.attributeExplorer,
+                        selection: updatedSelection,
+                        activeSelectionId: action.sid
+                    }
+                };
+            }
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
@@ -1020,12 +1085,12 @@ function visphyReducer(state = initialState, action) {
                     msg: null
                 }
             };
-        case TYPE.TOGGLE_TAXA_LIST_COLLAPSE:
+        case TYPE.TOGGLE_TAXA_LIST:
             return {
                 ...state,
                 taxaList: {
                     ...state.taxaList,
-                    collapsed: !state.taxaList.collapsed
+                    show: !state.taxaList.show
                 }
             };
         case TYPE.TOGGLE_SELECT_TAXA:
@@ -1097,49 +1162,35 @@ function visphyReducer(state = initialState, action) {
                 selectedTrees: action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids)
             };
 
-        case TYPE.TOGGLE_GLOBAL_TOOLKIT:
-            return {
-                ...state,
-                globalToolkit: {
-                    ...state.globalToolkit,
-                    show: !state.globalToolkit.show
-                }
-            };
-        case TYPE.MOVE_GLOBAL_TOOLKIT:
-            let {positionBeforeDrag, mousePosition} = state.globalToolkit;
-            return {
-                ...state,
-                globalToolkit: {
-                    ...state.globalToolkit,
-                    position: {left: positionBeforeDrag.left + (action.mousePosition.x - mousePosition.x),
-                        top: positionBeforeDrag.top + (action.mousePosition.y - mousePosition.y)}
-                }
-            };
-        case TYPE.MOVE_TOOLKIT_START:
-            return {
-                ...state,
-                globalToolkit: {
-                    ...state.globalToolkit,
-                    isMoving: true,
-                    mousePosition: action.mousePosition,
-                    positionBeforeDrag: {...state.globalToolkit.position}
-                }
-            };
-        case TYPE.MOVE_TOOLKIT_END:
-            return {
-                ...state,
-                globalToolkit: {
-                    ...state.globalToolkit,
-                    isMoving: false,
-                    mousePosition: null,
-                    positionBeforeDrag: null
-                }
-            };
 
         case TYPE.CLEAR_SELECTED_TREES:
             return {
                 ...state,
                 selectedTrees: {}
+            };
+
+        case TYPE.TOGGLE_REFERENCE_TREE_ATTRIBUTE_EXPLORER:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    charts: {
+                        ...state.referenceTree.charts,
+                        show: !state.referenceTree.charts.show
+                    }
+                }
+            };
+
+        case TYPE.TOGGLE_POP_ATTRIBUTE_EXPLORER:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    charts: {
+                        ...state.referenceTree.charts,
+                        float: !state.referenceTree.charts.float
+                    }
+                }
             };
 
         default:

@@ -5,7 +5,7 @@ import './App.css';
 
 function Navigation({title}) {
     return (
-        <Navbar inverse>
+        <Navbar inverse id="App-header">
             <Navbar.Header>
                 <Navbar.Brand>
                     <a href="/">VisPhy</a>

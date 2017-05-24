@@ -1,18 +1,22 @@
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+#App-header {
+  margin-bottom: 5px;
+  min-height: 30px;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+#App-header .nav>li>a {
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
-.App-intro {
-  font-size: large;
+
+#App-header .navbar-brand {
+  height: 20px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+
 }
+
+
 
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
@@ -30,7 +34,4 @@
   box-shadow: 0 0 1px rgba(255,255,255,.5);
 }
 
-.navbar {
-  margin-bottom: 5px;
-}
 

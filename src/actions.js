@@ -255,23 +255,27 @@ export function changeAttributeExplorerMode(section, scope, isContext) {
     return {type: TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE, section, scope, isContext}
 }
 
-export function toggleMoveHandle(handle) {
-    return {type: TYPE.TOGGLE_MOVE_HANDLE, handle}
+export function toggleMoveHandle(handle, isRef) {
+    return {type: TYPE.TOGGLE_MOVE_HANDLE, handle, isRef}
 }
-export function moveControlHandle(value) {
-    return {type: TYPE.MOVE_CONTROL_HANDLE, value}
+export function moveControlHandle(value, isRef) {
+    return {type: TYPE.MOVE_CONTROL_HANDLE, value, isRef}
 }
 
 export function toggleHistogramOrCDF(isHistogram) {
     return {type: TYPE.TOGGLE_HISTOGRAM_OR_CDF, isHistogram};
 }
 
-export function changeActiveRangeSelection(id) {
-    return {type: TYPE.CHANGE_ACTIVE_RANGE_SELECTION, id};
+export function changeActiveRangeSelection(id, isRef) {
+    return {type: TYPE.CHANGE_ACTIVE_RANGE_SELECTION, id, isRef};
 }
 
-export function changeSelectionRange(l, r, sid) {
-    return {type: TYPE.CHANGE_SELECTION_RANGE, l, r, sid};
+export function changeSelectionRange(l, r, sid, isRef) {
+    return {type: TYPE.CHANGE_SELECTION_RANGE, l, r, sid, isRef};
+}
+
+export function togglePopAttributeExplorer() {
+    return {type: TYPE.TOGGLE_POP_ATTRIBUTE_EXPLORER};
 }
 
 export function fetchDatasets() {
@@ -320,10 +324,6 @@ export function closeToast() {
     return {type: TYPE.CLOSE_TOAST};
 }
 
-export function toggleTaxaListCollapse() {
-    return {type: TYPE.TOGGLE_TAXA_LIST_COLLAPSE}
-}
-
 export function toggleSelectTaxa(e) {
     return {type: TYPE.TOGGLE_SELECT_TAXA, e};
 }
@@ -343,20 +343,15 @@ export function toggleSelectTrees(tids, isAdd) {
 }
 
 
-export function toggleGlobalToolkit() {
-    return {type: TYPE.TOGGLE_GLOBAL_TOOLKIT};
+export function toggleTaxaList() {
+    return {type: TYPE.TOGGLE_TAXA_LIST};
 }
 
-export function moveGlobalToolkit(mousePosition) {
-    return {type: TYPE.MOVE_GLOBAL_TOOLKIT, mousePosition}
-}
-export function moveToolkitStart(mousePosition) {
-    return {type: TYPE.MOVE_TOOLKIT_START, mousePosition}
-}
-export function moveToolkitEnd() {
-    return {type: TYPE.MOVE_TOOLKIT_END}
-}
 
 export function clearSelectedTrees() {
     return {type: TYPE.CLEAR_SELECTED_TREES};
+}
+
+export function toggleRefAttributeExplorer() {
+    return {type: TYPE.TOGGLE_REFERENCE_TREE_ATTRIBUTE_EXPLORER};
 }

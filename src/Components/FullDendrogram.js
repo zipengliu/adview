@@ -16,7 +16,7 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
-             entities, rangeSelection, cb} = this.props;
+             entities, rangeSelection} = this.props;
         let {expanded, highlightEntities, highlightUncertainEntities} = referenceTree;
         let isComparing = comparingTree !== null;
 
@@ -72,10 +72,6 @@ class FullDendrogram extends Component {
 
             return (
                <g>
-                   {tree.tid === referenceTree.id &&
-                   <rect className='reference-tree-indicator' x="0" y="-4"
-                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
-                   }
                    {tree.tid !== referenceTree.id &&
                    <rect className='comparing-tree-indicator' x="2" y="-4"
                          width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
@@ -92,7 +88,7 @@ class FullDendrogram extends Component {
                        {branchSpecs.map((d, i) =>
                            (<g key={d.bid}>
                                <line className={cn('branch-line', {expanded: expandedBranches.hasOwnProperty(d.bid),
-                                   'range-selected': inRange(d),
+                                   'range-selected': tree.tid === referenceTree.id && inRange(d),
                                    'checking': tree.tid === referenceTree.id && referenceTree.checkingBranch === d.bid})}
                                      x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                                {tree.tid === referenceTree.id && this.props.metricBranch === d.bid && d.bid != null &&
@@ -148,6 +144,7 @@ class FullDendrogram extends Component {
         let svgHeight = (isComparing? Math.max(dendrogram[0].treeBoundingBox.height, dendrogram[1].treeBoundingBox.height):
                 dendrogram.treeBoundingBox.height) + spec.margin.top + spec.margin.bottom;
 
+        console.log(this.props.comparingTreeExpansion);
         return (
             <svg width={svgWidth} height={svgHeight}>
                 <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
@@ -313,11 +310,10 @@ function mapStateToProps(state) {
     let ref = state.inputGroupData.referenceTree;
     let c = state.pairwiseComparison;
     let den, den1, den2;
-    let compExp = [];
+    let compExp = {};
     if (c.tid) {
         den1 = getDendrogramSpecs(state, null, 'right', state.referenceTree.universalBranchLen);
         den2 = getDendrogramSpecs(state, c.tid, 'left', state.referenceTree.universalBranchLen);
-        let compExp = {};
 
         // Get the corresponding branches in the comparing tree
         let refExp = state.referenceTree.expanded;
@@ -332,6 +328,8 @@ function mapStateToProps(state) {
     } else {
         den = getDendrogramSpecs(state, null, null, state.referenceTree.universalBranchLen);
     }
+
+    let ae = state.referenceTree.charts;
     return {
         dendrogram: c.tid? [den1, den2]: den,
         highlight: state.highlight,
@@ -342,9 +340,7 @@ function mapStateToProps(state) {
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
         metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
-        rangeSelection: state.attributeExplorer.activeSelectionId >= 0?
-            state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId]: null,
-        cb: state.cb,
+        rangeSelection: ae.activeSelectionId >= 0? ae.selection[ae.activeSelectionId]: null,
     };
 }
 

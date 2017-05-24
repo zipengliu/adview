@@ -30,7 +30,10 @@ let Overview = props => (
                     </OverlayTrigger>
                 </ButtonGroup>
             </div>
+
             <Dotplot />
+
+            <Button bsSize="xsmall" style={{width: '100%'}}> Create plot for local similarity </Button>
         </div>
 
         <PopupWindow />

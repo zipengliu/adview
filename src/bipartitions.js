@@ -239,9 +239,6 @@ class BipartitionList {
                 }
             }
         }
-        console.log('conflict entries= ');
-        console.log(conflictEntries.slice());
-        console.log(rEntry);
 
         let sortedEntries = conflictEntries.sort((a, b) => (b.numBips - a.numBips));
         if (rEntry) {

@@ -58,10 +58,9 @@ class DendrogramContainer extends Component {
                         <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
                 </div>
 
-                <div className="view-body panel-body">
+                <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
 
                     <FormGroup style={{display: 'inline-block'}}>
-                        <span style={{marginRight: '5px'}}>(as</span>
                         <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
                         <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
                         <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
@@ -71,7 +70,6 @@ class DendrogramContainer extends Component {
                         <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
                             <span style={{textDecoration: 'line-through'}}>remainder</span>
                         </Radio>
-                        )
                     </FormGroup>
 
                     <div>

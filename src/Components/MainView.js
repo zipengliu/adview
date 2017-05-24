@@ -4,7 +4,7 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import {Glyphicon, Button} from 'react-bootstrap';
+import {Glyphicon} from 'react-bootstrap';
 import {fetchInputGroup, closeToast, toggleGlobalToolkit} from '../actions';
 import cn from 'classnames';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
@@ -12,8 +12,9 @@ import Overview from './Overview';
 import DendrogramContainer from './DendrogramContainer';
 import TreeList from './TreeList';
 import Inspector from './Inspector';
-import AttributeExplorer from './AttributeExplorer';
 import TaxaList from './TaxaList';
+import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
+import AttributeExplorer from './AttributeExplorer';
 import TreeDistribution from './TreeDistribution';
 import GlobalToolkit from './GlobalToolkit';
 import BipartitionDistribution from './BipartitionDistribution';
@@ -35,28 +36,32 @@ class MainView extends Component {
                     </div>
                 </div>
 
-                <Button bsStyle="primary" bsSize="xsmall" active={this.props.globalToolkit.show} style={{position: 'fixed', top: 65, right: 5}}
-                        onClick={this.props.onToggleGlobalToolkit}>
-                    <Glyphicon glyph="wrench"/>
-                </Button>
 
                 {!this.props.isFetching && !this.props.isFetchFailed && this.props.inputGroupData &&
-                <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
-                    <GlobalToolkit/>
-                    <div className="left-column">
-                        <Overview />
-                        <AttributeExplorer />
-                        <TaxaList />
-                        <TreeList />
-                    </div>
-                    <div className="middle-column">
-                        <ReferenceTreeContainer></ReferenceTreeContainer>
-                    </div>
-                    <div className="right-column">
-                        <TreeDistribution />
-                        {!this.props.inputGroupData.withParalogs &&
-                        <BipartitionDistribution />}
-                        <DendrogramContainer />
+                <div>
+                    <TaxaList/>
+                    {this.props.referenceTree.charts.show && this.props.referenceTree.charts.float && <ReferenceTreeAttributeExplorer/>}
+                    <div className="mainview-container" style={{height: (getWindowHeight() - 40) + 'px'}}>
+                        <div className="left-column">
+                            <div className="chapter-title"><Glyphicon glyph="registration-mark"/>eference Tree</div>
+                            <ReferenceTreeContainer />
+                        </div>
+                        <div className="right-column">
+                            <div className="chapter-title">Tree Collection</div>
+                            <GlobalToolkit/>
+                            <div style={{flex: '1 1 auto', display: 'flex', flexFlow: 'row nowrap'}}>
+                                <div className="views-column" style={{flex: '1 1 auto', marginRight: '10px'}}>
+                                    <TreeDistribution />
+                                    {!this.props.inputGroupData.withParalogs && <BipartitionDistribution />}
+                                    <DendrogramContainer />
+                                </div>
+                                <div className="views-column" style={{flex: '0 0 auto', width: '200px'}}>
+                                    <TreeList />
+                                    <Overview />
+                                    <AttributeExplorer />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>}
 
