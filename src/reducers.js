@@ -96,7 +96,6 @@ let initialState = {
     selectedTrees: {},
     hoveredTrees: {},
     aggregatedDendrogram: {
-        // activeTreeId: null,
         activeSetIndex: 0,
         mode: 'frond',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
@@ -113,15 +112,7 @@ let initialState = {
             frondBaseLength: 14,
             nestMargin: 4,
         },
-        // treeOrder: 'static',        // either 'static' or 'dynamic'
-        //                             // static means sort by similarity to reference tree
-        //                             // dynamic means sort by similarity to highlighting subtree in reference tree
-        treeOrder: {
-            static: true,      // if static is true, only order by tree id (preserving the order)
-            // treeId: null,
-            // branchId: null,     // when this is null, order by rf distance between trees;
-            //                     // otherwise by similarity (jaccard index currently) between the corresponding branches
-        },
+        order: 'RF',                    // It can be RF or a branch ID
         shadedHistogram: {
             granularity: 1,
             binsFunc: width => Math.floor(width / 1),
@@ -480,14 +471,21 @@ function visphyReducer(state = initialState, action) {
                 }
             } else {
                 newExpanded[action.bid] = createExpandedBranchID(newExpanded);
-                newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
+                if (highlightIdx === -1) {
+                    newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
+                }
             }
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     expanded: newExpanded
                 },
-                highlight: newHighlights
+                highlight: newHighlights,
+                // aggregatedDendrogram: {          // Falls back to remainder layout
+                //     ...state.aggregatedDendrogram,
+                //     mode: Object.keys(newExpanded).length > 2 && state.aggregatedDendrogram.mode.indexOf('cluster') === -1?
+                //         'remainder': state.aggregatedDendrogram.mode
+                // }
             });
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
@@ -663,15 +661,12 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => action.tids.indexOf(tid) === -1)}),
             });
-        case TYPE.TOGGLE_SORTING:
+        case TYPE.CHANGE_SORTING:
             return {
                 ...state,
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        static: !state.aggregatedDendrogram.treeOrder.static
-                    }
+                    order: action.order
                 }
             };
         case TYPE.TOGGLE_AGGREGATION_MODE:

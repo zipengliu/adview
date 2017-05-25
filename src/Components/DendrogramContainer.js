@@ -6,10 +6,10 @@ import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {scaleLinear, hsl, extent} from 'd3';
-import {Tabs, Tab, Button, ButtonGroup, Glyphicon, Badge, OverlayTrigger, Tooltip, FormGroup, Radio} from 'react-bootstrap';
+import {Tabs, Tab, Button, ButtonGroup, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, toggleSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
+import {selectSet, changeSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
 import {createMappingFromArray, getIntersectionSet, isSubset} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
@@ -18,9 +18,9 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, mode, dendrograms, selectedTrees, rangeSelection} = this.props;
+        let {spec, mode, order, dendrograms, selectedTrees, rangeSelection, expandedBranches} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
-        let isOrderStatic = this.props.treeOrder.static;
+        let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
         let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
@@ -64,6 +64,12 @@ class DendrogramContainer extends Component {
         //     }
         // };
 
+        console.log(order);
+        let getDisplayOrder = order => {
+            if (order === 'RF') return 'RF distance';
+            return `local similarity of block ${expandedBranches[order]}`;
+        };
+
         return (
             <div className="view panel panel-default" id="aggregated-dendrograms">
                 <div className="view-header panel-heading">
@@ -72,41 +78,33 @@ class DendrogramContainer extends Component {
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
 
-                    <FormGroup style={{display: 'inline-block'}}>
-                        <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
-                        <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
-                        <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
-                        {/*<Radio inline checked={mode === 'taxa-cluster'} onChange={this.props.onToggleMode.bind(null, 'taxa-cluster')}>*/}
-                            {/*<span style={{textDecoration: 'line-through'}}>taxa-cluster</span>*/}
-                        {/*</Radio>*/}
-                        <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
-                            <span style={{textDecoration: 'line-through'}}>remainder</span>
-                        </Radio>
-                    </FormGroup>
-
                     <div>
-                        {/*<ButtonGroup bsSize="xsmall" style={{display: 'inline-block', marginRight: '10px'}}>*/}
-                        {/*<OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-popup">Inspect tree with full detail</Tooltip>}>*/}
-                        {/*<Button disabled={isClusterMode? true: true} onClick={this.props.onAddTreeToInspector.bind(null, activeTreeId)}>*/}
-                        {/*<Glyphicon glyph="new-window" /><span className="glyph-text">Inspect</span>*/}
-                        {/*</Button>*/}
-                        {/*</OverlayTrigger>*/}
-                        {/*</ButtonGroup>*/}
+                        <FormGroup style={{display: 'inline-block'}}>
+                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
+                            <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
+                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
+                            <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
+                                <span style={{textDecoration: 'line-through'}}>remainder</span>
+                            </Radio>
+                        </FormGroup>
 
-                        {/*<div style={{marginLeft: '5px', fontSize: '12px', display: 'inline-block'}}>*/}
-                            {/*<span style={{marginRight: '2px'}}>Sort by similarity to the </span>*/}
-                            {/*{isClusterMode? <span>#trees in a cluster</span>:*/}
-                                {/*<ButtonGroup bsSize="xsmall">*/}
-                                    {/*<Button active={isOrderStatic} onClick={isOrderStatic? null: this.props.onChangeSorting}>whole</Button>*/}
-                                    {/*{this.props.expandedBranches.length > 0 &&*/}
-                                    {/*<Button active={!isOrderStatic}*/}
-                                            {/*onClick={isOrderStatic ? this.props.onChangeSorting : null}>*/}
-                                        {/*branch {this.props.expandedBranches.length}*/}
-                                    {/*</Button>}*/}
-                                {/*</ButtonGroup>*/}
-                            {/*}*/}
-                            {/*<span style={{marginLeft: '2px'}}> of the reference tree.</span>*/}
-                        {/*</div>*/}
+                        <div style={{marginLeft: '20px', display: 'inline-block'}}>
+                            <span>Sort by the </span>
+                            {isClusterMode? <span>#trees of a cluster</span>:
+                                (expandedArr.length === 0? 'RF distance ':
+                                        <DropdownButton bsSize="xsmall" title={getDisplayOrder(order)} id="dropdown-sorting"
+                                        onSelect={this.props.onChangeSorting}>
+                                            <MenuItem eventKey='RF'>RF distance</MenuItem>
+                                            {expandedArr.map(bid =>
+                                                <MenuItem key={bid} eventKey={bid}>
+                                                    {getDisplayOrder(bid)}
+                                                </MenuItem>)}
+                                        </DropdownButton>
+                                )
+                            }
+                            {!isClusterMode && <span style={{marginLeft: '2px'}}> to the reference tree.</span>}
+                        </div>
+
                     </div>
 
                     <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
@@ -281,27 +279,36 @@ let clusterLayoutsByTopology = createSelector(
 );
 
 let sortLayouts = createSelector(
-    [state => state.aggregatedDendrogram.treeOrder,
-        state => state.aggregatedDendrogram.treeOrder.static? null: state.referenceTree.highlightMonophyly,
-        (_, layouts) => layouts
+    [state => state.aggregatedDendrogram.mode.indexOf('cluster') !== -1,
+        state => state.aggregatedDendrogram.order,
+        (_, layouts) => layouts,
+        state => state.inputGroupData.referenceTree,
+        state => state.cb
     ],
-    (order, _, layouts) => {
-        console.log('Sorting layouts...');
+    (isCluster, order, layouts, referenceTree, cb) => {
+        console.log('Sorting layouts...', isCluster, order);
 
         let res = [];
         for (let x in layouts) if (layouts.hasOwnProperty(x)) {
             res.push(layouts[x]);
         }
-        return res;
 
-        // TODO implement sorting
-        // let sortFunc;
-        // if (order.static || !bid || typeof bid === 'object') {
-        //     sortFunc = (t1, t2) => (t1 in ref.rfDistance? ref.rfDistance[t1]: -1) - (t2 in ref.rfDistance? ref.rfDistance[t2]: -1);
-        // } else {
-        //     let corr = ref.branches[bid][cb];
-        //     sortFunc = (t1, t2) => (t2 in corr? corr[t2].jac: 1.1) - (t1 in corr? corr[t1].jac: 1.1)
-        // }
+        let sortFunc;
+        if (isCluster) {
+            // Cluster AD is sort by the population of cluster
+            sortFunc = (t1, t2) => t2.num - t1.num;
+        } else {
+            if (order === 'RF') {
+                // Sort by RF distance to reference tree
+                sortFunc = (t1, t2) => referenceTree.rfDistance[t1.tid] - referenceTree.rfDistance[t2.tid];
+            } else {
+                // Sort by a branch similarity to the reference tree
+                let corr = referenceTree.branches[order][cb];
+                sortFunc = (t1, t2) => (t2.tid in corr? corr[t2.tid].jac: 1.1) - (t1.tid in corr? corr[t1.tid].jac: 1.1)
+            }
+        }
+
+        return res.sort(sortFunc);
     }
 );
 
@@ -504,7 +511,7 @@ let mapDispatchToProps = (dispatch) => ({
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onHighlightTrees: (tids) => {dispatch(toggleHighlightTrees(tids))},
     onSelectSet: i => {dispatch(selectSet(i))},
-    onChangeSorting: () => {dispatch(toggleSorting())},
+    onChangeSorting: (key) => {dispatch(changeSorting(key))},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
     onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))},
 });

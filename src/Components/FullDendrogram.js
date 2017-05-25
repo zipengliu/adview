@@ -74,12 +74,8 @@ class FullDendrogram extends Component {
                 } else {
                     x = d.x + spec.labelUnitCharWidth * entities[d.entity_id].name.length;
                 }
-                console.log('x pos: ',side, x);
                 return x;
             };
-            if (side === 'left') {
-                console.log(textSpecs);
-            }
             let pointerStyle = {
                 fill: 'black',
                 // transform: side === 'left'? 'rotateY(180deg)': 'none'

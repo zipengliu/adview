@@ -216,8 +216,8 @@ export function removeFromSet(tids, setIndex) {
     }
 }
 
-export function toggleSorting() {
-    return {type: TYPE.TOGGLE_SORTING}
+export function changeSorting(order) {
+    return {type: TYPE.CHANGE_SORTING, order}
 }
 
 export function toggleAggregationMode(mode) {
