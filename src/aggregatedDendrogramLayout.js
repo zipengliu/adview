@@ -3,7 +3,7 @@
  */
 
 import {scaleLog} from 'd3';
-import {createMappingFromArray, subtractMapping} from './utils';
+import {createMappingFromArray, subtractMapping, isMonophyly} from './utils';
 
 // Compute LCA of all expanded branches (ndoes) in a tree
 // as well as the pre-order of each expanded node
@@ -95,6 +95,7 @@ export let calcRemainderLayout = (tree, expanded, spec) => {
                 entities: createMappingFromArray(b.entities)};
             blocks[blockId].n -= b.entities.length;
             blocks[blockId].entities = subtractMapping(blocks[blockId].entities, blocks[curBid].entities);
+            blocks[blockId].isNotMonophyly = !isMonophyly(tree, blocks[blockId].entities);
             blocks[blockId].children.push(curBid);
             if (!expanded[curBid].in) {
                 blocks[blockId].matched = expanded[curBid].jac === 1;

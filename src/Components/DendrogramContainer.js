@@ -347,7 +347,7 @@ let fillLayouts = createSelector(
                 for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
                     let b = t.blocks[bid];
                     let intersections = highlightEntities
-                        .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlight.colorScheme(highlight.bids[i].color)}))
+                        .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlight.colorScheme[highlight.bids[i].color]}))
                         .filter(a => Object.keys(a.entities).length > 0)
                         .sort((a, b) => Object.keys(b.entities).length - Object.keys(a.entities).length);
                     // Check for overlap.  For now, subset relationship is the only possible overlap relation

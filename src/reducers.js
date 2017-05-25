@@ -72,7 +72,8 @@ let initialState = {
         ],
     },
     highlight: {
-        colorScheme: scaleOrdinal(schemeCategory10),
+        // colorScheme: scaleOrdinal(schemeCategory10),
+        colorScheme: ["#3366cc", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477" ],
         limit: 5,
         currentColor: 0,
         bids: [],
