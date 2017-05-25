@@ -372,13 +372,11 @@ let findHighlight = (bids, tid, bid) => {
     return -1;
 };
 
-// Determine is a is a subset of b.  a and b are both arrays.
-let isSubset = (a, b) => {
-    for (let i = 0; i < a.length; i++) {
-        if (b.indexOf(a[i]) === -1) return false;
-    }
-    return true;
-};
+let removeHighlightGroup = (highlight, idx) => ({
+    ...highlight,
+    colors: highlight.colors.map((c, i) => i === highlight.bids[idx].color? false: c),
+    bids: highlight.bids.filter((_, i) => i !== idx),
+});
 
 let getNextColor = (colors) => {
     for (let i = 0; i < colors.length; i++) {
@@ -387,13 +385,50 @@ let getNextColor = (colors) => {
     return -1;
 };
 
+let addHighlightGroup = (state, action) => {
+    let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
+    let tgtEntities = getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
+    let bids;
+
+    if (otherTid) {
+        bids = findEntities(tgtEntities, getTreeByTid(state, otherTid));
+    }
+
+    // create a new highlight group
+    let newHighlightGroup = {
+        src: action.tid, tgt: otherTid, [action.tid]: [action.bid], entities: tgtEntities,
+    };
+    if (otherTid) {
+        newHighlightGroup[otherTid] = bids;
+    }
+    let nextColor;
+    if (state.highlight.bids.length < state.highlight.limit) {
+        nextColor = getNextColor(state.highlight.colors);
+        newHighlightGroup.color = nextColor;
+        return {
+            ...state.highlight,
+            bids: [...state.highlight.bids, newHighlightGroup],
+            colors: state.highlight.colors.map((c, i) => i === nextColor? true: c)
+        }
+    } else {
+        nextColor = state.highlight.bids[0].color;
+        newHighlightGroup.color = nextColor;
+        return {
+            ...state.highlight,
+            // remove the last recent added group
+            bids: [...state.highlight.bids.slice(1), newHighlightGroup],
+        }
+    }
+
+};
+
 function visphyReducer(state = initialState, action) {
-    let newBids, newColors, curAE, updatedSelection;
+    let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlightGroup, newHighlights;
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             // Check if this branch is already highlighted
-            let idx = findHighlight(state.highlight.bids, action.tid, action.bid);
-            if (idx === -2) {
+            highlightIdx = findHighlight(state.highlight.bids, action.tid, action.bid);
+            if (highlightIdx === -2) {
                 // do not cancel or add, signal to the user
                 return {
                     ...state,
@@ -402,75 +437,17 @@ function visphyReducer(state = initialState, action) {
                         'please click the monophyly that triggers this highlight (the one with silhouette)'
                     }
                 }
-            } else if (idx !== -1) {
+            } else if (highlightIdx !== -1) {
                 // cancel highlight
                 return {
                     ...state,
-                    highlight: {
-                        ...state.highlight,
-                        colors: state.highlight.colors.map((c, i) => i === state.highlight.bids[idx].color? false: c),
-                        bids: state.highlight.bids.filter((_, i) => i !== idx),
-                    }
-                }
+                    highlight: removeHighlightGroup(state.highlight, highlightIdx)
+                };
             } else {
-                let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
-                let tgtEntities = getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
-                let bids;
-
-                if (otherTid) {
-                    bids = findEntities(tgtEntities, getTreeByTid(state, otherTid));
-                }
-                if (action.addictive && state.highlight.bids.length) {
-                    // Add to the current (last) highlight group
-                    // let mergingGroup = state.highlight.bids[state.highlight.bids.length - 1];
-                    //
-                    // if (isSubset(bids, mergingGroup)) {
-                    //     return {
-                    //         ...state,
-                    //         toast: {
-                    //             msg: 'This monophyly is already highlighted.'
-                    //         }
-                    //     }
-                    // }
-                    //
-                    // // Merge the bids into highlight group
-                    // let mergedGroup = {
-                    //     ...mergingGroup,
-                    //     // TODO what if user select a bid of the tgt tree?
-                    // }
-                } else {
-                    // create a new highlight group
-                    let newHighlightGroup = {
-                        src: action.tid, tgt: otherTid, [action.tid]: [action.bid], entities: tgtEntities,
-                    };
-                    if (otherTid) {
-                        newHighlightGroup[otherTid] = bids;
-                    }
-                    let nextColor;
-                    if (state.highlight.bids.length < state.highlight.limit) {
-                        nextColor = getNextColor(state.highlight.colors);
-                        newHighlightGroup.color = nextColor;
-                        return {
-                            ...state,
-                            highlight: {
-                                ...state.highlight,
-                                bids: [...state.highlight.bids, newHighlightGroup],
-                                colors: state.highlight.colors.map((c, i) => i === nextColor? true: c)
-                            }
-                        }
-                    } else {
-                        nextColor = state.highlight.bids[0].color;
-                        newHighlightGroup.color = nextColor;
-                        return {
-                            ...state,
-                            highlight: {
-                                ...state.highlight,
-                                // remove the last recent added group
-                                bids: [...state.highlight.bids.slice(1), newHighlightGroup],
-                            }
-                        }
-                    }
-                }
+                return {
+                    ...state,
+                    highlight: addHighlightGroup(state, action)
+                };
             }
             return state;
         case TYPE.TOGGLE_CHECKING_BRANCH:
@@ -490,87 +467,26 @@ function visphyReducer(state = initialState, action) {
                 }
             };
 
-        case TYPE.FETCH_TREE_REQUEST:
-            return Object.assign({}, state, {
-                toast: {
-                    ...state.toast,
-                    msg: 'Fetching tree from server...',
-                },
-                referenceTree: {
-                    ...state.referenceTree,
-                    expanded: {},
-                    isFetching: true,
-                }
-            });
-        case TYPE.FETCH_TREE_SUCCESS:
-            return state;
-            // return Object.assign({}, state, {
-            //     toast: {
-            //         ...state.toast,
-            //         msg: null
-            //     },
-            //     referenceTree: {
-            //         ...state.referenceTree,
-            //         id: action.tid,
-            //         isFetching: false,
-            //     },
-            //     inputGroupData: {
-            //         ...state.inputGroupData,
-            //         trees: {
-            //             ...state.inputGroupData.trees,
-            //             [action.tid]: {
-            //                 ...state.inputGroupData.trees[action.tid],
-            //                 branches: getGSF(getOrder(ladderize(prepareBranches(action.data, state.inputGroupData.trees[action.tid].rootBranch),
-            //                     state.inputGroupData.trees[action.tid].rootBranch), state.inputGroupData.trees[action.tid].rootBranch),
-            //                     state.cb, Object.keys(state.inputGroupData.trees).length - 1)
-            //             }
-            //         }
-            //     },
-            //     overview: {
-            //         ...state.overview,
-            //         coordinates: getCoordinates(state.inputGroupData.trees, state.cb, true, state.referenceTree.id, null),
-            //         metricMode: 'global',
-            //         metricBranch: null,
-            //     }
-            // });
-
-        case TYPE.FETCH_TREE_FAILURE:
-            return Object.assign({}, state, {
-                toast: {
-                    ...state.toast,
-                    msg: action.error.toString(),
-                },
-                referenceTree: {
-                    ...state.referenceTree,
-                    isFetching: false,
-                }
-            });
-
         case TYPE.SELECT_BRANCH:
             let newExpanded = {...state.referenceTree.expanded};
+            newHighlights = state.highlight;
+            highlightIdx = findHighlight(state.highlight.bids, state.referenceTree.id, action.bid);
             if (newExpanded.hasOwnProperty(action.bid)) {
                 delete newExpanded[action.bid];
+                if (highlightIdx >= 0) {
+                    // cancel the highlight
+                    newHighlights = removeHighlightGroup(state.highlight, highlightIdx);
+                }
             } else {
                 newExpanded[action.bid] = createExpandedBranchID(newExpanded);
+                newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
             }
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     expanded: newExpanded
                 },
-                // attributeExplorer: newSelected.length === 0 && state.attributeExplorer.activeSelectionId !== null &&
-                // state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].cb?
-                //     {   // if there is no selection and cb range selection is activated, deactivate it
-                //         ...state.attributeExplorer,
-                //         activeSelectionId: null
-                //     }: state.attributeExplorer,
-                // aggregatedDendrogram: {
-                //     ...state.aggregatedDendrogram,
-                //     treeOrder: {
-                //         ...state.aggregatedDendrogram.treeOrder,
-                //         static: newSelected.length === 0? true: state.aggregatedDendrogram.treeOrder.static
-                //     }
-                // }
+                highlight: newHighlights
             });
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
