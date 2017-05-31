@@ -59,7 +59,7 @@ class GlobalToolkit extends Component {
                                     <MenuItem eventKey={i} key={i}>
                                         {renderSubCollectionGlyph(d.glyph)}
                                         <span>{d.title}</span>
-                                        <Badge style={{marginLeft: '5px'}}>{d.tids.length}</Badge>
+                                        <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{d.tids.length}</Badge>
                                     </MenuItem>
                                 )}
                             </DropdownButton>

@@ -12,15 +12,15 @@ let glyphStyle = {
     top: '0',
     height: '10px',
     width: '10px',
-    color: 'grey'
+    color: 'black'
 };
 
 export function renderSubCollectionGlyph(glyph) {
     switch (glyph) {
-        case 'circle': return <div style={{...glyphStyle, borderRadius: '5px', backgroundColor: 'grey'}} />;
+        case 'circle': return <div style={{...glyphStyle, borderRadius: '5px', backgroundColor: 'black'}} />;
         case 'plus':
         case 'triangle-right': return <Glyphicon glyph={glyph} style={glyphStyle} />;
-        case 'square': return <div style={{...glyphStyle, backgroundColor: 'grey'}} />;
-        case 'diamond': return <div style={{...glyphStyle, backgroundColor: 'grey', marginRight: '4px', transform: 'rotate(45deg)'}} />;
+        case 'square': return <div style={{...glyphStyle, backgroundColor: 'black'}} />;
+        case 'diamond': return <div style={{...glyphStyle, backgroundColor: 'black', marginRight: '4px', transform: 'rotate(45deg)'}} />;
     }
 }

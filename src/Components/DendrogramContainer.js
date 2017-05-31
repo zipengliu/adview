@@ -53,18 +53,6 @@ class DendrogramContainer extends Component {
             }
         };
 
-        // let renderSubCollectionGlyph = glyph => {
-        //     switch (glyph) {
-        //         case 'circle': return <div className="sub-col-glyph" style={{borderRadius: '5px', backgroundColor: 'grey'}} />;
-        //         case 'plus':
-        //         case 'triangle-right': return <Glyphicon className="sub-col-glyph" glyph={glyph} />;
-        //         case 'square': return <div className="sub-col-glyph" style={{backgroundColor: 'grey'}} />;
-        //         case 'diamond': return <div className="sub-col-glyph"
-        //                                     style={{backgroundColor: 'grey', marginRight: '4px', transform: 'rotate(45deg)'}} />;
-        //     }
-        // };
-
-        console.log(order);
         let getDisplayOrder = order => {
             if (order === 'RF') return 'RF distance';
             return `local similarity of block ${expandedBranches[order]}`;
@@ -119,7 +107,7 @@ class DendrogramContainer extends Component {
                                              {renderSubCollectionGlyph(s.glyph)}
                                              <span>{s.title}</span>
                                              {i === this.props.activeSetIndex &&
-                                             <Badge style={{marginLeft: '5px'}}>{dendrograms.length}</Badge>
+                                             <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{dendrograms.length}</Badge>
                                              }
                                          </div>
                                      </OverlayTrigger>

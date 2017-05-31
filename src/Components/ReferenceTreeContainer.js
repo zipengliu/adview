@@ -58,7 +58,7 @@ class ReferenceTreeContainer extends Component {
 
                         {props.comparingTree &&
                         <OverlayTrigger placement="bottom" overlay={<Tooltip id="tooltip-cancel-compare">Exit pairwise comparison</Tooltip>}>
-                            <Button bsSize="xsmall" onClick={props.cancelCompare}>
+                            <Button bsSize="xsmall" bsStyle="primary" onClick={props.cancelCompare}>
                                 End pairwise comparison
                             </Button>
                         </OverlayTrigger>

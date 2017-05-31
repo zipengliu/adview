@@ -41,7 +41,7 @@ class Dotplot extends Component {
         coordinates[coordinates.length - 1] = coordinates[i];
         coordinates[i] = t;
 
-        let refGlyphSize = 16;
+        let refGlyphSize = 12;
         let dotSize = {
             circle: 6,
             plus: 9,
@@ -62,7 +62,7 @@ class Dotplot extends Component {
                      className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid), highlight:  hoveredTrees.hasOwnProperty(d.tid)})}
                      key={d.tid} x={scale(d.x) - dotSize[glyphs[d.tid]] / 2} y={scale(d.y) - dotSize[glyphs[d.tid]] / 2}
                      width={dotSize[glyphs[d.tid]]} height={dotSize[glyphs[d.tid]]}
-                     style={{fill: 'grey'}}
+                     style={{fill: 'grey', fillOpacity: '.8'}}
                 />)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
 

@@ -43,7 +43,12 @@ class MainView extends Component {
                     {this.props.referenceTree.charts.show && this.props.referenceTree.charts.float && <ReferenceTreeAttributeExplorer/>}
                     <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
                         <div className="left-column">
-                            <div className="chapter-title"><Glyphicon glyph="registration-mark"/>eference Tree</div>
+                            <div className="chapter-title">
+                                <Glyphicon glyph="registration-mark"/>eference Tree
+                                {this.props.pairwiseComparison.tid &&
+                                <span style={{fontSize: '12px'}}> vs. {this.props.inputGroupData.trees[this.props.pairwiseComparison.tid].name}</span>
+                                }
+                            </div>
                             <ReferenceTreeContainer />
                         </div>
                         <div className="right-column">

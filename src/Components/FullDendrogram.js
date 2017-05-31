@@ -60,26 +60,13 @@ class FullDendrogram extends Component {
 
             let names = textSpecs.map((d, i) =>
                 <text key={i} className="entity-name"
-                      x={d.x} y={d.y} dx={side === 'left'? -5: 5} dy={3}
+                      x={d.x} y={d.y} dx={side === 'left'? -8: 8} dy={3}
                       textAnchor={side === 'left'? 'end': 'start'}
                       onMouseEnter={this.props.onHighlightDup.bind(null, d.entity_id)}
                       onMouseLeave={this.props.onHighlightDup.bind(null, null)}
                 >
                     {entities[d.entity_id].name}
                 </text>);
-            let getPointerXPosition = (d, side) => {
-                let x;
-                if (side === 'left') {
-                    x = d.x - spec.labelUnitCharWidth * entities[d.entity_id].name.length - 20;
-                } else {
-                    x = d.x + spec.labelUnitCharWidth * entities[d.entity_id].name.length;
-                }
-                return x;
-            };
-            let pointerStyle = {
-                fill: 'black',
-                // transform: side === 'left'? 'rotateY(180deg)': 'none'
-            };
 
             let missingBranch = missing && missing.length? branchSpecs.filter(d => d.bid === 'missing_taxa')[0]: null;
 
@@ -114,14 +101,14 @@ class FullDendrogram extends Component {
 
                    <g className="names">{names}</g>
                    {textSpecs.filter(d => highlightEntitiesMapping.hasOwnProperty(d.entity_id)).map((d, i)=>
-                       <use xlinkHref={`#ref-tree-taxon-pointer${side === 'left'? '-left': ''}`} key={i} style={pointerStyle}
-                            x={getPointerXPosition(d, side)} y={d.y - 2}
-                            width={20} height={10} />
+                       <use xlinkHref="#ref-tree-taxon-pointer" key={i}
+                            x={side === 'left'? d.x - 6: d.x} y={d.y - 3}
+                            width={8} height={8} />
                    )}
                    {textSpecs.filter(d => highlightUncertainEntitiesMapping.hasOwnProperty(d.entity_id)).map((d, i)=>
-                       <use xlinkHref={`#ref-tree-taxon-pointer-uncertain${side === 'left'? '-left': ''}`} key={i} style={pointerStyle}
-                            x={getPointerXPosition(d, side)} y={d.y - 2}
-                            width={20} height={10} />
+                       <use xlinkHref="#ref-tree-taxon-pointer-uncertain" key={i}
+                            x={side === 'left'? d.x - 6: d.x} y={d.y - 3}
+                            width={8} height={8} />
                    )}
 
                    {missing && missing.length &&
@@ -186,22 +173,11 @@ class FullDendrogram extends Component {
                 </g>
 
                 <defs>
-                    <symbol id="ref-tree-taxon-pointer" viewBox="0 0 22 10">
-                        <path d="M5 0 L0 3L5 6Z"/>
-                        <path d="M11 0 L6 3L11 6Z"/>
-                        <path d="M17 0 L12 3L17 6Z"/>
-                        {/*<line x1="1" y1="3" x2="22" y2="3" style={{strokeWidth: '1px', stroke: 'black'}}/>*/}
+                    <symbol id="ref-tree-taxon-pointer" viewBox="0 0 10 10">
+                        <circle r={4} cx="4" cy="4" style={{fill: 'black'}} />
                     </symbol>
-                    <symbol id="ref-tree-taxon-pointer-uncertain" viewBox="0 0 20 10">
-                        <path d="M5 0 L0 3L5 6Z"/>
-                    </symbol>
-                    <symbol id="ref-tree-taxon-pointer-left" viewBox="0 0 20 10">
-                        <path d="M0 0 L0 6L5 3Z"/>
-                        <path d="M7 0 L7 6L12 3Z"/>
-                        <path d="M14 0 L14 6L19 3Z"/>
-                    </symbol>
-                    <symbol id="ref-tree-taxon-pointer-uncertain-left" viewBox="0 0 20 10">
-                        <path d="M0 0 L0 6L5 3Z"/>
+                    <symbol id="ref-tree-taxon-pointer-uncertain" viewBox="0 0 10 10">
+                        <circle r={3} cx="4" cy="4" style={{fill: 'none', stroke: 'black', strokeWidth: '2px'}} />
                     </symbol>
                 </defs>
             </svg>
@@ -236,7 +212,7 @@ let getDendrogramSpecs = createSelector(
                     longestEntity = Math.max(longestEntity, entities[b.entity].name.length * spec.labelUnitCharWidth);
                 }
             };
-            longestEntity += 20;        // For the taxon pointer mark
+            // longestEntity += 20;        // For the taxon pointer mark
 
             traverse(tree.rootBranch, 0, 1);
             let topologyWidth = ignoreBranchLen? maxTopoWidth: (aligned? spec.comparingTopologyWidth: spec.defaultTopologyWidth);
