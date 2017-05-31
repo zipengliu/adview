@@ -485,9 +485,9 @@ let mapStateToProps = (state) => {
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
         dendrograms,
-        rangeSelection: state.attributeExplorer.activeSelectionId === 0? {
+        rangeSelection: state.cbAttributeExplorer.activeSelectionId === 0? {
             attrName: 'support',
-            range: state.attributeExplorer.selection[state.attributeExplorer.activeSelectionId].range
+            range: state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId].range
         }: null,
         selectedTrees: state.selectedTrees,
         hoveredTrees: state.hoveredTrees,

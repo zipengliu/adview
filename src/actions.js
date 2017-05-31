@@ -169,6 +169,10 @@ export function changeSelection(x, y) {
     }
 }
 
+export function changeActiveExpandedBranch(bid) {
+    return {type: TYPE.CHANGE_ACTIVE_EXPANDED_BRANCH, bid};
+}
+
 export function changeDistanceMetric(mode, bid) {
     return function (dispatch, getState) {
         let state = getState();

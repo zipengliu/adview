@@ -126,25 +126,14 @@ let initialState = {
         sliderHeight: 18,
         margin: {left: 25, right: 8, top: 20, bottom: 2}
     },
-    attributeExplorer: {
-        withSupport: true,
-        modes: {
-            all: {
-                scope: 'tree',           // could be 'all', 'set', 'tree'
-                context: false,
-            },
-            corr: {
-                scope: 'all',           // could be 'all', 'set'
-                context: false,
-            },
-            ref: {
-
-            }
-        },
-        attributeNames: ['support'],
+    cbAttributeExplorer: {
+        activeExpandedBid: null,
+        attributes: [
+            {propertyName: 'support', displayName: 'support'},
+            {propertyName: 'similarity', displayName: 'similarity'}],
         selection: [
-            {isMoving: false, range: [0, 1], cb: true, attribute: 'support'},       // for the support in the corresponding branches section
-            {isMoving: false, range: [0, 1], cb: true, attribute: 'similarity'},   // for the similarity in the cb section
+            {isMoving: false, range: [0, 1], attribute: 'support'},       // for the support in the corresponding branches section
+            {isMoving: false, range: [0, 1], attribute: 'similarity'},   // for the similarity in the cb section
             ],
         activeSelectionId: null,
     },
@@ -461,6 +450,7 @@ function visphyReducer(state = initialState, action) {
 
         case TYPE.SELECT_BRANCH:
             let newExpanded = {...state.referenceTree.expanded};
+            let newActiveEB = state.cbAttributeExplorer.activeExpandedBid;
             newHighlights = state.highlight;
             highlightIdx = findHighlight(state.highlight.bids, state.referenceTree.id, action.bid);
             if (newExpanded.hasOwnProperty(action.bid)) {
@@ -469,11 +459,20 @@ function visphyReducer(state = initialState, action) {
                     // cancel the highlight
                     newHighlights = removeHighlightGroup(state.highlight, highlightIdx);
                 }
+                if (newActiveEB === action.bid) {
+                    // Pick a random one from the eb list
+                    if (Object.keys(newExpanded).length > 0) {
+                        newActiveEB = Object.keys(newExpanded)[0];
+                    } else {
+                        newActiveEB = null;
+                    }
+                }
             } else {
                 newExpanded[action.bid] = createExpandedBranchID(newExpanded);
                 if (highlightIdx === -1) {
                     newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
                 }
+                newActiveEB = action.bid;
             }
             return Object.assign({}, state, {
                 referenceTree: {
@@ -481,6 +480,12 @@ function visphyReducer(state = initialState, action) {
                     expanded: newExpanded
                 },
                 highlight: newHighlights,
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    activeExpandedBid: newActiveEB,
+                    activeSelectionId: newActiveEB === state.cbAttributeExplorer.activeExpandedBid?
+                        state.cbAttributeExplorer.activeSelectionId: null
+                }
                 // aggregatedDendrogram: {          // Falls back to remainder layout
                 //     ...state.aggregatedDendrogram,
                 //     mode: Object.keys(newExpanded).length > 2 && state.aggregatedDendrogram.mode.indexOf('cluster') === -1?
@@ -498,8 +503,9 @@ function visphyReducer(state = initialState, action) {
                     bids: [],
                     colors: (new Array(state.highlight.limit)).fill(false)
                 },
-                attributeExplorer: {
-                    ...state.attributeExplorer,
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    activeExpandedBid: null,
                     activeSelectionId: null
                 },
                 selectedTrees: {},
@@ -769,22 +775,8 @@ function visphyReducer(state = initialState, action) {
                 }
             };
 
-        case TYPE.CHANGE_ATTRIBUTE_EXPLORER_MODE:
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    modes: {
-                        ...state.attributeExplorer.modes,
-                        [action.section]: {
-                            scope: action.scope? action.scope: state.attributeExplorer.modes[action.section].scope,
-                            context: action.isContext != null? action.isContext: state.attributeExplorer.modes[action.section].context
-                        }
-                    }
-                }
-            };
         case TYPE.TOGGLE_MOVE_HANDLE:
-            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            curAE = action.isRef? state.referenceTree.charts: state.cbAttributeExplorer;
             updatedSelection = curAE.selection.map((s, i) => i === curAE.activeSelectionId?
                                 {...s, isMoving: action.handle? true: false, movingHandle: action.handle}: s);
             if (action.isRef) {
@@ -801,14 +793,14 @@ function visphyReducer(state = initialState, action) {
             } else {
                 return {
                     ...state,
-                    attributeExplorer: {
-                        ...state.attributeExplorer,
+                    cbAttributeExplorer: {
+                        ...state.cbAttributeExplorer,
                         selection: updatedSelection
                     }
                 };
             }
         case TYPE.MOVE_CONTROL_HANDLE:
-            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            curAE = action.isRef? state.referenceTree.charts: state.cbAttributeExplorer;
             let sel = curAE.selection[curAE.activeSelectionId];
             let newRange;
             if (sel.movingHandle === 'left') {
@@ -832,20 +824,12 @@ function visphyReducer(state = initialState, action) {
             } else {
                 return {
                     ...state,
-                    attributeExplorer: {
-                        ...state.attributeExplorer,
+                    cbAttributeExplorer: {
+                        ...state.cbAttributeExplorer,
                         selection: updatedSelection
                     }
                 };
             }
-        case TYPE.TOGGLE_HISTOGRAM_OR_CDF:
-            return {
-                ...state,
-                attributeExplorer: {
-                    ...state.attributeExplorer,
-                    shownAsHistogram: action.isHistogram
-                }
-            };
         case TYPE.CHANGE_ACTIVE_RANGE_SELECTION:
             if (action.isRef) {
                 return {
@@ -861,14 +845,14 @@ function visphyReducer(state = initialState, action) {
             } else {
                 return {
                     ...state,
-                    attributeExplorer: {
-                        ...state.attributeExplorer,
+                    cbAttributeExplorer: {
+                        ...state.cbAttributeExplorer,
                         activeSelectionId: action.id,
                     }
                 };
             }
         case TYPE.CHANGE_SELECTION_RANGE:
-            curAE = action.isRef? state.referenceTree.charts: state.attributeExplorer;
+            curAE = action.isRef? state.referenceTree.charts: state.cbAttributeExplorer;
             updatedSelection = curAE.selection.map((s, i) => i === action.sid? {...s, range: [action.l, action.r]}: s);
             if (action.isRef) {
                 return {
@@ -885,13 +869,21 @@ function visphyReducer(state = initialState, action) {
             } else {
                 return {
                     ...state,
-                    attributeExplorer: {
-                        ...state.attributeExplorer,
+                    cbAttributeExplorer: {
+                        ...state.cbAttributeExplorer,
                         selection: updatedSelection,
                         activeSelectionId: action.sid
                     }
                 };
             }
+        case TYPE.CHANGE_ACTIVE_EXPANDED_BRANCH:
+            return {
+                ...state,
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    activeExpandedBid: action.bid
+                }
+            };
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
@@ -943,7 +935,12 @@ function visphyReducer(state = initialState, action) {
                     ...state.overview,
                     coordinates: getCoordinates(action.data.referenceTree, action.data.trees, newCB, true, null)
                 },
-                cb: newCB
+                cb: newCB,
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    attributes: state.cbAttributeExplorer.attributes.slice(!!action.data.supportRange? 0: 1),
+                    selection: state.cbAttributeExplorer.selection.slice(!!action.data.supportRange? 0: 1)
+                }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
             return Object.assign({}, state, {

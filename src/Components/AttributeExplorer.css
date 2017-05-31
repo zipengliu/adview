@@ -7,10 +7,8 @@
     fill-opacity: .5;
 }
 
-#attribute-explorer .dropdown {
-    position: absolute;
-    top: 5px;
-    right: 5px;
+#cb-attribute-explorer .dropdown-menu {
+    min-width: 100px;
 }
 
 .attribute-chart .axis line {
@@ -70,8 +68,3 @@
     height: 1em;
 }
 
-.attribute-section-divider {
-    clear: both;
-    width: 95%;
-    height: 15px;
-}

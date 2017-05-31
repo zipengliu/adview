@@ -14,7 +14,7 @@ import TreeList from './TreeList';
 import Inspector from './Inspector';
 import TaxaList from './TaxaList';
 import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
-import AttributeExplorer from './AttributeExplorer';
+import CBAttributeExplorer from './CBAttributeExplorer';
 import TreeDistribution from './TreeDistribution';
 import GlobalToolkit from './GlobalToolkit';
 import BipartitionDistribution from './BipartitionDistribution';
@@ -63,7 +63,7 @@ class MainView extends Component {
                                 <div className="views-column" style={{flex: '0 0 auto', width: '200px'}}>
                                     <TreeList />
                                     <Overview />
-                                    <AttributeExplorer />
+                                    <CBAttributeExplorer />
                                 </div>
                             </div>
                         </div>
