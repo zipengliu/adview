@@ -46,7 +46,6 @@
     stroke: none;
 }
 .highlight-block {
-    fill: steelblue;
     fill-opacity: .3;
 }
 .highlight-block.fuzzy {

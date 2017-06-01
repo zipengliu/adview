@@ -189,7 +189,6 @@ let clusterTreesByBranch = clusterSelector(
 
         }
 
-        console.log(bins);
         return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
     }
 );

@@ -330,7 +330,7 @@ export let calcFrondLayout = (tree, expanded, spec) => {
             n: tree.entities.length - tree.branches[e].entities.length,
             entities: subtractMapping(createMappingFromArray(tree.entities), createMappingFromArray(tree.branches[e].entities)),
             matched: expanded.hasOwnProperty(e) && expanded[e].jac === 1,
-            no: expanded.hasOwnProperty(e)? expanded[e].no: null,
+            no: expanded.hasOwnProperty(e) && !isContext? expanded[e].no: null,
             context: isContext,
         };
         maxN = Math.max(maxN, blocks[bid].n);

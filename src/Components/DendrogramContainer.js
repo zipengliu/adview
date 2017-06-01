@@ -10,7 +10,7 @@ import {Tabs, Tab, Button, ButtonGroup, Badge, OverlayTrigger, Tooltip, FormGrou
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
-import {createMappingFromArray, getIntersectionSet, isSubset} from '../utils';
+import {createMappingFromArray, getIntersection, isSubset} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
@@ -210,7 +210,7 @@ let clusterLayoutsByTopology = createSelector(
                     return;
                 }
                 b.represent[addingTreeId] = addingBid;
-                b.matched = b.matched && addingBlocks[addingBid].matched;       // Here is problematic, outgroup does not align with ingroup!
+                b.matched = b.matched && addingBlocks[addingBid].matched;
                 for (let e in addingBlocks[addingBid].entities) if (addingBlocks[addingBid].entities.hasOwnProperty(e)) {
                     if (!b.entities.hasOwnProperty(e)) {
                         b.entities[e] = 0;
@@ -301,8 +301,9 @@ let sortLayouts = createSelector(
 );
 
 
-let getKDEBins = (n, values, kernel) => {
+let getKDEBins = (n, values, kernel, color) => {
     let valueExtent = extent(values);
+    let hslColor = hsl(color);
     if (valueExtent[0] === valueExtent[1]) {
         // No uncertainty
         return false;
@@ -319,49 +320,57 @@ let getKDEBins = (n, values, kernel) => {
         if (b > max) max = b;
         bins.push(b);
     }
-    scale = scaleLinear().domain([min, max]).range([1, .49]);
-    let colorBins = bins.map(scale).map(l => hsl(207, .44, l).toString());
+    scale = scaleLinear().domain([min, max]).range([1, hslColor.l]);
+    let colorBins = bins.map(scale).map(l => hsl(hslColor.h, hslColor.s, l).toString());
     return colorBins;
 };
 
+// Get the highlight portion of each block
 let fillLayouts = createSelector(
     [(_, layouts) => layouts,
+        (_, layouts, layoutsMapping) => layoutsMapping,
         state => state.highlight,
         state => state.aggregatedDendrogram.mode,
         state => state.aggregatedDendrogram.shadedHistogram],
-    (layouts, highlight, mode, shadedHistogramSpec) => {
+    (layouts, layoutsMapping, highlight, mode, shadedHistogramSpec) => {
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let filledLayouts = layouts.slice();
-        if (isClusterMode) {
+        let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
 
-        } else {
-            let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
+        for (let k = 0; k < filledLayouts.length; k++) {
+            let t = filledLayouts[k];
+            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+                let b = t.blocks[bid];
 
-            for (let i = 0; i < filledLayouts.length; i++) {
-                let t = filledLayouts[i];
-                for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-                    let b = t.blocks[bid];
-                    let intersections = highlightEntities
-                        .map((h, i) => ({entities: getIntersectionSet(b.entities, h), color: highlight.colorScheme[highlight.bids[i].color]}))
-                        .filter(a => Object.keys(a.entities).length > 0)
-                        .sort((a, b) => Object.keys(b.entities).length - Object.keys(a.entities).length);
-                    // Check for overlap.  For now, subset relationship is the only possible overlap relation
+                if (isClusterMode) {
                     b.fill = [];
-                    let curEnd = 0;
-                    for (let i = 0; i < intersections.length; i++) {
-                        let j;
-                        for (j = 0; j < i; j++) {
-                            if (isSubset(intersections[i].entities, intersections[j].entities)) break;
-                        }
-                        let proportion = Object.keys(intersections[i].entities).length / Object.keys(b.entities).length;
-                        b.fill.push({
-                            start: i === j? curEnd: b.fill[j].start,
-                            width: proportion,
-                            color: intersections[i].color
-                        });
-                        curEnd += i === j? proportion: 0;
-                    }
+                    for (let i = 0; i < highlightEntities.length; i++) {
+                        let h = highlightEntities[i];
+                        let newFill = {
+                            proportion: [],
+                            color: highlight.colorScheme[highlight.bids[i].color],
+                            colorBins: null
+                        };
 
+                        let hasIntersection = false;
+                        for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
+                            let e = layoutsMapping[tid].blocks[b.represent[tid]].entities;
+                            let intersection = getIntersection(e, h);
+                            if (intersection) {
+                                hasIntersection = true;
+                            }
+                            newFill.proportion.push(intersection / Object.keys(e).length);
+                        }
+                        if (hasIntersection) {
+                            newFill.colorBins = getKDEBins(shadedHistogramSpec.binsFunc(b.width - 2), newFill.proportion, shadedHistogramSpec.kernel, newFill.color);
+                            b.fill.push(newFill);
+                        }
+                    }
+                } else {
+                    b.fill = highlightEntities.map((h, i) => ({
+                        proportion: getIntersection(b.entities, h) / Object.keys(b.entities).length,
+                        color: highlight.colorScheme[highlight.bids[i].color]
+                    })).filter(a => a.proportion > 0);
                 }
             }
         }
@@ -370,99 +379,40 @@ let fillLayouts = createSelector(
 );
 
 let selectLayoutsByAttribute = createSelector(
-    [(_, layouts) => layouts],
-    (layouts) => {
-        return layouts;
+    [state => state.inputGroupData.trees,
+        state => state.inputGroupData.referenceTree,
+        state => state.cbAttributeExplorer.activeSelectionId >= 0? state.cbAttributeExplorer.activeExpandedBid: null,
+        state => state.cb,
+        state => state.cbAttributeExplorer.activeSelectionId >= 0?
+            state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId]: null,
+        (_, layouts) => layouts],
+    (trees, referenceTree, bid, cb, selection, layouts) => {
+        if (!bid || !selection) return layouts;
+        let corr = referenceTree.branches[bid][cb];
+        let res = [];
+        for (let i = 0; i < layouts.length; i++) {
+            let tid = layouts[i].tid;
+            if (corr.hasOwnProperty(tid) && corr[tid].bid) {
+                // Get the CB attribute value
+                let v;
+                if (selection.attribute === 'similarity') {
+                    v = corr[tid].jac;
+                } else {
+                    v = trees[tid].branches[corr[tid].bid][selection.attribute];
+                }
+
+                // Check if in range selection
+                res.push({
+                    ...layouts[i],
+                    rangeSelected: selection.range[0] <= v && v <= selection.range[1],
+                });
+            } else {
+                res.push(layouts[i]);
+            }
+        }
+        return res;
     }
 );
-
-// Get the highlight portion of each block
-// Also determine whether there is branch that falls into the range selection
-// FIXME: bottleneck!
-let getFill = (dendroMapping, clusters, isClusterMode, highlightGroups, trees, shadedHistogram) => {
-    if (isClusterMode) {
-        // TODO
-        // let h = createMappingFromArray(highlightGroups[0].entities);
-        // for (let i = 0; i < clusters.length; i++) {
-        //     let t = clusters[i];
-        //     for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-        //         let b = t.blocks[bid];
-        //         b.fillPercentage = [];
-        //         b.rangeSelected = 0;
-        //         for (let tid in b.represent) if (b.represent.hasOwnProperty(tid)) {
-        //             let e = dendroMapping[tid].blocks[b.represent[tid]].entities;
-        //             b.fillPercentage.push(getIntersection(e, h) / Object.keys(e).length);
-        //
-        //             if (rangeSelection && b.rangeSelected === 0) {
-        //                 let checkingBlock = dendroMapping[tid].blocks[b.represent[tid]];
-        //                 for (let bid1 in checkingBlock.branches)
-        //                     if (checkingBlock.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attrName]
-        //                         && trees[tid].branches[bid1][attrName] <= range[1]) {
-        //                         b.rangeSelected += 1;
-        //                         break;
-        //                     }
-        //             }
-        //         }
-        //
-        //         // construct the shaded histogram
-        //         // b.colorBins = entities.length > 0?
-        //         //     getKDEBins(shadedHistogram.binsFunc(b.width - 2), b.fillPercentage, shadedHistogram.kernel): null;
-        //     }
-        // }
-    } else {
-    }
-};
-
-let checkRangeSelection = (dendros, rangeSelection, referenceTree, trees, cb) => {
-    let {attribute, range} = rangeSelection || {};
-    let r, correspondingBranches;
-    if (rangeSelection && rangeSelection.cb) {
-        // only check the cb for the last expanded branch of the reference tree
-        r = trees[referenceTree.id];
-        correspondingBranches = r.branches[referenceTree.selected[0]][cb];
-    }
-    for (let tid in dendros) if (dendros.hasOwnProperty(tid)) {
-        let t = dendros[tid];
-        for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
-            let b = t.blocks[bid];
-            // Check if this block has any branches falls into an active range
-            b.rangeSelected = 0;
-            if (rangeSelection && !rangeSelection.cb && rangeSelection.attribute !== 'gsf') {
-                for (let bid1 in b.branches)
-                    if (b.branches.hasOwnProperty(bid1) && range[0] <= trees[tid].branches[bid1][attribute]
-                        && trees[tid].branches[bid1][attribute] <= range[1]) {
-                        b.rangeSelected += 1;
-                        break;
-                    }
-            }
-        }
-        for (let bid in t.branches) if (t.branches.hasOwnProperty(bid)) {
-            let b = t.branches[bid];
-            // Check if any branch in the aggregated dendrogram falls into this range
-            b.rangeSelected = false;
-            if (rangeSelection && !rangeSelection.cb) {
-                if (trees[tid].branches.hasOwnProperty(bid)) {
-                    let v = trees[tid].branches[bid][attribute];
-                    if (range[0] <= v && v <= range[1]) {
-                        b.rangeSelected = true;
-                    }
-                }
-            }
-        }
-        t.isCBinRange = false;
-        if (r) {
-            // if range selection is for cb, check cb's value
-            let corr = correspondingBranches[tid];
-            if (corr && t.branches.hasOwnProperty(corr.bid)) {
-                let v = attribute === 'similarity'? corr.jac: trees[tid].branches[corr.bid][attribute];
-                if (range[0] <= v && v <= range[1]) {
-                    // t.branches[corr.bid].rangeSelected = true;
-                    t.isCBinRange = true;
-                }
-            }
-        }
-    }
-};
 
 
 let mapStateToProps = (state) => {
@@ -476,7 +426,7 @@ let mapStateToProps = (state) => {
     } else {
         layoutArray = sortLayouts(state, filteredLayouts);
     }
-    let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray));
+    let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray), filteredLayouts);
 
     return {
         ...state.aggregatedDendrogram,

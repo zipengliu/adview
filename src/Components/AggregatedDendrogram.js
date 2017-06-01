@@ -14,7 +14,7 @@ class AggregatedDendrogram extends Component {
         let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {trees, blocks, branches, num, total, isCBinRange, selectedCnt} = this.props.data;
+        let {trees, blocks, branches, num, total, selectedCnt, rangeSelected} = this.props.data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
@@ -47,7 +47,7 @@ class AggregatedDendrogram extends Component {
 
         return (
             <svg width={svgWidth} height={svgHeight}>
-                {isCBinRange && <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+                {rangeSelected && <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
                 {((!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num)) &&
                 <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
 
@@ -75,22 +75,29 @@ class AggregatedDendrogram extends Component {
                                     />
 
                                     {!isClusterMode && b.fill &&
-                                        b.fill.map((f, i) => <rect key={i} className="highlight-block"
-                                                                   style={{fill: f.color}}
-                                                                   x={b.x + f.start * b.width} y={b.y} width={f.width * b.width} height={b.height} />) }
+                                        b.fill.map((f, i) =>
+                                            <rect key={i} className="highlight-block"
+                                                  style={{fill: f.color}}
+                                                  x={b.x} y={b.y + i * (b.height / b.fill.length)}
+                                                  width={f.proportion * b.width} height={b.height / b.fill.length} />) }
 
                                     {!isClusterMode && b.fill && b.isLeaf && false &&
                                     <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
                                           width={b.highlightWidth} height={b.height} />}
 
-                                    {false && isClusterMode && b.colorBins &&
-                                    b.colorBins.map((d, i) =>
-                                        <line key={i} className="highlight-block fuzzy" style={{stroke: d, strokeWidth: shadedGranularity}}
-                                              x1={b.x + i * shadedGranularity + 1} y1={b.y}
-                                              x2={b.x + i * shadedGranularity + 1} y2={b.y+b.height}/>)}
-                                    {false && isClusterMode && !b.colorBins && b.fillPercentage[0] > 0.001 &&
-                                    <rect className="highlight-block" x={b.x} y={b.y}
-                                          width={b.fillPercentage[0] * b.width} height={b.height} />}
+                                    {isClusterMode && b.fill &&
+                                    b.fill.map((f, i) =>
+                                        <g key={i}>
+                                            {f.colorBins?
+                                                f.colorBins.map((binColor, j) =>
+                                                    <line key={j} className="highlight-block fuzzy" style={{stroke: binColor, strokeWidth: shadedGranularity}}
+                                                          x1={b.x + j * shadedGranularity + 1} y1={b.y + i * b.height / b.fill.length}
+                                                          x2={b.x + j * shadedGranularity + 1} y2={b.y + (i + 1) * b.height / b.fill.length} />):
+                                                <rect className="highlight-block" style={{fill: f.color}}
+                                                      x={b.x} y={b.y + i * b.height / b.fill.length}
+                                                      width={f.proportion[0] * b.width} height={b.height / b.fill.length} />
+                                            }
+                                        </g>)}
 
                                     <rect className="respond-box"
                                           x={b.x} y={b.y} width={b.width} height={b.height}
@@ -98,15 +105,15 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {mode !== 'supercluster' && b.n > 1 && <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>}
+                                    {mode !== 'supercluster' && b.n > 1 && b.height > 22 &&
+                                    <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>}
                                     {b.no && <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
                                 </g>
                             )}
                         </g>
                         <g className="branches">
                             {branchArr.map(b =>
-                                <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded,
-                                    'range-selected': b.rangeSelected})}
+                                <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded})}
                                       key={b.bid}
                                       x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                         </g>

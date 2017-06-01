@@ -126,7 +126,10 @@ let getCBHistograms = createSelector(
     state => state.cb],
     (bid, referenceTree, trees, attributes, cb) => {
         if (!bid) return null;
-        let values = (new Array(attributes.length)).fill([]);
+        let values = [];
+        for (let i = 0; i < attributes.length; i++) {
+            values.push([]);
+        }
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             let corr = referenceTree.branches[bid][cb];
             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
