@@ -24,12 +24,12 @@ class TreeDistribution extends Component {
             let branchNo = expandedBranches[bid];
             let curN = 0;
             return (
-                <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #000'}}>
+                <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #ccc'}}>
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
                         return (
-                            <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #000': 'none',
+                            <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none',
                                 top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
                                  onMouseEnter={this.props.onHighlightTrees.bind(null, b,
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
@@ -42,11 +42,11 @@ class TreeDistribution extends Component {
                                 </div>}
                                 {d.highlightCnt && d.highlightCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    backgroundColor: 'rgba(31, 119, 180, .3)',
+                                    backgroundColor: '#b82e2e', opacity: '.6',
                                     width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
                                 {d.selectCnt && d.selectCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    border: '1px solid #e41a1c',
+                                    border: '3px solid #000', zIndex: 50,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
                             </div>
                         )
@@ -281,7 +281,7 @@ let mapStateToProps = state => {
             }
         }
     }
-    console.log(distributions);
+    // console.log(distributions);
 
     return {
         expandedBranches: state.referenceTree.expanded,

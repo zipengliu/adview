@@ -7,8 +7,8 @@
     stroke: #984ea3;
 }
 .branch-line.checking {
-    stroke-width: 5px;
-    stroke: yellow;
+    stroke-width: 8px;
+    stroke: black !important;
 }
 .branch-line.expanded {
     stroke-width: 3;

@@ -19,7 +19,7 @@
     position: relative;
 }
 .agg-dendro-box.selected {
-    border: 2px solid #e41a1c;
+    border: 2px solid #000;
 }
 
 
@@ -94,18 +94,18 @@
 
 .proportion .num {
     stroke: none;
-    fill: green;
+    fill: grey;
     fill-opacity: .5;
 }
 
 .proportion .highlight {
     stroke: none;
-    fill: steelblue;
+    fill: #b82e2e;
     /*fill-opacity: .5;*/
 }
 
 .proportion .selected{
-    stroke: #e41a1c;
+    stroke: #000;
     stroke-width: 2px;
     fill: none;
 }
@@ -128,8 +128,8 @@ rect.range-selected-cb-indicator {
 }
 
 rect.highlight-tree-indicator {
-    fill: steelblue;
-    fill-opacity: .4;
+    fill: #b82e2e;
+    fill-opacity: .6;
 }
 
 

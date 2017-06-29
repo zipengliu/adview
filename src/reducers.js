@@ -73,7 +73,7 @@ let initialState = {
     },
     highlight: {
         // colorScheme: scaleOrdinal(schemeCategory10),
-        colorScheme: ["#3366cc", "#ff9900", "#109618", "#990099", "#0099c6", "#dd4477" ],
+        colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6", "#dd4477" ],
         limit: 5,
         currentColor: 0,
         bids: [],
@@ -117,7 +117,8 @@ let initialState = {
             granularity: 1,
             binsFunc: width => Math.floor(width / 1),
             // kernel: x => Math.pow(Math.E, -50*x*x)
-            kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
+            // kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
+            kernel: x => x < 0? Math.E: Math.pow(Math.E, -50*x*x)
         }
     },
     attributeChartSpec: {
@@ -496,7 +497,11 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    expanded: {}
+                    expanded: {},
+                    charts: {
+                        ...state.referenceTree.charts,
+                        activeSelectionId: null
+                    }
                 },
                 highlight: {
                     ...state.highlight,

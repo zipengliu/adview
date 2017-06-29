@@ -5,7 +5,7 @@
 import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {scaleLinear, hsl, extent} from 'd3';
+import {scaleLinear, hcl, extent} from 'd3';
 import {Tabs, Tab, Button, ButtonGroup, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
@@ -38,6 +38,7 @@ class DendrogramContainer extends Component {
                 >
                     <AggregatedDendrogram data={t} spec={spec} mode={mode}
                                           isReferenceTree={t.tid === this.props.referenceTid}
+                                          isComparing={t.tid === this.props.comparingTid}
                                           hoveredTrees={this.props.hoveredTrees}
                                           onToggleBlock={this.props.onToggleBlock}
                                           rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
@@ -303,7 +304,7 @@ let sortLayouts = createSelector(
 
 let getKDEBins = (n, values, kernel, color) => {
     let valueExtent = extent(values);
-    let hslColor = hsl(color);
+    let hclColor = hcl(color);
     if (valueExtent[0] === valueExtent[1]) {
         // No uncertainty
         return false;
@@ -320,8 +321,8 @@ let getKDEBins = (n, values, kernel, color) => {
         if (b > max) max = b;
         bins.push(b);
     }
-    scale = scaleLinear().domain([min, max]).range([1, hslColor.l]);
-    let colorBins = bins.map(scale).map(l => hsl(hslColor.h, hslColor.s, l).toString());
+    scale = scaleLinear().domain([min, max]).range([150, hclColor.l]);
+    let colorBins = bins.map(scale).map(l => hcl(hclColor.h, hclColor.c, l).toString());
     return colorBins;
 };
 
@@ -435,6 +436,7 @@ let mapStateToProps = (state) => {
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
         dendrograms,
+        comparingTid: state.pairwiseComparison.tid,
         rangeSelection: state.cbAttributeExplorer.activeSelectionId === 0? {
             attrName: 'support',
             range: state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId].range

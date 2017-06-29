@@ -46,7 +46,9 @@ class MainView extends Component {
                             <div className="chapter-title">
                                 <Glyphicon glyph="registration-mark"/>eference Tree
                                 {this.props.pairwiseComparison.tid &&
-                                <span style={{fontSize: '12px'}}> vs. {this.props.inputGroupData.trees[this.props.pairwiseComparison.tid].name}</span>
+                                <span style={{fontSize: '12px'}}> vs. {this.props.inputGroupData.trees[this.props.pairwiseComparison.tid].name}
+                                    <Glyphicon style={{marginLeft: '5px'}} glyph="eye-open"/>
+                                    </span>
                                 }
                             </div>
                             <ReferenceTreeContainer />

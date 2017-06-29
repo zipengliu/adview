@@ -11,7 +11,7 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees} = this.props;
+        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees, isComparing} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {trees, blocks, branches, num, total, selectedCnt, rangeSelected} = this.props.data;
@@ -45,10 +45,13 @@ class AggregatedDendrogram extends Component {
         let svgWidth = size + margin.left + margin.right;
         let svgHeight = size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0);
 
+        let isHighlighted = (!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num);
+
         return (
             <svg width={svgWidth} height={svgHeight}>
-                {rangeSelected && <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
-                {((!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num)) &&
+                {!isHighlighted && rangeSelected &&
+                <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+                {isHighlighted &&
                 <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
 
                 <g transform={`translate(${margin.left},${margin.top})`}>
@@ -56,9 +59,9 @@ class AggregatedDendrogram extends Component {
                     <g className="proportion" >
                         <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
                         <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
-                        {highlightTreeCnt > 0 &&
+                        {highlightTreeCnt > 0 && highlightTreeCnt < num &&
                         <rect x="0" y="0" width={numScale(highlightTreeCnt)} height={proportionBarHeight} className="highlight" />}
-                        {selectedCnt > 0 &&
+                        {selectedCnt > 0 && selectedCnt < num &&
                         <rect x="0" y="0" width={numScale(selectedCnt)} height={proportionBarHeight} className="selected" />}
 
                         <text x="0" y="0" dx="4" dy="9">{num}</text>
@@ -119,6 +122,10 @@ class AggregatedDendrogram extends Component {
                         </g>
                     </g>
                 </g>
+                {isComparing &&
+                <use xlinkHref="#comparing-tree-indicator-in-full" x={svgWidth - 16} y="0"
+                     width="12" height="12"/>
+                }
             </svg>
         )
     }

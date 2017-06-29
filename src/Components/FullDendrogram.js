@@ -72,15 +72,15 @@ class FullDendrogram extends Component {
 
             return (
                <g>
-                   {tree.tid !== referenceTree.id &&
-                   <rect className='comparing-tree-indicator' x="2" y="-4"
-                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
+                   {tree.tid !== referenceTree.id && false &&
+                   <use xlinkHref="#comparing-tree-indicator-in-full" x={dendrogram.treeBoundingBox.width - 10} y="5"
+                        width="16" height="16"/>
                    }
 
-                   {tree.tid !== referenceTree.id && rangeSelection && rangeSelection.cb && cbInRange &&
-                   <rect className='range-selected-cb-indicator' x="0" y="-4"
-                         width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />
-                   }
+                   {/*{tree.tid !== referenceTree.id && rangeSelection && rangeSelection.cb && cbInRange &&*/}
+                   {/*<rect className='range-selected-cb-indicator' x="0" y="-4"*/}
+                         {/*width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />*/}
+                   {/*}*/}
                    <g>
                        {highlightBoxes}
                    </g>
@@ -178,6 +178,9 @@ class FullDendrogram extends Component {
                     </symbol>
                     <symbol id="ref-tree-taxon-pointer-uncertain" viewBox="0 0 10 10">
                         <circle r={3} cx="4" cy="4" style={{fill: 'none', stroke: 'black', strokeWidth: '2px'}} />
+                    </symbol>
+                    <symbol id="comparing-tree-indicator-in-full" viewBox="0 0 16 16">
+                        <path d="M8 3c-3.489 0-6.514 2.032-8 5 1.486 2.968 4.511 5 8 5s6.514-2.032 8-5c-1.486-2.968-4.511-5-8-5zM11.945 5.652c0.94 0.6 1.737 1.403 2.335 2.348-0.598 0.946-1.395 1.749-2.335 2.348-1.181 0.753-2.545 1.152-3.944 1.152s-2.763-0.398-3.945-1.152c-0.94-0.6-1.737-1.403-2.335-2.348 0.598-0.946 1.395-1.749 2.335-2.348 0.061-0.039 0.123-0.077 0.185-0.114-0.156 0.427-0.241 0.888-0.241 1.369 0 2.209 1.791 4 4 4s4-1.791 4-4c0-0.481-0.085-0.942-0.241-1.369 0.062 0.037 0.124 0.075 0.185 0.114v0zM8 6.5c0 0.828-0.672 1.5-1.5 1.5s-1.5-0.672-1.5-1.5 0.672-1.5 1.5-1.5 1.5 0.672 1.5 1.5z"></path>
                     </symbol>
                 </defs>
             </svg>

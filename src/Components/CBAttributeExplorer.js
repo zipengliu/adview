@@ -56,7 +56,7 @@ class CBAttributeExplorer extends Component {
                 <div className="view-body panel-body">
 
                     <div>
-                        <span>For branch</span>
+                        <span>For reference tree branch</span>
                         <DropdownButton bsSize="xsmall" id="cb-ae-select-branch" title={expanded[activeExpandedBid]}
                                         style={{marginLeft: '5px'}}
                                         onSelect={this.props.onChangeActiveExpandedBranch}>

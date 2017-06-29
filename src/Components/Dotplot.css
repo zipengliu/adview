@@ -3,13 +3,12 @@
 }
 
 .dot.selected {
-    stroke: #e41a1c;
+    stroke: #000;
     /*stroke-dasharray: 1,1;*/
     stroke-width: 2px;
 }
 .dot.highlight {
-    stroke: steelblue !important;
-    stroke-width: 2px;
+    fill: #b82e2e !important;
 }
 
 .selecting-box {

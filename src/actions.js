@@ -21,7 +21,7 @@ function requestInputGroup(id) {
 export function fetchInputGroup(id) {
     return function (dispatch) {
         dispatch(requestInputGroup(id));
-        return fetch(baseUrl + '/input_groups/' + id).then(function(response) {
+        return fetch(baseUrl + '/dataset/' + id).then(function(response) {
             if (response.status >= 400) {
                 console.log("Bad response from server");
                 dispatch(fetchInputGroupFailure(response.statusText))
