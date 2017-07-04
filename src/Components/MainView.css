@@ -182,3 +182,7 @@
 .legends {
     font-size: 10px;
 }
+
+.panel-collapsed .table {
+    display: none !important;
+}

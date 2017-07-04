@@ -89,7 +89,7 @@ class FullDendrogram extends Component {
                            (<g key={d.bid}>
                                <line className={cn('branch-line', {expanded: expandedBranches.hasOwnProperty(d.bid),
                                    'range-selected': tree.tid === referenceTree.id && inRange(d),
-                                   'checking': tree.tid === referenceTree.id && referenceTree.checkingBranch === d.bid})}
+                                   'checking': referenceTree.checkingBranchTid === tree.tid && referenceTree.checkingBranch === d.bid})}
                                      x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
                                {tree.tid === referenceTree.id && this.props.metricBranch === d.bid && d.bid != null &&
                                <circle className="metric-branch-indicator" r="4" cx={(d.x1 + d.x2) / 2} cy={d.y1} />}
@@ -122,8 +122,10 @@ class FullDendrogram extends Component {
                        {responsiveBoxes.map(d =>
                            <rect className={cn("box")}
                                  x={d.x} y={d.y} width={d.width} height={d.height}
-                                 onMouseEnter={tree.tid === referenceTree.id && branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, d.bid): null}
-                                 onMouseLeave={tree.tid === referenceTree.id && branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, null): null}
+                                 onMouseEnter={branches.hasOwnProperty(d.bid) && !branches[d.bid].isLeaf?
+                                     this.props.onToggleCheckingBranch.bind(null, d.bid, tree.tid): null}
+                                 onMouseLeave={tree.tid === referenceTree.checkingBranchTid
+                                 && branches.hasOwnProperty(d.bid) && !branches[d.bid].isLeaf? this.props.onToggleCheckingBranch.bind(null, null, null): null}
                                  onClick={(e) => {
                                      console.log('clicking on :', d.bid, 'ctrl: ', e.ctrlKey, ' alt: ', e.altKey, 'meta: ', e.metaKey);
                                      let isCtrl = e.ctrlKey || e.metaKey;
@@ -373,7 +375,7 @@ function mapDispatchToProps(dispatch) {
         toggleHighlightMonophyly: (tid, bid, addictive=false) => {
             dispatch(toggleHighlightMonophyly(tid, bid, addictive));
         },
-        onToggleCheckingBranch: bid => {dispatch(toggleCheckingBranch(bid))},
+        onToggleCheckingBranch: (bid, tid) => {dispatch(toggleCheckingBranch(bid, tid))},
         onSelectBranch: (bid) => {
             dispatch(selectBranchOnFullDendrogram(bid));
         },

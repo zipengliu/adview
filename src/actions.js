@@ -51,6 +51,39 @@ function fetchInputGroupFailure(err) {
     }
 }
 
+export function makeConsensus(inputGroupId, tids) {
+    return function (dispatch) {
+        dispatch(makeConsensusRequest(tids));
+        let requestBody = new FormData();
+        requestBody.append('inputGroupId', inputGroupId);
+        requestBody.append('trees', tids.join(','));
+        return fetch(baseUrl + '/consensus', {method: 'POST', body: requestBody}).then(function (response) {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(fetchInputGroupFailure(response.statusText))
+            }
+            return response.json();
+        }).then(function (data) {
+            console.log('Get consensus tree succeeded!');
+            dispatch(makeConsensusSuccess(data));
+        }).catch(function (error) {
+            dispatch(makeConsensusFailure(error));
+        })
+    }
+}
+
+function makeConsensusRequest(tids) {
+    return {type: TYPE.MAKE_CONSENSUS_REQUEST, tids}
+}
+
+function makeConsensusSuccess(data) {
+    return {type: TYPE.MAKE_CONSENSUS_SUCCESS, data}
+}
+
+function makeConsensusFailure(error) {
+    return {type: TYPE.MAKE_CONSENSUS_FAILURE, error}
+}
+
 export function toggleHighlightMonophyly(tid, bid, addictive=false) {
     return {
         type: TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY,
@@ -58,8 +91,8 @@ export function toggleHighlightMonophyly(tid, bid, addictive=false) {
     }
 }
 
-export function toggleCheckingBranch(bid) {
-    return {type: TYPE.TOGGLE_CHECKING_BRANCH, bid};
+export function toggleCheckingBranch(bid, tid) {
+    return {type: TYPE.TOGGLE_CHECKING_BRANCH, bid, tid};
 }
 
 export function toggleUniversalBranchLength() {
@@ -358,4 +391,12 @@ export function clearSelectedTrees() {
 
 export function toggleRefAttributeExplorer() {
     return {type: TYPE.TOGGLE_REFERENCE_TREE_ATTRIBUTE_EXPLORER};
+}
+
+export function toggleTreeDistributionCollapse() {
+    return {type: TYPE.TOGGLE_TREE_DISTRIBUTION_COLLAPSE}
+}
+
+export function toggleBipDistributionCollapse() {
+    return {type: TYPE.TOGGLE_BIP_DISTRIBUTION_COLLAPSE}
 }

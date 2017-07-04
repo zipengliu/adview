@@ -28,7 +28,7 @@
 
 .attribute-chart .slider .control {
     fill: purple;
-    cursor: pointer;
+    cursor: col-resize;
 }
 
 .attribute-chart .slider .selected-area {

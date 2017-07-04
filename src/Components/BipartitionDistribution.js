@@ -5,15 +5,16 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {scaleLinear} from 'd3';
+import cn from 'classnames';
 import {Table, Glyphicon} from 'react-bootstrap';
-import {toggleHighlightTrees, toggleSelectTrees} from '../actions';
+import {toggleHighlightTrees, toggleSelectTrees, toggleBipDistributionCollapse} from '../actions';
 import {getHighlightProportion, clusterSelector} from './TreeDistribution';
 
 
 class BipartitionDistribution extends Component {
     render() {
         let {expandedBranches, distributions, numBips} = this.props;
-        let {tooltipMsg} = this.props.bipartitionDistribution;
+        let {tooltipMsg, collapsed} = this.props.bipartitionDistribution;
         let expandedArr = Object.keys(expandedBranches);
 
         let renderBars = (d, bid) => {
@@ -55,9 +56,13 @@ class BipartitionDistribution extends Component {
         };
 
         return (
-            <div id="bip-distribution" className="view panel panel-default">
+            <div id="bip-distribution" className={cn("view panel panel-default", {'panel-collapsed': collapsed})}>
                 <div className="view-header panel-heading">
-                    <div className="view-title">Bipartition Distribution</div>
+                    <div className="view-title">Bipartition Distribution
+                        <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={this.props.onToggleCollapsed}>
+                            <Glyphicon glyph={collapsed? 'th-list': 'minus'}/>
+                        </span>
+                    </div>
                 </div>
 
                 <Table condensed bordered>
@@ -119,6 +124,7 @@ let mapStateToProps = state => {
 let mapDispatchToProps = dispatch => ({
     onHighlightTrees: (tids, msg) => {dispatch(toggleHighlightTrees(tids, msg, true))},
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
+    onToggleCollapsed: () => {dispatch(toggleBipDistributionCollapse())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BipartitionDistribution);

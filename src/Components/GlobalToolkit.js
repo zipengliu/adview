@@ -4,25 +4,37 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
+import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
-    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing} from '../actions';
+    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing, makeConsensus} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
 
 class GlobalToolkit extends Component {
     render() {
-        let {selectedTrees, cb} = this.props;
+        let {selectedTrees, cb, inputGroupId, consensusTrees} = this.props;
+        let selectedTids = BitSet(selectedTrees.map(tid => tid.substring(1)));
+        let isConsensusNotConsistent = consensusTrees && this.props.isComparingConsensus && !selectedTids.equals(consensusTrees);
 
         return (
             <div id="global-toolkit" className="panel panel-default">
                 <div className="panel-body">
                     <div>
-                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-compare">Compare tree with the reference tree in detail</Tooltip>}>
-                            <Button bsSize="xsmall" disabled={selectedTrees.length !== 1|| selectedTrees[0] === this.props.referenceTid}
-                                    onClick={this.props.onCompareWithReference.bind(null, selectedTrees[0])}>
-                                <Glyphicon glyph="zoom-in" /><span className="glyph-text">pairwise compare</span>
-                            </Button>
-                        </OverlayTrigger>
+                        <ButtonGroup bsSize="xsmall">
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-compare">Compare tree with the reference tree in detail</Tooltip>}>
+                                <Button disabled={selectedTrees.length !== 1|| selectedTrees[0] === this.props.referenceTid}
+                                        onClick={this.props.onCompareWithReference.bind(null, selectedTrees[0])}>
+                                    <Glyphicon glyph="zoom-in" /><span className="glyph-text">pairwise compare</span>
+                                </Button>
+                            </OverlayTrigger>
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-consensus">Make a consensus tree of selected trees and pairwise compare with the reference tree</Tooltip>}>
+                                <Button disabled={selectedTrees.length < 2}
+                                        onClick={this.props.onMakeConsensus.bind(null, inputGroupId, selectedTrees)}>
+                                    <Glyphicon glyph="zoom-in" /><span className="glyph-text">{isConsensusNotConsistent? 're-':''}make consensus</span>
+                                </Button>
+                            </OverlayTrigger>
+                        </ButtonGroup>
+
                         <ButtonGroup bsSize="xsmall" style={{margin: '0 10px'}}>
                             <OverlayTrigger placement="bottom" rootClose overlay={<Tooltip id="tooltip-reset">Clear all selected trees, expanded branches and highlights</Tooltip>}>
                                 <Button onClick={this.props.onClearAll}>
@@ -85,6 +97,8 @@ class GlobalToolkit extends Component {
 let mapStateToProps = state => ({
     sets: state.sets,
     selectedTrees: Object.keys(state.selectedTrees),
+    consensusTrees: state.consensusTrees,
+    isComparingConsensus: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1,
     inputGroupId: state.inputGroupData.inputGroupId,
     activeSetIndex: state.aggregatedDendrogram.activeSetIndex,
     referenceTid: state.referenceTree.id,
@@ -103,6 +117,7 @@ let mapDispatchToProps = dispatch => ({
     onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
 
     onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))},
+    onMakeConsensus: (inputGroupId, tids) => {dispatch(makeConsensus(inputGroupId, tids))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(GlobalToolkit);

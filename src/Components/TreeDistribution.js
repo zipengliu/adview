@@ -5,16 +5,17 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector, createSelectorCreator} from 'reselect';
+import cn from 'classnames';
 import {scaleLinear} from 'd3';
 import {Button, ButtonGroup, Table, Badge, Glyphicon} from 'react-bootstrap';
-import {toggleSubsetDistribution, toggleHighlightTrees, toggleSelectTrees} from '../actions';
+import {toggleSubsetDistribution, toggleHighlightTrees, toggleSelectTrees, toggleTreeDistributionCollapse} from '../actions';
 import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
 
 class TreeDistribution extends Component {
     render() {
         let {expandedBranches, sets, distributions} = this.props;
-        let {showSubsets, tooltipMsg} = this.props.treeDistribution;
+        let {showSubsets, tooltipMsg, collapsed} = this.props.treeDistribution;
         let numTrees = sets[0].tids.length;
         let expandedArr = Object.keys(expandedBranches);
 
@@ -56,9 +57,14 @@ class TreeDistribution extends Component {
         };
 
         return (
-            <div id="tree-distribution" className="view panel panel-default">
+            <div id="tree-distribution" className={cn("view panel panel-default", {'panel-collapsed': collapsed})}>
                 <div className="view-header panel-heading">
-                    <div className="view-title">Tree Distribution by Reference Partition</div>
+                    <div className="view-title">
+                        Tree Distribution by Reference Partition
+                        <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={this.props.onToggleCollapsed}>
+                            <Glyphicon glyph={collapsed? 'th-list': 'minus'}/>
+                        </span>
+                    </div>
                 </div>
 
                 <Table condensed bordered>
@@ -295,6 +301,7 @@ let mapDispatchToProps = dispatch => ({
     onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},
     onHighlightTrees: (tids, msg) => {dispatch(toggleHighlightTrees(tids, msg))},
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
+    onToggleCollapsed: () => {dispatch(toggleTreeDistributionCollapse())}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TreeDistribution);

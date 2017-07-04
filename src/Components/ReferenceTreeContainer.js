@@ -26,7 +26,7 @@ class ReferenceTreeContainer extends Component {
                         {/*</div>*/}
                     {/*</OverlayTrigger>*/}
                 {/*</div>*/}
-                <div className="view-body panel-body" ref={v => {this.viewBody = v}}>
+                <div className="view-body panel-body" >
                     {props.charts.show && !props.charts.float && <ReferenceTreeAttributeExplorer/>}
                     <div>
                         <ButtonGroup bsSize="xsmall">
@@ -71,13 +71,16 @@ class ReferenceTreeContainer extends Component {
                         }
                     </div>
 
-                    <FullDendrogram />
+                    <div ref={v => {this.viewBody = v}}>
+                        <FullDendrogram />
+                    </div>
 
                     {props.checkingBranch &&
-                    <div className="checking-branch-tooltip" style={{top: viewBodyPos.bottom + 'px', left: viewBodyPos.left + 'px'}}>
+                    <div className="checking-branch-tooltip" style={{top: viewBodyPos.top + 10 + 'px', left: viewBodyPos.right - 120 + 'px'}}>
                         {props.tooltip.map((a, i) =>
                             <div key={i}>
-                                {a.attribute}: {a.accessor(props.tree.branches[props.checkingBranch])}
+                                {a.attribute}: {a.accessor(props.checkingBranchTid === props.tree.tid?
+                                props.tree.branches[props.checkingBranch]: props.comparingTree.branches[props.checkingBranch])}
                             </div>)}
                     </div>
                     }
@@ -141,6 +144,7 @@ let mapStateToProps = state => ({
     universalBranchLen: state.referenceTree.universalBranchLen,
 
     checkingBranch: state.referenceTree.checkingBranch,
+    checkingBranchTid: state.referenceTree.checkingBranchTid,
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,
     taxaList: state.taxaList,

@@ -3,7 +3,8 @@
  */
 
 import * as TYPE from './actionTypes';
-import {scaleOrdinal, scaleLinear, schemeCategory10} from 'd3-scale';
+import {scaleLinear} from 'd3-scale';
+import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
 import BipartitionList from './bipartitions';
 
@@ -46,6 +47,7 @@ let initialState = {
     },
     referenceTree: {
         id: null,
+        checkingBranchTid: null,
         checkingBranch: null,           // the branch that is being displayed in details
         expanded: {},
         isFetching: false,
@@ -60,9 +62,9 @@ let initialState = {
             attributes: [
                 {propertyName: 'support', displayName: 'support'},
                 {propertyName: 'gsf', displayName: '%exact match (GSF)'}],
-            activeSelectionId: null,
+            activeSelectionId: 0,
             selection: [
-                {isMoving: false, range: [0, 1], attribute: 'support'},
+                {isMoving: false, range: [0.6, 0.9], attribute: 'support'},
                 {isMoving: false, range: [0, 1], attribute: 'gsf'},
             ]
         },
@@ -94,6 +96,7 @@ let initialState = {
         selectingArea: null
     },
     selectedTrees: {},
+    consensusTrees: null,
     hoveredTrees: {},
     aggregatedDendrogram: {
         activeSetIndex: 0,
@@ -147,10 +150,12 @@ let initialState = {
         selected: {}
     },
     treeDistribution: {
+        collapsed: false,
         showSubsets: false,
         tooltipMsg: null,
     },
     bipartitionDistribution: {
+        collapsed: true,
         tooltipMsg: null,
     }
 };
@@ -437,7 +442,8 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
-                    checkingBranch: action.bid
+                    checkingBranch: action.bid,
+                    checkingBranchTid: action.tid
                 }
             };
         case TYPE.TOGGLE_UNIVERSAL_BRANCH_LENGTH:
@@ -1098,7 +1104,23 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 selectedTrees: action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids)
             };
+        case TYPE.TOGGLE_TREE_DISTRIBUTION_COLLAPSE:
+            return {
+                ...state,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    collapsed: !state.treeDistribution.collapsed
+                }
+            };
 
+        case TYPE.TOGGLE_BIP_DISTRIBUTION_COLLAPSE:
+            return {
+                ...state,
+                bipartitionDistribution: {
+                    ...state.bipartitionDistribution,
+                    collapsed: !state.bipartitionDistribution.collapsed
+                }
+            };
 
         case TYPE.CLEAR_SELECTED_TREES:
             return {
@@ -1127,6 +1149,60 @@ function visphyReducer(state = initialState, action) {
                         ...state.referenceTree.charts,
                         float: !state.referenceTree.charts.float
                     }
+                }
+            };
+
+        case TYPE.MAKE_CONSENSUS_REQUEST:
+            return {
+                ...state,
+                consensusTrees: BitSet(action.tids.map(tid => tid.substring(1))),
+                toast: {
+                    ...state.toast,
+                    msg: `Building consensus tree for the selected trees (${action.tids.length}).`
+                }
+            };
+        case TYPE.MAKE_CONSENSUS_SUCCESS:
+            // Copy from the TYPE.COMPARE_WITH_REFERENCE
+            let consensusTid = action.data.tid;
+            newBids = state.highlight.bids.map(h => (
+                {...h, tgt: consensusTid,
+                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                        getTreeByTid(state, consensusTid))}
+            ));
+            newColors = state.highlight.colors;
+            return {
+                ...state,
+                inputGroupData: {
+                    ...state.inputGroupData,
+                    trees: {
+                        ...state.inputGroupData.trees,
+                        [action.data.tid]: {
+                            ...action.data,
+                            branches: prepareBranches(action.data.branches, action.data.rootBranch, [0, 1]),
+                            missing: findMissing(action.data, state.inputGroupData.entities)
+                        }
+                    }
+                },
+                pairwiseComparison: {
+                    ...state.pairwiseComparison,
+                    tid: consensusTid
+                },
+                highlight: {
+                    ...state.highlight,
+                    bids: newBids,
+                    colors: newColors
+                },
+                toast: {
+                    ...state.toast,
+                    msg: null
+                }
+            };
+        case TYPE.MAKE_CONSENSUS_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Failed to build consensus tree: ' + action.error.toString()
                 }
             };
 

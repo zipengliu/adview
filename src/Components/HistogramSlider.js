@@ -87,6 +87,12 @@ let HistogramSlider = props => {
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'right'): null}/>
                         <rect className="selected-area" x={controlPos[0]} y={-spec.chartHeight - 3}
                               width={controlPos[1] - controlPos[0]} height={spec.chartHeight + 6} />
+                        <use xlinkHref="#slider-handle-left" x={controlPos[0] - 5} y={-spec.chartHeight + 10} width={5} height={30}
+                             className="control"
+                             onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
+                        <use xlinkHref="#slider-handle-right" x={controlPos[1]} y={-spec.chartHeight + 10} width={5} height={30}
+                             className="control"
+                             onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'right'): null}/>
                     </g>
                     }
                 </g>
@@ -94,6 +100,17 @@ let HistogramSlider = props => {
             <text x={spec.margin.left} y="24">
                 {hasData && selection && `   (${rangeFormat(selection.range[0])} - ${rangeFormat(selection.range[1])})`}
             </text>
+
+            <symbol id="slider-handle-left" viewBox="0 0 5 30">
+                <rect x="0" y="0" width="10" height="30" rx="4" ry="4"
+                      style={{stroke: 'black', strokeWidth: '1px', fill: 'grey', fillOpacity: '.3'}} />
+                <line x1="4" y1="10" x2="4" y2="20" style={{stroke: 'black', strokeWidth: '1px'}} />
+            </symbol>
+            <symbol id="slider-handle-right" viewBox="0 0 5 30">
+                <rect x="-5" y="0" width="10" height="30" rx="4" ry="4"
+                      style={{stroke: 'black', strokeWidth: '1px', fill: 'grey', fillOpacity: '.3'}} />
+                <line x1="1" y1="10" x2="1" y2="20" style={{stroke: 'black', strokeWidth: '1px'}} />
+            </symbol>
         </svg>
     )
 };
