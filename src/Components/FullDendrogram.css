@@ -85,3 +85,9 @@ rect.reference-tree-indicator {
     font-size: 10px;
     color: #fff;
 }
+
+.reference-tree-extended-menu {
+    position: fixed;
+    z-index: 200;
+    display: block;
+}

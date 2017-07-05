@@ -7,8 +7,8 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {scaleLinear} from 'd3';
-import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, changeDistanceMetric, toggleCheckingBranch,
-toggleHighlightDuplicate} from '../actions';
+import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, toggleCheckingBranch,
+    toggleHighlightDuplicate, toggleExtendedMenu} from '../actions';
 import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
@@ -128,17 +128,19 @@ class FullDendrogram extends Component {
                                  && branches.hasOwnProperty(d.bid) && !branches[d.bid].isLeaf? this.props.onToggleCheckingBranch.bind(null, null, null): null}
                                  onClick={(e) => {
                                      console.log('clicking on :', d.bid, 'ctrl: ', e.ctrlKey, ' alt: ', e.altKey, 'meta: ', e.metaKey);
+                                     e.stopPropagation();
+                                     e.preventDefault();
                                      let isCtrl = e.ctrlKey || e.metaKey;
-                                     if (e.altKey && isCtrl) {
-                                         if (branches.hasOwnProperty(d.bid) && this.props.metricBranch !== d.bid)
-                                             this.props.onChangeDistanceMetric(d.bid)
+                                     if (e.altKey) {
+                                         if (branches.hasOwnProperty(d.bid) && tree.tid === referenceTree.id)
+                                             this.props.onOpenExtendedMenu(d.bid, e.clientX, e.clientY);
                                      } else if (isCtrl) {
-                                         // TODO should allow missing to be expanded
-                                         if (branches.hasOwnProperty(d.bid))
+                                         if (branches.hasOwnProperty(d.bid) && tree.tid === referenceTree.id)
                                              this.props.onSelectBranch(d.bid);
                                      } else {
                                          this.props.toggleHighlightMonophyly(tree.tid, d.bid, e.shiftKey)
-                                     } }}
+                                     }
+                                 }}
                                  key={d.bid}>
                            </rect>)}
                    </g>
@@ -376,13 +378,9 @@ function mapDispatchToProps(dispatch) {
             dispatch(toggleHighlightMonophyly(tid, bid, addictive));
         },
         onToggleCheckingBranch: (bid, tid) => {dispatch(toggleCheckingBranch(bid, tid))},
-        onSelectBranch: (bid) => {
-            dispatch(selectBranchOnFullDendrogram(bid));
-        },
-        onChangeDistanceMetric: (bid) => {
-            dispatch(changeDistanceMetric('local', bid));
-        },
+        onSelectBranch: (bid) => {dispatch(selectBranchOnFullDendrogram(bid))},
         onHighlightDup: eid => {dispatch(toggleHighlightDuplicate(eid))},
+        onOpenExtendedMenu: (bid, x, y) => {dispatch(toggleExtendedMenu(bid, x, y))},
     }
 }
 

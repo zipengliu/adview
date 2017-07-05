@@ -54,6 +54,9 @@ let initialState = {
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
         universalBranchLen: false,
+        extendedMenu: {
+            bid: null,                  // The bid of the extensive menu that is triggered by
+        },
 
         charts: {
             show: true,
@@ -419,6 +422,12 @@ function visphyReducer(state = initialState, action) {
                 // do not cancel or add, signal to the user
                 return {
                     ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        extendedMenu: {
+                            bid: null
+                        }
+                    },
                     toast: {
                         msg: 'This monophyly is already highlighted.  If you want to undo the highlight, ' +
                         'please click the monophyly that triggers this highlight (the one with silhouette)'
@@ -428,11 +437,23 @@ function visphyReducer(state = initialState, action) {
                 // cancel highlight
                 return {
                     ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        extendedMenu: {
+                            bid: null
+                        }
+                    },
                     highlight: removeHighlightGroup(state.highlight, highlightIdx)
                 };
             } else {
                 return {
                     ...state,
+                    referenceTree: {
+                        ...state.referenceTree,
+                        extendedMenu: {
+                            bid: null
+                        }
+                    },
                     highlight: addHighlightGroup(state, action)
                 };
             }
@@ -484,7 +505,10 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
-                    expanded: newExpanded
+                    expanded: newExpanded,
+                    extendedMenu: {
+                        bid: null
+                    }
                 },
                 highlight: newHighlights,
                 cbAttributeExplorer: {
@@ -492,12 +516,7 @@ function visphyReducer(state = initialState, action) {
                     activeExpandedBid: newActiveEB,
                     activeSelectionId: newActiveEB === state.cbAttributeExplorer.activeExpandedBid?
                         state.cbAttributeExplorer.activeSelectionId: null
-                }
-                // aggregatedDendrogram: {          // Falls back to remainder layout
-                //     ...state.aggregatedDendrogram,
-                //     mode: Object.keys(newExpanded).length > 2 && state.aggregatedDendrogram.mode.indexOf('cluster') === -1?
-                //         'remainder': state.aggregatedDendrogram.mode
-                // }
+                },
             });
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
@@ -534,6 +553,16 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     highlightEntities: action.e? [action.e]: []
+                }
+            };
+        case TYPE.REROOT:
+            // TODO
+            return {
+                ...state,
+                referenceTree: {
+                    extendedMenu: {
+                        bid: null
+                    }
                 }
             };
 
@@ -643,6 +672,12 @@ function visphyReducer(state = initialState, action) {
                 toast: {
                     ...state.toast,
                     msg: 'Calculating overview...'
+                },
+                referenceTree: {
+                    ...state.referenceTree,
+                    extendedMenu: {
+                        bid: null
+                    }
                 }
             };
         case TYPE.CHANGE_DISTANCE_METRIC_SUCCESS:
@@ -1148,6 +1183,18 @@ function visphyReducer(state = initialState, action) {
                     charts: {
                         ...state.referenceTree.charts,
                         float: !state.referenceTree.charts.float
+                    }
+                }
+            };
+        case TYPE.TOGGLE_EXTENDED_MENU:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    extendedMenu: {
+                        bid: action.bid,
+                        x: action.x,
+                        y: action.y + 10
                     }
                 }
             };

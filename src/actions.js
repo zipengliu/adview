@@ -315,6 +315,27 @@ export function togglePopAttributeExplorer() {
     return {type: TYPE.TOGGLE_POP_ATTRIBUTE_EXPLORER};
 }
 
+export function toggleExtendedMenu(bid, x, y) {
+    return {type: TYPE.TOGGLE_EXTENDED_MENU, bid, x, y};
+}
+
+export function reroot(bid) {
+    return {type: TYPE.REROOT, bid};
+}
+
+// Re-rooting is a blocking procedure at frontend currently. Should move to backend and run async later
+// export function rerootRequest(bid) {
+//     return {type: TYPE.REROOT_REQUEST, bid};
+// }
+//
+// export function rerootSuccess(data) {
+//     return {type: TYPE.REROOT_SUCCESS, data};
+// }
+//
+// export function rerootFailure(error) {
+//     return {type: TYPE.REROOT_FAILURE, error};
+// }
+
 export function fetchDatasets() {
     return function (dispatch) {
         dispatch(requestDatasets());
