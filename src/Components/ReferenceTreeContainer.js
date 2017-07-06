@@ -3,77 +3,61 @@
  */
 
 import React, {Component} from 'react';
-import {OverlayTrigger, ButtonGroup, Button, Tooltip, Glyphicon, Badge, MenuItem} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip, MenuItem} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
 import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
-import {compareWithReference, toggleUniversalBranchLength, toggleTaxaList, toggleRefAttributeExplorer,
+import {compareWithReference, toggleUniversalBranchLength,
     toggleExtendedMenu, changeDistanceMetric, selectBranchOnFullDendrogram, toggleHighlightMonophyly, reroot} from '../actions';
 import {createMappingFromArray} from '../utils';
 
 class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
-        let {extendedMenu} = props;
+        let {tree, comparingTree, extendedMenu, universalBranchLen} = props;
         let viewBodyPos = this.viewBody? this.viewBody.getBoundingClientRect(): {bottom: 0, left: 0};
 
         return (
             <div className="view panel panel-default" style={{height: '100%'}} id="reference-tree">
-                {/*<div className="view-header panel-heading">*/}
-                    {/*<OverlayTrigger placement="bottom" overlay={<Tooltip id="ref-tree-title">{props.tree.name +*/}
-                    {/*(props.comparingTree? (' (reference tree) vs. ' + props.comparingTree.name) + ' (comparing tree)': '')}</Tooltip>}>*/}
-                        {/*<div className="view-title" style={{textOverflow: 'ellipsis', whiteSpace: 'nowrap', overflow: 'hidden'}}>*/}
-                            {/*Reference Tree ({props.tree.name})*/}
-                            {/*{props.comparingTree? ` vs. ${props.comparingTree.name}`: ''}*/}
-                        {/*</div>*/}
-                    {/*</OverlayTrigger>*/}
-                {/*</div>*/}
                 <div className="view-body panel-body" >
                     {props.charts.show && !props.charts.float && <ReferenceTreeAttributeExplorer/>}
-                    <div>
-                        <ButtonGroup bsSize="xsmall">
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-toggle-ref-attr-explorer">
-                                {(props.charts.show? 'show': 'hide') + 'distribution of branch attributes'} </Tooltip>}>
-                                <Button onClick={props.toggleAE} active={props.charts.show}>
-                                    Attributes <Glyphicon glyph="signal"/>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-toggle-taxa-list">
-                                {props.taxaList.show? 'close taxa list': 'open taxa list'} </Tooltip>}>
-                                <Button onClick={props.toggleTaxaList} active={props.taxaList.show}>
-                                    <span>All taxa</span>
-                                    <Badge style={{marginLeft: '5px'}}>{props.numAllEntities}</Badge>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-branch-len">
-                                {props.universalBranchLen? 'Encode branch length': 'Use uniform branch length'} </Tooltip>}>
-                                <Button onClick={props.toggleBranchLen}>
-                                    {props.universalBranchLen? 'encoded': 'uniform'} branch length
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-import">Import a reference tree</Tooltip>}>
-                                <Button disabled>
-                                    import
-                                </Button>
-                            </OverlayTrigger>
-                        </ButtonGroup>
 
-                        {props.comparingTree &&
-                        <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-cancel-compare">Exit pairwise comparison</Tooltip>}>
-                            <Button bsSize="xsmall" bsStyle="primary" onClick={props.cancelCompare}>
-                                End pairwise comparison
-                            </Button>
-                        </OverlayTrigger>
-                        }
-                        {props.tree.missing &&
-                        <div style={{float: 'right', fontSize: '12px', marginRight: '10px'}}>
-                            #Taxa: {Object.keys(createMappingFromArray(props.tree.entities)).length}
-                            {props.comparingTree? ` vs. ${Object.keys(createMappingFromArray(props.comparingTree.entities)).length} `: ''}
-                        </div>
-                        }
+                    <div className="reference-tree-name">
+                        {tree.name} ({Object.keys(createMappingFromArray(tree.entities)).length} taxa)
+                        {comparingTree? ` vs. ${comparingTree.name} (${Object.keys(createMappingFromArray(props.comparingTree.entities)).length} taxa)`: ''}
                     </div>
 
-                    <div ref={v => {this.viewBody = v}} onClick={props.closeExtendedMenu}>
+                    <div>
+                        <ButtonGroup bsSize="xsmall">
+                            <Button active={!universalBranchLen} onClick={universalBranchLen? props.toggleBranchLen: Function.prototype}>
+                                Encode
+                            </Button>
+                            <Button active={universalBranchLen} onClick={!universalBranchLen? props.toggleBranchLen: Function.prototype}>
+                                Ignore
+                            </Button>
+                        </ButtonGroup>
+                        <div style={{display: 'inline-block', marginLeft: '5px', marginRight: '10px'}}> branch length.</div>
+
+                        {props.comparingTree &&
+                        <ButtonGroup bsSize="xsmall">
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-cancel-compare">Exit pairwise comparison</Tooltip>}>
+                                <Button bsStyle="primary" onClick={props.cancelCompare}>
+                                    End pairwise comparison
+                                </Button>
+                            </OverlayTrigger>
+                            {props.comparingTree.tid.indexOf('consensus') !== -1 &&
+                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-export-consensus">Export consensus tree to a file</Tooltip>}>
+                                <Button onClick={Function.prototype}>
+                                    Export consensus tree
+                                </Button>
+                            </OverlayTrigger>
+                            }
+                        </ButtonGroup>
+                        }
+
+                    </div>
+
+                    <div ref={v => {this.viewBody = v}} onClick={extendedMenu.bid? props.closeExtendedMenu: Function.prototype}>
                         <FullDendrogram />
                     </div>
 
@@ -82,7 +66,7 @@ class ReferenceTreeContainer extends Component {
                         style={{left: extendedMenu.x + 'px', top: extendedMenu.y + 'px'}}>
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-highlight-monophyly">
                             Highlight / De-highlight this monophyly with color here and in aggregated dendrograms</Tooltip>}>
-                            <MenuItem onSelect={() => {props.toggleHighlightMonophyly(props.tree.tid, extendedMenu.bid)}}>
+                            <MenuItem onSelect={() => {props.toggleHighlightMonophyly(tree.tid, extendedMenu.bid)}}>
                                 Highlight / De-highlight this monophyly
                             </MenuItem>
                         </OverlayTrigger>
@@ -111,8 +95,8 @@ class ReferenceTreeContainer extends Component {
                     <div className="checking-branch-tooltip" style={{top: viewBodyPos.top + 10 + 'px', left: viewBodyPos.right - 120 + 'px'}}>
                         {props.tooltip.map((a, i) =>
                             <div key={i}>
-                                {a.attribute}: {a.accessor(props.checkingBranchTid === props.tree.tid?
-                                props.tree.branches[props.checkingBranch]: props.comparingTree.branches[props.checkingBranch])}
+                                {a.attribute}: {a.accessor(props.checkingBranchTid === tree.tid?
+                                tree.branches[props.checkingBranch]: props.comparingTree.branches[props.checkingBranch])}
                             </div>)}
                     </div>
                     }
@@ -169,7 +153,6 @@ class ReferenceTreeContainer extends Component {
 }
 
 let mapStateToProps = state => ({
-    numAllEntities: Object.keys(state.inputGroupData.entities).length,
     tree: state.inputGroupData.referenceTree,
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
@@ -180,14 +163,11 @@ let mapStateToProps = state => ({
     checkingBranchTid: state.referenceTree.checkingBranchTid,
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,
-    taxaList: state.taxaList,
 });
 
 let mapDispatchToProps = dispatch => ({
     cancelCompare: () => {dispatch(compareWithReference(null))},
     toggleBranchLen: () => {dispatch(toggleUniversalBranchLength())},
-    toggleTaxaList: () => {dispatch(toggleTaxaList())},
-    toggleAE: () => {dispatch(toggleRefAttributeExplorer())},
     closeExtendedMenu: () => {dispatch(toggleExtendedMenu())},
     changeDistanceMetric: (bid) => {dispatch(changeDistanceMetric('local', bid))},
     selectBranch: (bid) => {dispatch(selectBranchOnFullDendrogram(bid))},

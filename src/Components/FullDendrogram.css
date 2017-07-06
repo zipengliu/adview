@@ -91,3 +91,9 @@ rect.reference-tree-indicator {
     z-index: 200;
     display: block;
 }
+
+.reference-tree-name {
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+}
