@@ -8,7 +8,7 @@ import {connect} from 'react-redux';
 import FullDendrogram from './FullDendrogram';
 import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import {compareWithReference, toggleUniversalBranchLength,
-    toggleExtendedMenu, changeDistanceMetric, selectBranchOnFullDendrogram, toggleHighlightMonophyly, reroot} from '../actions';
+    toggleExtendedMenu, changeDistanceMetric, selectBranchOnFullDendrogram, toggleHighlightMonophyly, rerootReferenceTree} from '../actions';
 import {createMappingFromArray} from '../utils';
 
 class ReferenceTreeContainer extends Component {
@@ -174,7 +174,7 @@ let mapDispatchToProps = dispatch => ({
     toggleHighlightMonophyly: (tid, bid, addictive=false) => {
         dispatch(toggleHighlightMonophyly(tid, bid, addictive));
     },
-    reroot: bid => {dispatch(reroot(bid))},
+    reroot: bid => {dispatch(rerootReferenceTree(bid))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

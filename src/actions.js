@@ -5,6 +5,7 @@
 import 'whatwg-fetch';
 import * as TYPE from './actionTypes';
 import {getCoordinates} from './utils';
+import {reroot} from './tree';
 
 // Fetch data actions
 const baseUrl = process.env.NODE_ENV === 'production'? 'http://visphy.cs.ubc.ca/api': 'http://localhost:33333';
@@ -319,22 +320,40 @@ export function toggleExtendedMenu(bid, x, y) {
     return {type: TYPE.TOGGLE_EXTENDED_MENU, bid, x, y};
 }
 
-export function reroot(bid) {
-    return {type: TYPE.REROOT, bid};
+export function rerootReferenceTree(rid) {
+    return function (dispatch, getState) {
+        let state = getState();
+        dispatch(rerootRequest(rid));
+
+        return new Promise(() => {
+            console.log('Re-rooting to ', rid);
+
+            // The timeout here is to yield to update cycle of React so that it can display the toast message
+            setTimeout(() => {
+                // Do the heavy lifting of re-root
+                let {trees, referenceTree} = state.inputGroupData;
+                let newReferenceTree = reroot(referenceTree, rid, trees);
+                dispatch(rerootSuccess(newReferenceTree));
+            }, 0);
+        }).catch(err => {
+            console.error(err);
+            dispatch(rerootFailure(err.toString()));
+        });
+    }
 }
 
 // Re-rooting is a blocking procedure at frontend currently. Should move to backend and run async later
-// export function rerootRequest(bid) {
-//     return {type: TYPE.REROOT_REQUEST, bid};
-// }
-//
-// export function rerootSuccess(data) {
-//     return {type: TYPE.REROOT_SUCCESS, data};
-// }
-//
-// export function rerootFailure(error) {
-//     return {type: TYPE.REROOT_FAILURE, error};
-// }
+export function rerootRequest(bid) {
+    return {type: TYPE.REROOT_REQUEST, bid};
+}
+
+export function rerootSuccess(data) {
+    return {type: TYPE.REROOT_SUCCESS, data};
+}
+
+export function rerootFailure(error) {
+    return {type: TYPE.REROOT_FAILURE, error};
+}
 
 export function fetchDatasets() {
     return function (dispatch) {

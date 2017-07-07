@@ -3,10 +3,10 @@
  */
 
 import * as TYPE from './actionTypes';
-import {scaleLinear} from 'd3-scale';
 import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
 import BipartitionList from './bipartitions';
+import {getGSF, getEntitiesByBid, prepareBranches, ladderize, findMissing, findEntities} from './tree';
 
 let initialState = {
     isFetching: false,
@@ -178,64 +178,6 @@ let getAvailableGlyph = sets => {
     return null;
 };
 
-let findMissing = (geneTree, allEntities) => {
-    let geneEntities = geneTree.entities;
-    if (geneEntities.length === Object.keys(allEntities).length) return [];
-    let m = createMappingFromArray(geneEntities);
-    let missing = [];
-    for (let eid in allEntities)
-        if (allEntities.hasOwnProperty(eid) && !m.hasOwnProperty(eid)) {
-            missing.push(eid);
-        }
-    return missing;
-};
-
-// Find entities in tree.  Return a list of highest bids that can cover all the entities
-let findEntities = (entities, tree) => {
-    let entitiesMapping = createMappingFromArray(entities);
-    let bids = [];
-    let covered = {};
-    // Traverse bottom-up
-    let traverse = (bid) => {
-        let b = tree.branches[bid];
-        if (b.left) {
-            traverse(b.left);
-            traverse(b.right);
-            if (covered[b.left] && covered[b.right]) {
-                covered[bid] = true
-            } else if (covered[b.left]) {
-                bids.push(b.left);
-            } else if (covered[b.right]) {
-                bids.push(b.right);
-            }
-        } else {
-            if (entitiesMapping.hasOwnProperty(b.entity)) {
-                covered[bid] = true;
-            }
-        }
-    };
-    traverse(tree.rootBranch);
-    // See if there is anything matched to the missing taxa
-    let {missing} = tree;
-    if (missing && missing.length) {
-        for (let i = 0; i < missing.length; i++) {
-            if (entitiesMapping.hasOwnProperty(missing[i])) {
-                bids.push('m-' + missing[i]);
-            }
-        }
-    }
-    return bids;
-};
-
-let getEntitiesByBid = (tree, bid) => {
-    if (bid ===  'missing_taxa') {
-        return tree.missing;
-    } else if (bid.startsWith('m-')) {
-        return [bid.substr(2)];
-    } else {
-        return tree.branches[bid].entities;
-    }
-};
 
 let getTreeByTid = (state, tid) => {
     return tid === state.referenceTree.id? state.inputGroupData.referenceTree: state.inputGroupData.trees[tid];
@@ -252,97 +194,8 @@ let createExpandedBranchID = exps => {
     return 'BOOM';
 };
 
-// let ladderize = (branches, rootBranch) => {
-//    let traverse = bid => {
-//        let b = branches[bid];
-//        if (!b.isLeaf) {
-//            let left = branches[b.left];
-//            let right = branches[b.right];
-//            if (left.entities.length > right.entities.length) {
-//                let tmp = b.left;
-//                b.left = b.right;
-//                b.right = tmp;
-//            }
-//            traverse(b.left);
-//            traverse(b.right);
-//        }
-//    };
-//    traverse(rootBranch);
-//    return branches;
-// };
 
-// calculate the percentage of trees that support a branch (gene support frequency)
-// n is the number of gene trees (or the number of trees in the tree collection, excluding the reference tree)
-let getGSF = (branches, cb, n, createNewObject=false) => {
-    let res = branches;
-    if (createNewObject) {
-        res = {};
-    }
-    for (let bid in branches) if (branches.hasOwnProperty(bid)) {
-        let b = branches[bid];
-        let cnt = 0;
-        for (let tid in b[cb]) if (b[cb].hasOwnProperty(tid)) {
-            cnt += b[cb][tid].jac === 1
-        }
-        if (createNewObject) {
-            res[bid] = {...b, gsf: cnt / n};
-        } else {
-            b.gsf = cnt / n;
-        }
-    }
-    return res;
-};
 
-// Fill in the field 'parent', 'entities' and also the in-order of every branch
-// Re-scale the support if necessary
-let prepareBranches = (branches, rootBranch, supportRange=null) => {
-    let supportScale = supportRange? scaleLinear().domain(supportRange).range([0, 1]): null;
-    let order = 0;
-    let dfs = (bid) => {
-        let b = branches[bid];
-        //  The range of the support in the raw dataset is [0, 100], we are going to scale it down to [0,1]
-        if (supportRange) {
-            b.support = supportScale(b.support);
-        }
-        if (b.left) {
-            b.isLeaf = false;
-            branches[b.left].parent = bid;
-            branches[b.right].parent = bid;
-            dfs(b.left);
-            b.order = order;
-            order += 1;
-            dfs(b.right);
-            b.entities = branches[b.left].entities.concat(branches[b.right].entities)
-        } else {
-            b.isLeaf = true;
-            b.entities = [b.entity];
-            b.order = order;
-            order += 1;
-        }
-    };
-    dfs(rootBranch);
-    branches[rootBranch].parent = rootBranch;
-
-    return branches;
-};
-
-// let getOrder = (branches, rootBranch) => {
-//     let order = 0;
-//     let dfs = (bid) => {
-//         let b = branches[bid];
-//         if (b.left) {
-//             dfs(b.left);
-//             b.order = order;
-//             order += 1;
-//             dfs(b.right);
-//         } else {
-//             b.order = order;
-//             order += 1;
-//         }
-//     };
-//     dfs(rootBranch);
-//     return branches;
-// };
 
 let findHighlight = (bids, tid, bid) => {
     for (let i = 0; i < bids.length; i++) {
@@ -555,14 +408,41 @@ function visphyReducer(state = initialState, action) {
                     highlightEntities: action.e? [action.e]: []
                 }
             };
-        case TYPE.REROOT:
-            // TODO
+        case TYPE.REROOT_REQUEST:
             return {
                 ...state,
                 referenceTree: {
+                    ...state.referenceTree,
                     extendedMenu: {
                         bid: null
                     }
+                },
+                toast: {
+                    ...state.toast,
+                    msg: 'Re-rooting...',
+                }
+            };
+        case TYPE.REROOT_SUCCESS:
+            return {
+                ...state,
+                inputGroupData: {
+                    ...state.inputGroupData,
+                    referenceTree: {
+                        ...action.data,
+                        branches: getGSF(action.data.branches, state.cb, Object.keys(state.inputGroupData.trees).length, false)
+                    }
+                },
+                toast: {
+                    ...state.toast,
+                    msg: null
+                }
+            };
+        case TYPE.REROOT_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: action.error
                 }
             };
 

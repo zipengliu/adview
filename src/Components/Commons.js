@@ -24,3 +24,4 @@ export function renderSubCollectionGlyph(glyph) {
         case 'diamond': return <div style={{...glyphStyle, backgroundColor: 'black', marginRight: '4px', transform: 'rotate(45deg)'}} />;
     }
 }
+
