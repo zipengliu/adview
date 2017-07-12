@@ -141,6 +141,20 @@ export let getEntitiesByBid = (tree, bid) => {
     }
 };
 
+
+export function getAllCB(referenceTree, rbid, trees, inGroupOnly=false) {
+    let cb = {}, cb2 = {};
+    for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+        cb[tid] = getCB(referenceTree, rbid, trees[tid], false, inGroupOnly);
+        if (referenceTree.missing.length || trees[tid].missing.length) {
+            cb2[tid] = getCB(referenceTree, rbid, trees[tid], true, false);
+        } else {
+            cb2[tid] = cb[tid];
+        }
+    }
+    return {cb, cb2};
+}
+
 // Does not deal with duplicates
 export function getCB(referenceTree, rbid, tree, withoutMissing=false, inGroupOnly=false) {
     let treeMissingDict = createMappingFromArray(tree.missing);
@@ -307,19 +321,13 @@ export function reroot(referenceTree, rid, trees) {
     // Re-calculate CB for those changed branches
     for (let i = 0; i < changedBranches.length; i++) {
         let bid = changedBranches[i];
-        branches[bid].cb = {};
-        branches[bid].cb2 = {};
-        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
-            branches[bid].cb[tid] = getCB(newReferenceTree, bid, trees[tid], false, false);
-            if (referenceTree.missing.length || trees[tid].missing.length) {
-                branches[bid].cb2[tid] = getCB(newReferenceTree, bid, trees[tid], true, false);
-            } else {
-                branches[bid].cb2[tid] = branches[bid].cb[tid];
-            }
-        }
+        let data = getAllCB(newReferenceTree, bid, trees, false);
+        Object.assign(branches[bid], data);
         console.log(bid, Object.keys(branches[bid].entities));
         console.log(branches[bid].cb);
     }
 
     return newReferenceTree;
 }
+
+export let getVirtualBid = group => 'virtual-' + group;

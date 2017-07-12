@@ -10,6 +10,7 @@ import {scaleLinear} from 'd3';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, toggleCheckingBranch,
     toggleHighlightDuplicate, toggleExtendedMenu} from '../actions';
 import {createMappingFromArray} from '../utils';
+import {getVirtualBid} from '../tree';
 
 import './FullDendrogram.css';
 
@@ -17,7 +18,7 @@ class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
              entities, rangeSelection} = this.props;
-        let {expanded, highlightEntities, highlightUncertainEntities} = referenceTree;
+        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified} = referenceTree;
         let isComparing = comparingTree !== null;
 
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
@@ -146,8 +147,14 @@ class FullDendrogram extends Component {
                    </g>
                    }
 
+                   {tree.tid === referenceTree.id && branchSpecs.filter(d => userSpecified.hasOwnProperty(d.bid)).map((d, i) =>
+                       <text key={i} className={`${expandedBranches.hasOwnProperty(getVirtualBid(userSpecified[d.bid]))? 'expanded-branch': 'user-specified-group'}-marker`}
+                             x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy={branches[d.bid].isLeaf? -1: -3}>
+                           {userSpecified[d.bid]}
+                       </text>
+                   )}
                    {branchSpecs.filter(d => expandedBranches.hasOwnProperty(d.bid)).map((d, i) =>
-                       <text key={i} x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy="-4" style={{fill: '#e41a1c', fontSize: '12px', fontWeight: 'bold'}}>
+                       <text key={i} className="expanded-branch-marker" x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy="-4">
                            {expandedBranches[d.bid]}
                        </text>
                    )}

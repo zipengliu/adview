@@ -3,19 +3,45 @@
  */
 
 import React, {Component} from 'react';
-import {OverlayTrigger, ButtonGroup, Button, Tooltip, MenuItem} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip, MenuItem, DropdownButton} from 'react-bootstrap';
 import {connect} from 'react-redux';
+import cn from 'classnames';
 import FullDendrogram from './FullDendrogram';
 import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
-import {compareWithReference, toggleUniversalBranchLength,
-    toggleExtendedMenu, changeDistanceMetric, selectBranchOnFullDendrogram, toggleHighlightMonophyly, rerootReferenceTree} from '../actions';
+import {compareWithReference, toggleUniversalBranchLength, toggleExtendedMenu, changeDistanceMetric,
+    selectBranchOnFullDendrogram, toggleHighlightMonophyly, rerootReferenceTree,
+    createUserSpecifiedTaxaGroup, addToUserSpecifiedTaxaGroup, removeFromUserSpecifiedTaxaGroup,
+    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup} from '../actions';
 import {createMappingFromArray} from '../utils';
+import {getVirtualBid} from '../tree';
 
 class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
-        let {tree, comparingTree, extendedMenu, universalBranchLen} = props;
+        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches} = props;
+        let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
+        let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
+        let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
+            (isExtSpecified && expandedBranches.hasOwnProperty(getVirtualBid(userSpecified[extendedMenu.bid])));
+        let groups = Object.keys(userSpecifiedByGroup);
+        let {branches} = tree;
         let viewBodyPos = this.viewBody? this.viewBody.getBoundingClientRect(): {bottom: 0, left: 0};
+
+        let isContained = (bid, gid) => {
+            let g = userSpecifiedByGroup[gid];
+            let goUp = (id, target) => {
+                if (id === target) return true;
+                if (id === tree.rootBranch) return false;
+                return goUp(branches[id].parent, target);
+            };
+            for (let i = 0; i < g.length; i++) {
+                // Check if bid is a descendant of g[i]
+                if (goUp(bid, g[i])) {
+                    return true;
+                }
+            }
+            return false;
+        };
 
         return (
             <div className="view panel panel-default" style={{height: '100%'}} id="reference-tree">
@@ -37,6 +63,15 @@ class ReferenceTreeContainer extends Component {
                             </Button>
                         </ButtonGroup>
                         <div style={{display: 'inline-block', marginLeft: '5px', marginRight: '10px'}}> branch length.</div>
+
+                        {groups.length > 0 &&
+                        <DropdownButton bsSize="xsmall" title="Match user specified taxa group" id="exp-user-specified-taxa-group"
+                        onSelect={(gid) => {props.expandUSTG(gid)}}>
+                            {groups.map((gid, i) =>
+                                <MenuItem key={i} eventKey={gid}>{gid}</MenuItem>
+                            )}
+                        </DropdownButton>
+                        }
 
                         {props.comparingTree &&
                         <ButtonGroup bsSize="xsmall">
@@ -64,30 +99,61 @@ class ReferenceTreeContainer extends Component {
                     {extendedMenu.bid &&
                     <ul className="dropdown-menu open reference-tree-extended-menu"
                         style={{left: extendedMenu.x + 'px', top: extendedMenu.y + 'px'}}>
+
+                        <MenuItem header>Branch exploration</MenuItem>
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-highlight-monophyly">
                             Highlight / De-highlight this monophyly with color here and in aggregated dendrograms</Tooltip>}>
-                            <MenuItem onSelect={() => {props.toggleHighlightMonophyly(tree.tid, extendedMenu.bid)}}>
-                                Highlight / De-highlight this monophyly
+                            <MenuItem disabled={isExtLeaf} onSelect={() => {props.toggleHighlightMonophyly(tree.tid, extendedMenu.bid)}}>
+                                Highlight / De-highlight
                             </MenuItem>
                         </OverlayTrigger>
 
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-expand-branch">
-                            Expand / Un-expand this branch in all views</Tooltip>}>
-                            <MenuItem onSelect={() => {props.selectBranch(extendedMenu.bid)}}>
-                                Expand / Un-expand this branch
+                            (Undo) Find matches of this monophyly in the tree collection</Tooltip>}>
+                            <MenuItem disabled={isExtLeaf} onSelect={() => {
+                                isExtSpecified && isExtExpanded? props.expandUSTG(userSpecified[extendedMenu.bid], true):
+                                    props.selectBranch(extendedMenu.bid)}}>
+                                {isExtExpanded? 'Undo match': 'Match'}
                             </MenuItem>
                         </OverlayTrigger>
+                        <MenuItem divider/>
+
+                        <MenuItem header>User specified taxa group</MenuItem>
+
+                        <MenuItem disabled={isExtSpecified} onSelect={() => {props.createUSTG(extendedMenu.bid)}}>
+                            Create new taxa group
+                        </MenuItem>
+                        <li className={cn("dropdown-submenu", {disabled: isExtSpecified || groups.length === 0})}>
+                            <a href="#">Add to an existent taxa group</a>
+                            {groups.length > 0 &&
+                            <ul className="dropdown-menu" >
+                                {groups.map((gid, i) =>
+                                    <MenuItem key={i} disabled={isContained(extendedMenu.bid, gid)}
+                                              onSelect={() => {props.addToUSTG(extendedMenu.bid, gid)}}>{gid}</MenuItem>
+                                )}
+                            </ul>}
+                        </li>
+                        <MenuItem disabled={!isExtSpecified || userSpecifiedByGroup[userSpecified[extendedMenu.bid]].length === 1}
+                                  onSelect={() => {props.removeFromUSTG(extendedMenu.bid, userSpecified[extendedMenu.bid])}}>
+                            Remove from its taxa group
+                        </MenuItem>
+                        <MenuItem disabled={!isExtSpecified} onSelect={() => {props.removeUSTG(userSpecified[extendedMenu.bid])}}>
+                            Delete this taxa group
+                        </MenuItem>
+                        <MenuItem divider/>
+
+                        <MenuItem header>Others</MenuItem>
 
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-re-compute">
                             Re-compute tree similarities by this branch (local similarity)</Tooltip>}>
-                            <MenuItem onSelect={() => {props.changeDistanceMetric(extendedMenu.bid)}}>
+                            <MenuItem disabled={isExtLeaf} onSelect={() => {props.changeDistanceMetric(extendedMenu.bid)}}>
                                 Re-compute Tree Similarity View
                             </MenuItem>
                         </OverlayTrigger>
 
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-re-root">
                             Re-root the reference tree to this branch</Tooltip>}>
-                            <MenuItem onSelect={() => {props.reroot(extendedMenu.bid)}}>Re-root reference tree</MenuItem>
+                            <MenuItem disabled={isExtLeaf} onSelect={() => {props.reroot(extendedMenu.bid)}}>Re-root reference tree</MenuItem>
                         </OverlayTrigger>
                     </ul>}
 
@@ -158,6 +224,9 @@ let mapStateToProps = state => ({
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
     universalBranchLen: state.referenceTree.universalBranchLen,
 
+    expandedBranches: state.referenceTree.expanded,
+    userSpecifiedByGroup: state.referenceTree.userSpecifiedByGroup,
+    userSpecified: state.referenceTree.userSpecified,
     extendedMenu: state.referenceTree.extendedMenu,
     checkingBranch: state.referenceTree.checkingBranch,
     checkingBranchTid: state.referenceTree.checkingBranchTid,
@@ -175,6 +244,11 @@ let mapDispatchToProps = dispatch => ({
         dispatch(toggleHighlightMonophyly(tid, bid, addictive));
     },
     reroot: bid => {dispatch(rerootReferenceTree(bid))},
+    createUSTG: bid => {dispatch(createUserSpecifiedTaxaGroup(bid))},
+    addToUSTG: (bid, group) => {dispatch(addToUserSpecifiedTaxaGroup(bid, group))},
+    removeFromUSTG: (bid, group) => {dispatch(removeFromUserSpecifiedTaxaGroup(bid, group))},
+    removeUSTG: group => {dispatch(removeUserSpecifiedTaxaGroup(group))},
+    expandUSTG: (group, collapse=false) => {dispatch(expandUserSpecifiedTxaGroup(group, collapse))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

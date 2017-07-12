@@ -355,6 +355,26 @@ export function rerootFailure(error) {
     return {type: TYPE.REROOT_FAILURE, error};
 }
 
+export function createUserSpecifiedTaxaGroup(bid) {
+    return {type: TYPE.CREATE_USER_SPECIFIED_TAXA_GROUP, bid};
+}
+
+export function addToUserSpecifiedTaxaGroup(bid, group) {
+    return {type: TYPE.ADD_TO_USER_SPECIFIED_TAXA_GROUP, bid, group};
+}
+
+export function removeFromUserSpecifiedTaxaGroup(bid, group) {
+    return {type: TYPE.REMOVE_FROM_USER_SPECIFIED_TAXA_GROUP, bid, group};
+}
+
+export function removeUserSpecifiedTaxaGroup(group) {
+    return {type: TYPE.REMOVE_USER_SPECIFIED_TAXA_GROUP, group};
+}
+
+export function expandUserSpecifiedTxaGroup(group, collapse=false) {
+    return {type: TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP, group, collapse};
+}
+
 export function fetchDatasets() {
     return function (dispatch) {
         dispatch(requestDatasets());

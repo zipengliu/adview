@@ -5,14 +5,14 @@
 import * as TYPE from './actionTypes';
 import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
-import BipartitionList from './bipartitions';
-import {getGSF, getEntitiesByBid, prepareBranches, ladderize, findMissing, findEntities} from './tree';
+// import BipartitionList from './bipartitions';
+import {getGSF, getEntitiesByBid, prepareBranches, findMissing, findEntities, getAllCB, getVirtualBid} from './tree';
 
 let initialState = {
     isFetching: false,
     isFetchFailed: false,
     inputGroupData: null,
-    bipartitions: {},
+    // bipartitions: {},
     datasets: [],
     toast: {
         msg: null,
@@ -50,12 +50,16 @@ let initialState = {
         checkingBranchTid: null,
         checkingBranch: null,           // the branch that is being displayed in details
         expanded: {},
+        userSpecified: {},              // mapping of the user specified taxa group pool, from bid to letter
+        userSpecifiedByGroup: {},       // reverse mapping of the above, maintain this for performance
         isFetching: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
         highlightUncertainEntities: [],
         universalBranchLen: false,
         extendedMenu: {
             bid: null,                  // The bid of the extensive menu that is triggered by
+            x: null,
+            y: null,
         },
 
         charts: {
@@ -157,10 +161,10 @@ let initialState = {
         showSubsets: false,
         tooltipMsg: null,
     },
-    bipartitionDistribution: {
-        collapsed: true,
-        tooltipMsg: null,
-    }
+    // bipartitionDistribution: {
+    //     collapsed: true,
+    //     tooltipMsg: null,
+    // }
 };
 
 
@@ -183,33 +187,48 @@ let getTreeByTid = (state, tid) => {
     return tid === state.referenceTree.id? state.inputGroupData.referenceTree: state.inputGroupData.trees[tid];
 };
 
-let createExpandedBranchID = exps => {
+let getNewGroupID = (exps, backward=false) => {
     let usedID = {};
     for (let bid in exps) if (exps.hasOwnProperty(bid))
         usedID[exps[bid]] = true;
     for (let i = 0; i < 26; i++) {
-        let id = String.fromCharCode(i + 65);
+        let id = String.fromCharCode(backward? 90 - i: i + 65);
         if (!usedID.hasOwnProperty(id)) return id;
     }
     return 'BOOM';
 };
 
 
-
-
+// Search the {tid, bid} in the bids data structure to locate the highlight group
+// Return the index if found, -1 is not found,
 let findHighlight = (bids, tid, bid) => {
     for (let i = 0; i < bids.length; i++) {
         let h = bids[i];
-        if ((h.src === tid && h[tid][0] === bid) || (h.tgt === tid && h[tid].length === 1 && h[tid][0] === bid)) {
-            return i;
-        }
-        if (h.tgt === tid) {
-            if (h[tid].length === 1 && h[tid][0] === bid) {
+        if (h.src === tid || h.tgt === tid) {
+            if (Array.isArray(bid)) {
+                // Check if the two arrays are the same
+                let temp = createMappingFromArray(h[tid]);
+                let found = true;
+                for (let j = 0; j < bid.length; j++) {
+                    if (!temp.hasOwnProperty(bid[i])) {
+                        found = false;
+                        break;
+                    }
+                }
+                if (found) return i;
+            } else if (h[tid].indexOf(bid) !== -1) {
                 return i;
             }
-            if (h[tid].indexOf(bid) !== -1) {
-                return -2;
-            }
+        }
+    }
+    return -1;
+};
+
+let findHighlightByVirtualBid = (bids, tid, virtualBid) => {
+    for (let i = 0; i < bids.length; i++) {
+        let h = bids[i];
+        if ((h.src === tid || h.tgt === tid) && (h.virtualBid === virtualBid)) {
+            return i;
         }
     }
     return -1;
@@ -228,9 +247,9 @@ let getNextColor = (colors) => {
     return -1;
 };
 
-let addHighlightGroup = (state, action) => {
+let addHighlightGroup = (state, action, updateGroupIdx=null) => {
     let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
-    let tgtEntities = getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
+    let tgtEntities = action.targetEntities || getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
     let bids;
 
     if (otherTid) {
@@ -239,13 +258,23 @@ let addHighlightGroup = (state, action) => {
 
     // create a new highlight group
     let newHighlightGroup = {
-        src: action.tid, tgt: otherTid, [action.tid]: [action.bid], entities: tgtEntities,
+        src: action.tid, tgt: otherTid, [action.tid]: action.bids || [action.bid], entities: tgtEntities,
     };
     if (otherTid) {
         newHighlightGroup[otherTid] = bids;
     }
+    if (action.virtualBid) {
+        newHighlightGroup.virtualBid = action.virtualBid;
+    }
+
     let nextColor;
-    if (state.highlight.bids.length < state.highlight.limit) {
+    if (updateGroupIdx !== null && updateGroupIdx >= 0) {
+        newHighlightGroup.color = state.highlight.bids[updateGroupIdx].color;
+        return {
+            ...state.highlight,
+            bids: state.highlight.bids.map((v, i) => i === updateGroupIdx? newHighlightGroup: v)
+        }
+    } else if (state.highlight.bids.length < state.highlight.limit) {
         nextColor = getNextColor(state.highlight.colors);
         newHighlightGroup.color = nextColor;
         return {
@@ -262,31 +291,32 @@ let addHighlightGroup = (state, action) => {
             bids: [...state.highlight.bids.slice(1), newHighlightGroup],
         }
     }
-
 };
 
+
 function visphyReducer(state = initialState, action) {
-    let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlightGroup, newHighlights;
+    let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup, newReferenceTree;
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             // Check if this branch is already highlighted
             highlightIdx = findHighlight(state.highlight.bids, action.tid, action.bid);
-            if (highlightIdx === -2) {
-                // do not cancel or add, signal to the user
-                return {
-                    ...state,
-                    referenceTree: {
-                        ...state.referenceTree,
-                        extendedMenu: {
-                            bid: null
-                        }
-                    },
-                    toast: {
-                        msg: 'This monophyly is already highlighted.  If you want to undo the highlight, ' +
-                        'please click the monophyly that triggers this highlight (the one with silhouette)'
-                    }
-                }
-            } else if (highlightIdx !== -1) {
+            // if (highlightIdx === -2) {
+            //     // do not cancel or add, signal to the user
+            //     return {
+            //         ...state,
+            //         referenceTree: {
+            //             ...state.referenceTree,
+            //             extendedMenu: {
+            //                 bid: null,
+            //             }
+            //         },
+            //         toast: {
+            //             msg: 'This monophyly is already highlighted.  If you want to undo the highlight, ' +
+            //             'please click the monophyly that triggers this highlight (the one with silhouette)'
+            //         }
+            //     }
+            // } else
+            if (highlightIdx !== -1) {
                 // cancel highlight
                 return {
                     ...state,
@@ -349,7 +379,7 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             } else {
-                newExpanded[action.bid] = createExpandedBranchID(newExpanded);
+                newExpanded[action.bid] = getNewGroupID(newExpanded, false);
                 if (highlightIdx === -1) {
                     newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
                 }
@@ -371,11 +401,67 @@ function visphyReducer(state = initialState, action) {
                         state.cbAttributeExplorer.activeSelectionId: null
                 },
             });
+        case TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP:
+            newExpanded = {...state.referenceTree.expanded};
+            let virtualBid = getVirtualBid(action.group);
+            highlightIdx = findHighlightByVirtualBid(state.highlight.bids, state.referenceTree.id, virtualBid);
+
+            if (action.collapse) {
+                // Clear the expansion
+                delete newExpanded[virtualBid];
+                newHighlights = highlightIdx >= 0? removeHighlightGroup(state.highlight, highlightIdx): state.highlight;
+                newReferenceTree = {
+                    ...state.inputGroupData.referenceTree,
+                    branches: {
+                        ...state.inputGroupData.referenceTree.branches,
+                    }
+                };
+                delete newReferenceTree.branches[virtualBid];
+            } else {
+                newExpanded[virtualBid] = action.group;
+                // Compile a list of all taxa in that taxa group and construct a virtual branch of these taxa
+                let bids = state.referenceTree.userSpecifiedByGroup[action.group];
+                let entities = bids.reduce((acc, bid) => (acc.concat(state.inputGroupData.referenceTree.branches[bid].entities)), []);
+
+                newReferenceTree = {
+                    ...state.inputGroupData.referenceTree,
+                    branches: {
+                        ...state.inputGroupData.referenceTree.branches,
+                        [virtualBid]: {
+                            entities,
+                        }
+                    }
+                };
+                let cbData = getAllCB(newReferenceTree, virtualBid, state.inputGroupData.trees, false);
+                Object.assign(newReferenceTree.branches[virtualBid], cbData);
+
+                // In case the taxa group is previously highlighted but now it got changed
+                newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bids, targetEntities: entities, virtualBid}, highlightIdx);
+            }
+
+            return {
+                ...state,
+                inputGroupData: {
+                    ...state.inputGroupData,
+                    referenceTree: newReferenceTree,
+                },
+                referenceTree: {
+                    ...state.referenceTree,
+                    expanded: newExpanded,
+                    extendedMenu: {
+                        bid: null
+                    }
+                },
+                highlight: newHighlights,
+            };
+
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
                 referenceTree: {
                     ...state.referenceTree,
                     expanded: {},
+                    userSpecified: {},
+                    userSpecifiedByGroup: {},
                     charts: {
                         ...state.referenceTree.charts,
                         activeSelectionId: null
@@ -443,6 +529,86 @@ function visphyReducer(state = initialState, action) {
                 toast: {
                     ...state.toast,
                     msg: action.error
+                }
+            };
+        case TYPE.CREATE_USER_SPECIFIED_TAXA_GROUP:
+            let newGroupId = getNewGroupID(state.referenceTree.userSpecified, true);
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    userSpecified: {
+                        ...state.referenceTree.userSpecified,
+                        [action.bid]: newGroupId,
+                    },
+                    userSpecifiedByGroup: {
+                        ...state.referenceTree.userSpecifiedByGroup,
+                        [newGroupId]: [action.bid]
+                    },
+                    extendedMenu: {
+                        ...state.referenceTree.extendedMenu,
+                        bid: null,
+                    }
+                }
+            };
+        case TYPE.ADD_TO_USER_SPECIFIED_TAXA_GROUP:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    userSpecified: {
+                        ...state.referenceTree.userSpecified,
+                        [action.bid]: action.group
+                    },
+                    userSpecifiedByGroup: {
+                        ...state.referenceTree.userSpecifiedByGroup,
+                        [action.group]: [...state.referenceTree.userSpecifiedByGroup[action.group], action.bid]
+                    },
+                    extendedMenu: {
+                        ...state.referenceTree.extendedMenu,
+                        bid: null,
+                    }
+                }
+            };
+        case TYPE.REMOVE_FROM_USER_SPECIFIED_TAXA_GROUP:
+            newUS = {...state.referenceTree.userSpecified};
+            delete newUS[action.bid];
+            // The triggered aciton ensures that the group has more than one branch, so the newUSGroup would NOT be empty
+            newUSGroup = state.referenceTree.userSpecifiedByGroup[action.group].filter(bid => bid !== action.bid);
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    userSpecified: newUS,
+                    userSpecifiedByGroup: {
+                        ...state.referenceTree.userSpecifiedByGroup,
+                        [action.group]: newUSGroup
+                    },
+                    extendedMenu: {
+                        ...state.referenceTree.extendedMenu,
+                        bid: null,
+                    }
+                }
+            };
+        case TYPE.REMOVE_USER_SPECIFIED_TAXA_GROUP:
+            newUS = {};
+            for (let bid in state.referenceTree.userSpecified)
+                if (state.referenceTree.userSpecified.hasOwnProperty(bid) && state.referenceTree.userSpecified[bid] !== action.group) {
+                    newUS[bid] = state.referenceTree.userSpecified[bid];
+                }
+            newUSByGroup = {...state.referenceTree.userSpecifiedByGroup};
+            delete newUSByGroup[action.group];
+
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    userSpecified: newUS,
+                    userSpecifiedByGroup: newUSByGroup,
+                    extendedMenu: {
+                        ...state.referenceTree.extendedMenu,
+                        bid: null,
+                    }
                 }
             };
 
@@ -556,7 +722,7 @@ function visphyReducer(state = initialState, action) {
                 referenceTree: {
                     ...state.referenceTree,
                     extendedMenu: {
-                        bid: null
+                        bid: null,
                     }
                 }
             };
@@ -672,7 +838,7 @@ function visphyReducer(state = initialState, action) {
                 // Entering pairwise comparison mode
                 newBids = state.highlight.bids.map(h => (
                     {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
                             getTreeByTid(state, action.tid))}
                 ));
                 newColors = state.highlight.colors;
@@ -835,7 +1001,7 @@ function visphyReducer(state = initialState, action) {
             return Object.assign({}, state, {
                 isFetching: false,
                 inputGroupData: action.data,
-                bipartitions: new BipartitionList(action.data.referenceTree, action.data.trees, action.data.entities),
+                // bipartitions: new BipartitionList(action.data.referenceTree, action.data.trees, action.data.entities),
                 toast: {
                     ...state.toast,
                     msg: null
@@ -976,10 +1142,10 @@ function visphyReducer(state = initialState, action) {
                     ...state.treeDistribution,
                     tooltipMsg: action.msg
                 },
-                bipartitionDistribution: action.isMsgForBip? {
-                    ...state.treeDistribution,
-                    tooltipMsg: action.msg
-                }: state.bipartitionDistribution
+                // bipartitionDistribution: action.isMsgForBip? {
+                //     ...state.treeDistribution,
+                //     tooltipMsg: action.msg
+                // }: state.bipartitionDistribution
             };
         case TYPE.TOGGLE_SELECT_TREES:
             // If select a different tree for pairwise comparison
@@ -996,7 +1162,7 @@ function visphyReducer(state = initialState, action) {
                     return true;
                 }).map(h => (
                     {...h, tgt: comparingTid,
-                        [comparingTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                        [comparingTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
                             getTreeByTid(state, comparingTid))}
                 ));
                 return {
@@ -1028,14 +1194,14 @@ function visphyReducer(state = initialState, action) {
                 }
             };
 
-        case TYPE.TOGGLE_BIP_DISTRIBUTION_COLLAPSE:
-            return {
-                ...state,
-                bipartitionDistribution: {
-                    ...state.bipartitionDistribution,
-                    collapsed: !state.bipartitionDistribution.collapsed
-                }
-            };
+        // case TYPE.TOGGLE_BIP_DISTRIBUTION_COLLAPSE:
+        //     return {
+        //         ...state,
+        //         bipartitionDistribution: {
+        //             ...state.bipartitionDistribution,
+        //             collapsed: !state.bipartitionDistribution.collapsed
+        //         }
+        //     };
 
         case TYPE.CLEAR_SELECTED_TREES:
             return {
@@ -1074,7 +1240,7 @@ function visphyReducer(state = initialState, action) {
                     extendedMenu: {
                         bid: action.bid,
                         x: action.x,
-                        y: action.y + 10
+                        y: action.y + 10,
                     }
                 }
             };
@@ -1093,7 +1259,7 @@ function visphyReducer(state = initialState, action) {
             let consensusTid = action.data.tid;
             newBids = state.highlight.bids.map(h => (
                 {...h, tgt: consensusTid,
-                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h[h.src][0]),
+                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
                         getTreeByTid(state, consensusTid))}
             ));
             newColors = state.highlight.colors;

@@ -17,7 +17,7 @@ import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import CBAttributeExplorer from './CBAttributeExplorer';
 import TreeDistribution from './TreeDistribution';
 import GlobalToolkit from './GlobalToolkit';
-import BipartitionDistribution from './BipartitionDistribution';
+// import BipartitionDistribution from './BipartitionDistribution';
 import {getWindowHeight} from '../utils';
 
 import './MainView.css';
@@ -65,7 +65,7 @@ class MainView extends Component {
                             <div style={{flex: '1 1 auto', display: 'flex', flexFlow: 'row nowrap'}}>
                                 <div className="views-column" style={{flex: '1 1 auto', marginRight: '10px'}}>
                                     <TreeDistribution />
-                                    {!inputGroupData.withParalogs && <BipartitionDistribution />}
+                                    {/*{!inputGroupData.withParalogs && <BipartitionDistribution />}*/}
                                     <DendrogramContainer />
                                 </div>
                                 <div className="views-column" style={{flex: '0 0 auto', width: '200px'}}>
