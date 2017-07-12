@@ -69,7 +69,18 @@ class FullDendrogram extends Component {
                     {entities[d.entity_id].name}
                 </text>);
 
-            let missingBranch = missing && missing.length? branchSpecs.filter(d => d.bid === 'missing_taxa')[0]: null;
+            // let missingBranch = missing && missing.length? branchSpecs.filter(d => d.bid === 'missing_taxa')[0]: null;
+            let firstMissingTaxa, missingBoxRect;
+            if (missing && missing.length) {
+                firstMissingTaxa = textSpecs[textSpecs.length - missing.length];
+                missingBoxRect = side === 'left'? {
+                    x: 5, width: firstMissingTaxa.x + 10
+                }: {
+                    x: firstMissingTaxa.x - 5, width: dendrogram.treeBoundingBox.width - firstMissingTaxa.x + 5
+                };
+                missingBoxRect.y = firstMissingTaxa.y - 5;
+                missingBoxRect.height = textSpecs[textSpecs.length - 1].y - firstMissingTaxa.y + 10;
+            }
 
             return (
                <g>
@@ -114,8 +125,12 @@ class FullDendrogram extends Component {
 
                    {missing && missing.length &&
                    <g>
-                       <text x={missingBranch.x1} y={missingBranch.y1} dx="1" dy="-2" textAnchor={side === 'left'? 'end': 'start'} >missing</text>
-                       <text x={missingBranch.x1} y={missingBranch.y1} dx="1" dy="12" textAnchor={side === 'left'? 'end': 'start'} >taxa</text>
+                       {/*<text x={missingBranch.x1} y={missingBranch.y1} dx="1" dy="-2" textAnchor={side === 'left'? 'end': 'start'} >missing</text>*/}
+                       {/*<text x={missingBranch.x1} y={missingBranch.y1} dx="1" dy="12" textAnchor={side === 'left'? 'end': 'start'} >taxa</text>*/}
+                       <text x={firstMissingTaxa.x - 5} y={firstMissingTaxa.y}
+                             style={{textAnchor: side === 'left'? 'start': 'end'}}>Missing </text>
+                       <rect {...missingBoxRect} rx="5" ry="5"
+                             style={{fill: 'none', stroke: 'grey', strokeWidth: '1px', strokeDasharray: '5,5'}} />
                    </g>}
 
                    {(!isStatic || isComparing) &&
@@ -282,20 +297,20 @@ let getDendrogramSpecs = createSelector(
         // Construct a tree for the missing taxa
         let missing = tree.missing;
         if (missing && missing.length) {
-            // curY += 20;
-            let missingTaxaBranchPos = (missing.length - 1) / 2 * spec.marginOnEntity + curY;
-            b['missing_taxa'] = {bid: 'missing_taxa', x1: topologyWidth - 80, x2: topologyWidth - 30,
-                y1: missingTaxaBranchPos, y2: missingTaxaBranchPos,
-                isLeaf: false};
-            boundingBox['missing_taxa'] = {x: topologyWidth - 80, y: curY - boxHalfWidth,
-                width: treeWidth - topologyWidth + 80 - spec.boundingBoxSideMargin,
-                height: missing.length * spec.marginOnEntity};
-            connectLines.push({x1: topologyWidth - 30, x2: topologyWidth - 30, y1: curY, y2: curY + (missing.length - 1) * spec.marginOnEntity});
+            curY += 20;
+            // let missingTaxaBranchPos = (missing.length - 1) / 2 * spec.marginOnEntity + curY;
+            // b['missing_taxa'] = {bid: 'missing_taxa', x1: topologyWidth - 80, x2: topologyWidth - 30,
+            //     y1: missingTaxaBranchPos, y2: missingTaxaBranchPos,
+            //     isLeaf: false};
+            // boundingBox['missing_taxa'] = {x: topologyWidth - 80, y: curY - boxHalfWidth,
+            //     width: treeWidth - topologyWidth + 80 - spec.boundingBoxSideMargin,
+            //     height: missing.length * spec.marginOnEntity};
+            // connectLines.push({x1: topologyWidth - 30, x2: topologyWidth - 30, y1: curY, y2: curY + (missing.length - 1) * spec.marginOnEntity});
             for (let i = 0; i < missing.length; i++) {
-                let bid = 'm-' + missing[i];
-                b[bid] = {bid, x1: topologyWidth - 30, x2: topologyWidth, y1: curY, y2: curY, isLeaf: true};
-                boundingBox[bid] = {x: topologyWidth, y: curY - boxHalfWidth,
-                    width: treeWidth - topologyWidth - spec.boundingBoxSideMargin, height: spec.responsiveAreaSize};
+                // let bid = 'm-' + missing[i];
+                // b[bid] = {bid, x1: topologyWidth - 30, x2: topologyWidth, y1: curY, y2: curY, isLeaf: true};
+                // boundingBox[bid] = {x: topologyWidth, y: curY - boxHalfWidth,
+                //     width: treeWidth - topologyWidth - spec.boundingBoxSideMargin, height: spec.responsiveAreaSize};
                 text.push({entity_id: missing[i],  x: !aligned? topologyWidth: (side === 'right'? topologyWidth: treeWidth - topologyWidth), y: curY});
                 curY += spec.marginOnEntity;
             }
