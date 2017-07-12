@@ -460,3 +460,7 @@ export function toggleTreeDistributionCollapse() {
 export function toggleBipDistributionCollapse() {
     return {type: TYPE.TOGGLE_BIP_DISTRIBUTION_COLLAPSE}
 }
+
+export function toggleHighlightSegment(tids, entities, tooltipMsg) {
+    return {type: TYPE.TOGGLE_HIGHLIGHT_SEGMENT, tids, entities, tooltipMsg};
+}

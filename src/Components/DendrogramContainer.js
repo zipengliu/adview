@@ -6,7 +6,7 @@ import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {scaleLinear, hcl, extent} from 'd3';
-import {Tabs, Tab, Button, ButtonGroup, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem} from 'react-bootstrap';
+import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Popover, Table} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
@@ -28,6 +28,29 @@ class DendrogramContainer extends Component {
         let getDendroBox = t => {
             t.selectedCnt = isClusterMode? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
                 selectedTrees.hasOwnProperty(t.tid);
+            let treeInfoPanel = <Popover id={`tree-info-${t.tid}`} title={t.name} style={{maxWidth: '500px'}}>
+                {t.cbInfo.length > 0 &&
+                <Table condensed>
+                    <thead>
+                        <tr>
+                            <th>Match For</th>
+                            <th>Exact?</th>
+                            <th>Similarity</th>
+                            {t.cbInfo[0].support >= 0 && <th>Support</th>}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {t.cbInfo.map((v, i) => <tr key={i}>
+                        <td>{v.no}</td>
+                        <td>{v.isExact? 'Y': 'N'}</td>
+                        <td>{v.similarity.toFixed(1)}</td>
+                        {v.support >= 0 && <td>{v.support.toFixed(1)}</td>}
+                    </tr>)}
+                    </tbody>
+                </Table>}
+                {t.cbInfo.length === 0 && <p>There is no branch of interest yet. Please select from the reference tree.</p>}
+            </Popover>;
+
             let div = (
                 <div className={cn("agg-dendro-box", {selected: isClusterMode? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
                      key={t.tid}
@@ -47,7 +70,7 @@ class DendrogramContainer extends Component {
                 return div;
             } else {
                 return (
-                    <OverlayTrigger key={t.tid} rootClose placement="top" overlay={<Tooltip id={`tree-name-${t.tid}`}>{t.name}</Tooltip>}>
+                    <OverlayTrigger key={t.tid} rootClose placement="top" overlay={treeInfoPanel}>
                         {div}
                     </OverlayTrigger>
                 )
@@ -146,18 +169,24 @@ let getLayouts = createSelector(
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             // Get corresponding branches in the tree
             let e = {};
+            let cbInfo = [];
             for (let rBid in expanded) if (expanded.hasOwnProperty(rBid)) {
                 let corr = referenceTree.branches[rBid][cb];
                 if (corr.hasOwnProperty(tid) && corr[tid].bid) {
                     e[corr[tid].bid] = {
                         ...corr[tid],
                         no: expanded[rBid]
+                    };
+                    cbInfo.push({no: expanded[rBid], isExact: corr[tid].jac === 1.0, similarity: corr[tid].jac});
+                    if (trees[tid].branches[corr[tid].bid].support) {
+                        cbInfo[cbInfo.length - 1].support = trees[tid].branches[corr[tid].bid].support;
                     }
                 }
             }
 
             // calculate the layout
             layouts[tid] = layoutFunc(trees[tid], e, spec);
+            layouts[tid].cbInfo = cbInfo;
         }
 
         return layouts;

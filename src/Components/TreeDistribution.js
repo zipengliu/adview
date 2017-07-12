@@ -8,7 +8,7 @@ import {createSelector, createSelectorCreator} from 'reselect';
 import cn from 'classnames';
 import {scaleLinear} from 'd3';
 import {Button, ButtonGroup, Table, Badge, Glyphicon} from 'react-bootstrap';
-import {toggleSubsetDistribution, toggleHighlightTrees, toggleSelectTrees, toggleTreeDistributionCollapse} from '../actions';
+import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionCollapse, toggleHighlightSegment} from '../actions';
 import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
 
@@ -32,12 +32,12 @@ class TreeDistribution extends Component {
                         return (
                             <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none',
                                 top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
-                                 onMouseEnter={this.props.onHighlightTrees.bind(null, b,
+                                 onMouseEnter={this.props.onHighlightSegment.bind(null, b, d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
-                                 onMouseLeave={this.props.onHighlightTrees.bind(null, [], null)}
+                                 onMouseLeave={this.props.onHighlightSegment.bind(null, [], [], null)}
                                  onClick={(e) => {this.props.onSelectTrees(b, e.shiftKey)}}
                             >
-                                {d.hasCompatibleTree && i == 0 &&
+                                {d.hasCompatibleTree && i === 0 &&
                                 <div style={{fontSize: '16px', position: 'relative', top: '50%', left: '2px', transform: 'translateY(-50%)'}}>
                                     <Glyphicon glyph="registration-mark" />
                                 </div>}
@@ -188,14 +188,16 @@ let clusterTreesByBranch = clusterSelector(
         // Sort the bins except the first one
         bins = exactMatchBin.length > 0? [exactMatchBin, ...bins.sort(binSortFunc)]:
             bins.sort(binSortFunc);
+        let entities = [];
         for (let i = 0; i < bins.length; i++) {
             for (let j = 0; j < bins[i].length; j++) {
                 treeToBin[bins[i][j]] = i;
             }
-
+            let e = i === 0 && exactMatchBin.length > 0? ref.branches[bid].entities: Object.keys(taxaSetByTree[bins[i][0]]);
+            entities.push(e);
         }
 
-        return {bins, treeToBin, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
+        return {bins, treeToBin, entities, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
     }
 );
 
@@ -299,7 +301,7 @@ let mapStateToProps = state => {
 
 let mapDispatchToProps = dispatch => ({
     onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},
-    onHighlightTrees: (tids, msg) => {dispatch(toggleHighlightTrees(tids, msg))},
+    onHighlightSegment: (tids, entities, msg) => {dispatch(toggleHighlightSegment(tids, entities, msg))},
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onToggleCollapsed: () => {dispatch(toggleTreeDistributionCollapse())}
 });

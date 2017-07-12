@@ -1298,6 +1298,20 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Failed to build consensus tree: ' + action.error.toString()
                 }
             };
+        case TYPE.TOGGLE_HIGHLIGHT_SEGMENT:
+            // This is actually combination of HIGHLIGHT_TREES and HIGHLIGHT_ENTITIES
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    highlightEntities: action.entities,
+                },
+                hoveredTrees: action.tids && action.tids.length? createMappingFromArray(action.tids): {},
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    tooltipMsg: action.tooltipMsg
+                },
+            };
 
         default:
             return state;
