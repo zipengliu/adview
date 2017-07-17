@@ -4,18 +4,16 @@
 
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
-import {createSelector, createSelectorCreator} from 'reselect';
 import cn from 'classnames';
 import {scaleLinear} from 'd3';
 import {Button, ButtonGroup, Table, Badge, Glyphicon} from 'react-bootstrap';
 import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionCollapse, toggleHighlightSegment} from '../actions';
-import {createMappingFromArray, subtractMapping, areSetsEqual} from '../utils';
 
 
 class TreeDistribution extends Component {
     render() {
-        let {expandedBranches, sets, distributions} = this.props;
-        let {showSubsets, tooltipMsg, collapsed} = this.props.treeDistribution;
+        let {expandedBranches, sets, treeDistribution} = this.props;
+        let {showSubsets, tooltipMsg, collapsed, data} = treeDistribution;
         let numTrees = sets[0].tids.length;
         let expandedArr = Object.keys(expandedBranches);
 
@@ -76,7 +74,7 @@ class TreeDistribution extends Component {
                     </tr>
                     </thead>
                     <tbody>
-                    {distributions.map((s, i) =>
+                    {data.map((s, i) =>
                         (expandedArr.map((bid, j) =>
                             <tr key={`${i}-${j}`}>
                                 {j === 0 &&
@@ -106,198 +104,12 @@ class TreeDistribution extends Component {
     }
 }
 
-let memoizeDistribution = (func) => {
-    let lastArgs = null;
-    let memoizedResults = {};
 
-    return function() {
-        // Check if arguments are the same as last time
-        let bid = arguments[3];
-        if (!lastArgs || lastArgs[0] !== arguments[0] || lastArgs[1] !== arguments[1] || lastArgs[2] !== arguments[2]) {
-            memoizedResults = {
-                [bid]: func.apply(null, arguments)
-            };
-        } else if (!memoizedResults.hasOwnProperty(bid)) {
-            memoizedResults[bid] = func.apply(null, arguments);
-        }
-
-        lastArgs = arguments;
-        return memoizedResults[bid];
-    }
-};
-
-export let clusterSelector = createSelectorCreator(memoizeDistribution);
-
-let binSortFunc = (a, b) => (b.length - a.length);
-
-let clusterTreesByBranch = clusterSelector(
-    state => state.inputGroupData.trees,
-    state => state.inputGroupData.referenceTree,
-    state => state.cb,
-    (_, bid) => bid,
-    (trees, ref, cb, bid) => {
-        console.log('Binning trees by ', bid, ' in reference tree under mode ', cb);
-        let bins = [], treeToBin = {};
-        let withoutMissing = cb === 'cb2';
-        let correspondingBranches = ref.branches[bid][cb];
-
-        // Push the exact matching trees first
-        let exactMatchBin = Object.keys(trees).filter(tid => correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac === 1.0);
-
-        let missingMap = {};
-        if (withoutMissing) {
-            for (let tid in trees) if (trees.hasOwnProperty(tid)) {
-                missingMap[tid] = createMappingFromArray(trees[tid].missing);
-            }
-        }
-        let taxaSetByTree = {};
-        // Extract the corresponding set of taxa
-        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
-            if (correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac < 1.0) {
-                taxaSetByTree[tid] = {};
-                let corr = correspondingBranches[tid];
-                if (corr.bid) {
-                    taxaSetByTree[tid] = createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities);
-                    if (!corr.in) {
-                        taxaSetByTree[tid] = subtractMapping(createMappingFromArray(trees[tid].entities), taxaSetByTree[tid]);
-                    }
-                }
-            }
-        }
-
-
-        // Bin all other the trees
-        for (let tid in trees) if (trees.hasOwnProperty(tid) && taxaSetByTree.hasOwnProperty(tid)) {
-            let found = false;
-            for (let j = 0; j < bins.length; j++) {
-                let s = bins[j];
-                let set1 = withoutMissing? subtractMapping(taxaSetByTree[s[0]], missingMap[tid]): taxaSetByTree[s[0]];
-                let set2 = withoutMissing? subtractMapping(taxaSetByTree[tid], missingMap[s[0]]): taxaSetByTree[tid];
-                if (areSetsEqual(set1, set2)) {
-                    found = true;
-                    s.push(tid);
-                    break;
-                }
-            }
-            if (!found) {
-                // create a new bin
-                bins.push([tid]);
-            }
-        }
-
-        // Sort the bins except the first one
-        bins = exactMatchBin.length > 0? [exactMatchBin, ...bins.sort(binSortFunc)]:
-            bins.sort(binSortFunc);
-        let entities = [];
-        for (let i = 0; i < bins.length; i++) {
-            for (let j = 0; j < bins[i].length; j++) {
-                treeToBin[bins[i][j]] = i;
-            }
-            let e = i === 0 && exactMatchBin.length > 0? ref.branches[bid].entities: Object.keys(taxaSetByTree[bins[i][0]]);
-            entities.push(e);
-        }
-
-        return {bins, treeToBin, entities, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
-    }
-);
-
-export let getHighlightProportion = (distribution, tids) => {
-    let {bins, treeToBin} = distribution;
-    let highlightCnt = (new Array(bins.length)).fill(0);
-    for (let tid in tids) if (tids.hasOwnProperty(tid)) {
-        if (treeToBin.hasOwnProperty(tid)) {
-            if (Array.isArray(treeToBin[tid])) {
-                for (let i = 0; i < treeToBin[tid].length; i++) {
-                    highlightCnt[treeToBin[tid][i]] += 1;
-                }
-            } else {
-                highlightCnt[treeToBin[tid]] += 1;
-            }
-        }
-    }
-    return highlightCnt;
-};
-
-let getSubsetDistribution = createSelector(
-    [full => full, (_, sets) => sets],
-    (fullDistribution, sets) => {
-        let s = [];
-        for (let i = 1; i < sets.length; i++) {         // The first set is the full set, so skip it
-            s.push({});
-            for (let bid in fullDistribution) if (fullDistribution.hasOwnProperty(bid)) {
-                let fd = fullDistribution[bid];
-
-                // Init the bins for subset[i] and bipartition j
-                let bins = [];
-                for (let k = 0; k < fd.bins.length; k++) {
-                    bins.push([]);
-                }
-
-                // Bin the trees according to full distribution
-                for (let k = 0; k < sets[i].tids.length; k++) {
-                    let tid = sets[i].tids[k];
-                    bins[fd.treeToBin[tid]].push(tid);
-                }
-                let hasCompatibleTree = bins[0].length > 0;
-
-                // Filter and sort the bins
-                let filteredBins = bins.filter(b => b.length > 0);
-                if (hasCompatibleTree) {
-                    filteredBins = [filteredBins[0], ...filteredBins.slice(1).sort(binSortFunc)];
-                } else {
-                    filteredBins = filteredBins.sort(binSortFunc);
-                }
-
-                // Fill in its treeToBin
-                let treeToBin = {};
-                for (let k = 0; k < filteredBins.length; k++) {
-                    for (let x = 0; x < filteredBins[k].length; x++) {
-                        treeToBin[filteredBins[k][x]] = k;
-                    }
-                }
-
-                // Store the distribution data
-                s[i - 1][bid] = {
-                    bins: filteredBins,
-                    treeToBin,
-                    hasCompatibleTree,
-                    n: sets[i].tids.length};
-            }
-        }
-        console.log('subset distribution:',  s);
-        return s;
-    }
-);
-
-let mapStateToProps = state => {
-    let expanded = state.referenceTree.expanded;
-    let distributions = [{}];
-    for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
-        let d = clusterTreesByBranch(state, bid);
-        d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
-        d.selectCnt = getHighlightProportion(d, state.selectedTrees);
-        distributions[0][bid] = d;
-    }
-
-    let sets = state.sets;
-    if (state.treeDistribution.showSubsets) {
-        distributions = distributions.concat(getSubsetDistribution(distributions[0], sets));
-        for (let i = 1; i < sets.length; i++) {
-            for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
-                distributions[i][bid].highlightCnt = getHighlightProportion(distributions[i][bid], state.hoveredTrees);
-                distributions[i][bid].selectCnt = getHighlightProportion(distributions[i][bid], state.selectedTrees);
-            }
-        }
-    }
-    // console.log(distributions);
-
-    return {
-        expandedBranches: state.referenceTree.expanded,
-        sets: state.sets,
-        treeDistribution: state.treeDistribution,
-        distributions
-    };
-};
+let mapStateToProps = state => ({
+    expandedBranches: state.referenceTree.expanded,
+    sets: state.sets,
+    treeDistribution: state.treeDistribution,
+});
 
 let mapDispatchToProps = dispatch => ({
     onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},

@@ -6,7 +6,8 @@ import * as TYPE from './actionTypes';
 import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
 // import BipartitionList from './bipartitions';
-import {getGSF, getEntitiesByBid, prepareBranches, findMissing, findEntities, getAllCB, getVirtualBid} from './tree';
+import {getGSF, getEntitiesByBid, prepareBranches, findMissing, findEntities, getAllCB, getVirtualBid,
+    clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
 
 let initialState = {
     isFetching: false,
@@ -160,6 +161,8 @@ let initialState = {
         collapsed: false,
         showSubsets: false,
         tooltipMsg: null,
+        data: [{}],                 // Data structure for the tree distribution.  data[0] is for the whole collection, data[i] is for the ith sub-collection.
+                                    // Each item in the data array is a mapping from bid to a segmentation of trees.
     },
     // bipartitionDistribution: {
     //     collapsed: true,
@@ -296,6 +299,8 @@ let addHighlightGroup = (state, action, updateGroupIdx=null) => {
 
 function visphyReducer(state = initialState, action) {
     let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup, newReferenceTree;
+    let newDistData, newSets, sub, newHoveredTrees;
+
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
             // Check if this branch is already highlighted
@@ -364,7 +369,14 @@ function visphyReducer(state = initialState, action) {
             let newActiveEB = state.cbAttributeExplorer.activeExpandedBid;
             newHighlights = state.highlight;
             highlightIdx = findHighlight(state.highlight.bids, state.referenceTree.id, action.bid);
-            if (newExpanded.hasOwnProperty(action.bid)) {
+            newDistData = state.treeDistribution.data.slice();
+            let d;
+            if (newExpanded.hasOwnProperty(action.bid)) {       // Cancel the match of this branch
+                for (let i = 0; i < newDistData.length; i++) {
+                    d = {...newDistData[i]};
+                    delete d[action.bid];
+                    newDistData[i] = d;
+                }
                 delete newExpanded[action.bid];
                 if (highlightIdx >= 0) {
                     // cancel the highlight
@@ -378,7 +390,19 @@ function visphyReducer(state = initialState, action) {
                         newActiveEB = null;
                     }
                 }
-            } else {
+            } else {                        // Find match for this branch
+                let full = clusterTreesByBranch(state.inputGroupData.trees, state.inputGroupData.referenceTree, state.cb, action.bid);
+                let subs = state.treeDistribution.showSubsets? getSubsetDistribution(full, state.sets, action.bid): null;
+                for (let i = 0; i < newDistData.length; i++) {
+                    d = i === 0? full: subs[i - 1];
+                    d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
+                    d.selectCnt = getHighlightProportion(d, state.selectedTrees);
+                    newDistData[i] = {
+                        ...newDistData[i],
+                        [action.bid]: d
+                    };
+                }
+
                 newExpanded[action.bid] = getNewGroupID(newExpanded, false);
                 if (highlightIdx === -1) {
                     newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
@@ -400,14 +424,24 @@ function visphyReducer(state = initialState, action) {
                     activeSelectionId: newActiveEB === state.cbAttributeExplorer.activeExpandedBid?
                         state.cbAttributeExplorer.activeSelectionId: null
                 },
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: newDistData
+                }
             });
         case TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP:
             newExpanded = {...state.referenceTree.expanded};
             let virtualBid = getVirtualBid(action.group);
             highlightIdx = findHighlightByVirtualBid(state.highlight.bids, state.referenceTree.id, virtualBid);
+            newDistData = state.treeDistribution.data.slice();
 
             if (action.collapse) {
                 // Clear the expansion
+                for (let i = 0; i < newDistData.length; i++) {
+                    d = {...newDistData[i]};
+                    delete d[virtualBid];
+                    newDistData[i] = d;
+                }
                 delete newExpanded[virtualBid];
                 newHighlights = highlightIdx >= 0? removeHighlightGroup(state.highlight, highlightIdx): state.highlight;
                 newReferenceTree = {
@@ -418,6 +452,18 @@ function visphyReducer(state = initialState, action) {
                 };
                 delete newReferenceTree.branches[virtualBid];
             } else {
+                let full = clusterTreesByBranch(state.inputGroupData.trees, state.inputGroupData.referenceTree, state.cb, virtualBid);
+                let subs = state.treeDistribution.showSubsets? getSubsetDistribution(full, state.sets, virtualBid): null;
+                for (let i = 0; i < newDistData.length; i++) {
+                    d = i === 0? full: subs[i - 1];
+                    d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
+                    d.selectCnt = getHighlightProportion(d, state.selectedTrees);
+                    newDistData[i] = {
+                        ...newDistData[i],
+                        [virtualBid]: d
+                    };
+                }
+
                 newExpanded[virtualBid] = action.group;
                 // Compile a list of all taxa in that taxa group and construct a virtual branch of these taxa
                 let bids = state.referenceTree.userSpecifiedByGroup[action.group];
@@ -453,6 +499,10 @@ function visphyReducer(state = initialState, action) {
                     }
                 },
                 highlight: newHighlights,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: newDistData
+                }
             };
 
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
@@ -484,6 +534,10 @@ function visphyReducer(state = initialState, action) {
                         ...state.aggregatedDendrogram.treeOrder,
                         static: true
                     }
+                },
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: [{}]
                 }
             });
         case TYPE.TOGGLE_HIGHLIGHT_DUPLICATE:
@@ -629,7 +683,6 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.CREATE_NEW_SET:
             let newSetIndex = state.sets.length;
-            // TODO: LIMIT the number of sub-collections!
             if (newSetIndex > 4) {
                 return {
                     ...state,
@@ -644,13 +697,21 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             }
-            return Object.assign({}, state, {
-                sets: [...state.sets, {
+            newSets = [...state.sets, {
                     sid: guid(),
                     title: state.overview.currentTitle,
                     tids: Object.keys(state.selectedTrees),
                     glyph: getAvailableGlyph(state.sets)
-                }],
+                }];
+            if (state.treeDistribution.showSubsets) {
+                sub = getSubsetDistribution(state.treeDistribution.data[0], newSets, null, newSets.length - 1);
+                for (let bid in sub) if (sub.hasOwnProperty(bid)) {
+                    sub[bid].highlightCnt = getHighlightProportion(sub[bid], state.hoveredTrees);
+                    sub[bid].selectCnt = getHighlightProportion(sub[bid], state.selectedTrees);
+                }
+            }
+            return Object.assign({}, state, {
+                sets: newSets,
                 overview: {
                     ...state.overview,
                     currentTitle: '',
@@ -659,7 +720,11 @@ function visphyReducer(state = initialState, action) {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     activeSetIndex: newSetIndex
-                }
+                },
+                treeDistribution: state.treeDistribution.showSubsets? {
+                    ...state.treeDistribution,
+                    data: [...state.treeDistribution.data, sub]
+                }: state.treeDistribution
             });
         case TYPE.TYPING_TITLE:
             return Object.assign({}, state, {
@@ -670,17 +735,33 @@ function visphyReducer(state = initialState, action) {
 
             });
         case TYPE.ADD_TO_SET:
+            newSets = state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: mergeMappingToArray(s.tids, state.selectedTrees).slice()});
+            if (state.treeDistribution.showSubsets) {
+                sub = getSubsetDistribution(state.treeDistribution.data[0], newSets, null, action.setIndex);
+                for (let bid in sub) if (sub.hasOwnProperty(bid)) {
+                    sub[bid].highlightCnt = getHighlightProportion(sub[bid], state.hoveredTrees);
+                    sub[bid].selectCnt = getHighlightProportion(sub[bid], state.selectedTrees);
+                }
+            }
             return Object.assign({}, state, {
-                sets: state.sets.map((s, i) => i !== action.sid? s: {...s, tids: mergeMappingToArray(s.tids, state.selectedTrees).slice()}),
+                sets: newSets,
+                treeDistribution: state.treeDistribution.showSubsets? {
+                    ...state.treeDistribution,
+                    data: state.treeDistribution.data.map((s, i) => i === action.setIndex? sub: s)
+                }: state.treeDistribution
             });
         case TYPE.REMOVE_SET:
             return Object.assign({}, state, {
-                sets: state.sets.filter((s, i) => i !== action.setIndex),
+                sets: state.sets.filter((_, i) => i !== action.setIndex),
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     activeSetIndex: 0,
                     activeTreeId: null
-                }
+                },
+                treeDistribution: state.treeDistribution.showSubsets? {
+                    ...state.treeDistribution,
+                    data: state.treeDistribution.data.filter((_, i) => i !== action.setIndex)
+                }: state.treeDistribution
             });
 
         case TYPE.START_SELECTION:
@@ -756,8 +837,20 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.REMOVE_FROM_SET:
+            newSets = state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => action.tids.indexOf(tid) === -1)});
+            if (state.treeDistribution.showSubsets) {
+                sub = getSubsetDistribution(state.treeDistribution.data[0], newSets, null, action.setIndex);
+                for (let bid in sub) if (sub.hasOwnProperty(bid)) {
+                    sub[bid].highlightCnt = getHighlightProportion(sub[bid], state.hoveredTrees);
+                    sub[bid].selectCnt = getHighlightProportion(sub[bid], state.selectedTrees);
+                }
+            }
             return Object.assign({}, state, {
-                sets: state.sets.map((s, i) => i !== action.setIndex? s: {...s, tids: s.tids.filter(tid => action.tids.indexOf(tid) === -1)}),
+                sets: newSets,
+                treeDistribution: state.treeDistribution.showSubsets? {
+                    ...state.treeDistribution,
+                    data: state.treeDistribution.data.map((s, i) => i === action.setIndex? sub: s)
+                }: state.treeDistribution
             });
         case TYPE.CHANGE_SORTING:
             return {
@@ -1032,6 +1125,10 @@ function visphyReducer(state = initialState, action) {
                     ...state.cbAttributeExplorer,
                     attributes: state.cbAttributeExplorer.attributes.slice(!!action.data.supportRange? 0: 1),
                     selection: state.cbAttributeExplorer.selection.slice(!!action.data.supportRange? 0: 1)
+                },
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: [{}]
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_FAILURE:
@@ -1077,11 +1174,12 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_JACCARD_MISSING:
-            // TODO if cb2 (cb when ignoring missing taxa) is not present, falls back to cb
-            // This is a quick hack
+            // This is a quick hack to fall back to cb if cb2 is absent
             if (state.inputGroupData.inputGroupId === 1 && action.cb === 'cb2') {
                 return state;
             }
+            // TODO change the USTG match, treeDistribution
+            // Or a shortcut: clear first and then switch
             return {
                 ...state,
                 inputGroupData: {
@@ -1089,7 +1187,7 @@ function visphyReducer(state = initialState, action) {
                     trees: {
                         ...state.inputGroupData.trees,
                         [state.referenceTree.id]: {
-                            ...state.inputGroupData.trees[state.referenceTree.id],
+                            ...state.inputGroupData.trees[state.referenceTree.id],          // Re-match the virtual branches
                             branches: getGSF(state.inputGroupData.trees[state.referenceTree.id].branches, action.cb, Object.keys(state.inputGroupData.trees).length - 1, true)
                         }
                     }
@@ -1127,27 +1225,60 @@ function visphyReducer(state = initialState, action) {
             };
 
         case TYPE.TOGGLE_SHOW_SUBSET_DISTRIBUTION:
+            if (!state.treeDistribution.showSubsets) {       // show
+                let subs = getSubsetDistribution(state.treeDistribution.data[0], state.sets);
+                for (let i = 0; i < subs.length; i++) {
+                    for (let bid in subs[i]) if (subs[i].hasOwnProperty(bid)) {
+                        subs[i][bid].highlightCnt = getHighlightProportion(subs[i][bid], state.hoveredTrees);
+                        subs[i][bid].selectCnt = getHighlightProportion(subs[i][bid], state.selectedTrees);
+                    }
+                }
+                newDistData = state.treeDistribution.data.concat(subs);
+            } else {                                        // collapse
+                newDistData = state.treeDistribution.data.slice(0, 1);
+            }
             return {
                 ...state,
                 treeDistribution: {
                     ...state.treeDistribution,
-                    showSubsets: !state.treeDistribution.showSubsets
+                    showSubsets: !state.treeDistribution.showSubsets,
+                    data: newDistData
                 }
             };
         case TYPE.TOGGLE_HIGHLIGHT_TREES:
+            newHoveredTrees = action.tids && action.tids.length? createMappingFromArray(action.tids): {};
+            newDistData = [];
+            for (let i = 0; i < state.treeDistribution.data.length; i++) {
+                let d = state.treeDistribution.data[i];
+                newDistData.push({});
+                for (let bid in d) if (d.hasOwnProperty(bid)) {
+                    newDistData[i][bid] = {
+                        ...d[bid],
+                        highlightCnt: getHighlightProportion(d[bid], newHoveredTrees)
+                    }
+                }
+            }
             return {
                 ...state,
-                hoveredTrees: action.tids && action.tids.length? createMappingFromArray(action.tids): {},
-                treeDistribution: action.isMsgForBip? state.treeDistribution: {
+                hoveredTrees: newHoveredTrees,
+                treeDistribution: {
                     ...state.treeDistribution,
-                    tooltipMsg: action.msg
-                },
-                // bipartitionDistribution: action.isMsgForBip? {
-                //     ...state.treeDistribution,
-                //     tooltipMsg: action.msg
-                // }: state.bipartitionDistribution
+                    data: newDistData
+                }
             };
         case TYPE.TOGGLE_SELECT_TREES:
+            let newSelectedTrees = action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids);
+            newDistData = [];
+            for (let i = 0; i < state.treeDistribution.data.length; i++) {
+                let d = state.treeDistribution.data[i];
+                newDistData.push({});
+                for (let bid in d) if (d.hasOwnProperty(bid)) {
+                    newDistData[i][bid] = {
+                        ...d[bid],
+                        selectCnt: getHighlightProportion(d[bid], newSelectedTrees)
+                    }
+                }
+            }
             // If select a different tree for pairwise comparison
             if (action.tids.length === 1 && state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
                 && (!action.isAdd || action.isAdd && !Object.keys(state.selectedTrees).length)) {
@@ -1176,6 +1307,10 @@ function visphyReducer(state = initialState, action) {
                         ...state.highlight,
                         bids: newBids,
                         colors: newColors
+                    },
+                    treeDistribution: {
+                        ...state.treeDistribution,
+                        data: newDistData
                     }
                 }
             }
@@ -1183,7 +1318,11 @@ function visphyReducer(state = initialState, action) {
             // If not for pairwise comparison
             return {
                 ...state,
-                selectedTrees: action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids)
+                selectedTrees: newSelectedTrees,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: newDistData
+                }
             };
         case TYPE.TOGGLE_TREE_DISTRIBUTION_COLLAPSE:
             return {
@@ -1204,9 +1343,24 @@ function visphyReducer(state = initialState, action) {
         //     };
 
         case TYPE.CLEAR_SELECTED_TREES:
+            newDistData = [];
+            for (let i = 0; i < state.treeDistribution.data.length; i++) {
+                let d = state.treeDistribution.data[i];
+                newDistData.push({});
+                for (let bid in d) if (d.hasOwnProperty(bid)) {
+                    newDistData[i][bid] = {
+                        ...d[bid],
+                        selectCnt: 0
+                    }
+                }
+            }
             return {
                 ...state,
-                selectedTrees: {}
+                selectedTrees: {},
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: newDistData
+                }
             };
 
         case TYPE.TOGGLE_REFERENCE_TREE_ATTRIBUTE_EXPLORER:
@@ -1300,16 +1454,29 @@ function visphyReducer(state = initialState, action) {
             };
         case TYPE.TOGGLE_HIGHLIGHT_SEGMENT:
             // This is actually combination of HIGHLIGHT_TREES and HIGHLIGHT_ENTITIES
+            newHoveredTrees = action.tids && action.tids.length? createMappingFromArray(action.tids): {};
+            newDistData = [];
+            for (let i = 0; i < state.treeDistribution.data.length; i++) {
+                let d = state.treeDistribution.data[i];
+                newDistData.push({});
+                for (let bid in d) if (d.hasOwnProperty(bid)) {
+                    newDistData[i][bid] = {
+                        ...d[bid],
+                        highlightCnt: getHighlightProportion(d[bid], newHoveredTrees)
+                    }
+                }
+            }
             return {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
                     highlightEntities: action.entities,
                 },
-                hoveredTrees: action.tids && action.tids.length? createMappingFromArray(action.tids): {},
+                hoveredTrees: newHoveredTrees,
                 treeDistribution: {
                     ...state.treeDistribution,
-                    tooltipMsg: action.tooltipMsg
+                    tooltipMsg: action.tooltipMsg,
+                    data: newDistData
                 },
             };
 

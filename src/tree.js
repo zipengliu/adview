@@ -4,7 +4,7 @@
 
 
 import {scaleLinear} from 'd3-scale';
-import {createMappingFromArray, subtractMapping} from './utils';
+import {createMappingFromArray, subtractMapping, areSetsEqual} from './utils';
 
 // Basic operations for a tree
 
@@ -331,3 +331,153 @@ export function reroot(referenceTree, rid, trees) {
 }
 
 export let getVirtualBid = group => 'virtual-' + group;
+
+
+let binSortFunc = (a, b) => (b.length - a.length);
+
+export let clusterTreesByBranch = (trees, ref, cb, bid) => {
+    console.log('Binning trees by ', bid, ' in reference tree under mode ', cb);
+    let bins = [], treeToBin = {};
+    let withoutMissing = cb === 'cb2';
+    let correspondingBranches = ref.branches[bid][cb];
+
+    // Push the exact matching trees first
+    let exactMatchBin = Object.keys(trees).filter(tid => correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac === 1.0);
+
+    let missingMap = {};
+    if (withoutMissing) {
+        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+            missingMap[tid] = createMappingFromArray(trees[tid].missing);
+        }
+    }
+    let taxaSetByTree = {};
+    // Extract the corresponding set of taxa
+    for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+        if (correspondingBranches.hasOwnProperty(tid) && correspondingBranches[tid].jac < 1.0) {
+            taxaSetByTree[tid] = {};
+            let corr = correspondingBranches[tid];
+            if (corr.bid) {
+                taxaSetByTree[tid] = createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities);
+                if (!corr.in) {
+                    taxaSetByTree[tid] = subtractMapping(createMappingFromArray(trees[tid].entities), taxaSetByTree[tid]);
+                }
+            }
+        }
+    }
+
+
+    // Bin all other the trees
+    for (let tid in trees) if (trees.hasOwnProperty(tid) && taxaSetByTree.hasOwnProperty(tid)) {
+        let found = false;
+        for (let j = 0; j < bins.length; j++) {
+            let s = bins[j];
+            let set1 = withoutMissing? subtractMapping(taxaSetByTree[s[0]], missingMap[tid]): taxaSetByTree[s[0]];
+            let set2 = withoutMissing? subtractMapping(taxaSetByTree[tid], missingMap[s[0]]): taxaSetByTree[tid];
+            if (areSetsEqual(set1, set2)) {
+                found = true;
+                s.push(tid);
+                break;
+            }
+        }
+        if (!found) {
+            // create a new bin
+            bins.push([tid]);
+        }
+    }
+
+    // Sort the bins except the first one
+    bins = exactMatchBin.length > 0? [exactMatchBin, ...bins.sort(binSortFunc)]:
+        bins.sort(binSortFunc);
+    let entities = [];
+    for (let i = 0; i < bins.length; i++) {
+        for (let j = 0; j < bins[i].length; j++) {
+            treeToBin[bins[i][j]] = i;
+        }
+        let e = i === 0 && exactMatchBin.length > 0? ref.branches[bid].entities: Object.keys(taxaSetByTree[bins[i][0]]);
+        entities.push(e);
+    }
+
+    return {bins, treeToBin, entities, n: Object.keys(trees).length, hasCompatibleTree: exactMatchBin.length > 0};
+};
+
+export let getHighlightProportion = (distribution, tids) => {
+    let {bins, treeToBin} = distribution;
+    let highlightCnt = (new Array(bins.length)).fill(0);
+    for (let tid in tids) if (tids.hasOwnProperty(tid)) {
+        if (treeToBin.hasOwnProperty(tid)) {
+            if (Array.isArray(treeToBin[tid])) {
+                for (let i = 0; i < treeToBin[tid].length; i++) {
+                    highlightCnt[treeToBin[tid][i]] += 1;
+                }
+            } else {
+                highlightCnt[treeToBin[tid]] += 1;
+            }
+        }
+    }
+    return highlightCnt;
+};
+
+export let getSubsetDistribution = (fullDistribution, sets, targetBid=null, setIndex=null) => {
+    let filter = (fd, bid, set) => {
+        // Init the bins for subset[i] and bipartition j
+        let bins = [];
+        for (let k = 0; k < fd.bins.length; k++) {
+            bins.push([]);
+        }
+
+        // Bin the trees according to full distribution
+        for (let k = 0; k < set.tids.length; k++) {
+            let tid = set.tids[k];
+            bins[fd.treeToBin[tid]].push(tid);
+        }
+        let hasCompatibleTree = bins[0].length > 0;
+
+        // Filter and sort the bins
+        let filteredBins = bins.filter(b => b.length > 0);
+        if (hasCompatibleTree) {
+            filteredBins = [filteredBins[0], ...filteredBins.slice(1).sort(binSortFunc)];
+        } else {
+            filteredBins = filteredBins.sort(binSortFunc);
+        }
+
+        // Fill in its treeToBin and entities
+        let treeToBin = {};
+        let entities = [];
+        for (let k = 0; k < filteredBins.length; k++) {
+            for (let x = 0; x < filteredBins[k].length; x++) {
+                treeToBin[filteredBins[k][x]] = k;
+            }
+            entities.push(fd.entities[fd.treeToBin[filteredBins[k][0]]]);
+        }
+
+        return {
+            bins: filteredBins,
+            treeToBin,
+            hasCompatibleTree,
+            n: set.tids.length,
+            entities
+        };
+    };
+
+    let s;
+    if (setIndex) {
+        s = {};
+        for (let bid in fullDistribution) if (fullDistribution.hasOwnProperty(bid)) {
+            s[bid] = filter(fullDistribution[bid], bid, sets[setIndex]);
+        }
+    } else {
+        s = [];
+        for (let i = 1; i < sets.length; i++) {         // The first set is the full set, so skip it
+            if (targetBid) {
+                s.push(filter(fullDistribution, targetBid, sets[i]));
+            } else {
+                s.push({});
+                for (let bid in fullDistribution) if (fullDistribution.hasOwnProperty(bid)) {
+                    s[i - 1][bid] = filter(fullDistribution[bid], bid, sets[i]);
+                }
+            }
+        }
+    }
+    return s;
+};
+

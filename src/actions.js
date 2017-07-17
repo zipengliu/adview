@@ -153,10 +153,10 @@ export function createNewSet() {
     }
 }
 
-export function addToSet(sid) {
+export function addToSet(setIndex) {
     return {
         type: TYPE.ADD_TO_SET,
-        sid
+        setIndex
     }
 }
 
