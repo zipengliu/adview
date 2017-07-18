@@ -17,9 +17,13 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
-             entities, rangeSelection} = this.props;
-        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified} = referenceTree;
+             entities, rangeSelection, distributions} = this.props;
+        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer} = referenceTree;
         let isComparing = comparingTree !== null;
+        let taxaMembership = membershipViewer.map(m => {
+            let d = distributions[0][m.bid];
+            return createMappingFromArray(d.entities[d.treeToBin[m.tid]]);
+        });
 
         highlightUncertainEntities = isStatic? null: highlightUncertainEntities;
         let highlightEntitiesMapping = createMappingFromArray(highlightEntities || []);
@@ -111,7 +115,10 @@ class FullDendrogram extends Component {
                        )}
                    </g>
 
-                   <g className="names">{names}</g>
+                   <g className="names"
+                      transform={`translate(${membershipViewer.length * spec.membershipViewerGap * (side === 'left'? -1: 1)},0)`}>
+                       {names}
+                   </g>
                    {textSpecs.filter(d => highlightEntitiesMapping.hasOwnProperty(d.entity_id)).map((d, i)=>
                        <use xlinkHref="#ref-tree-taxon-pointer" key={i}
                             x={side === 'left'? d.x - 6: d.x} y={d.y - 3}
@@ -122,6 +129,19 @@ class FullDendrogram extends Component {
                             x={side === 'left'? d.x - 6: d.x} y={d.y - 3}
                             width={8} height={8} />
                    )}
+
+                   {membershipViewer.length > 0 &&
+                   <g transform={`translate(${side === 'left'? dendrogram.treeBoundingBox.width - dendrogram.topologyWidth - spec.membershipViewerGap * membershipViewer.length: dendrogram.topologyWidth + spec.membershipViewerGap},0)`}>
+                       {membershipViewer.map((_, i) => <g key={i} className="taxa-membership-markers" transform={`translate(${i * spec.membershipViewerGap},0)`}>
+                           <circle r="7" cx={3} cy={-8} className="taxa-membership-highlight-marker" />
+                           <text dy={-4}>{i + 1}</text>
+                           {textSpecs.filter(d => taxaMembership[i].hasOwnProperty(d.entity_id)).map((d, j) =>
+                               <use xlinkHref="#ref-tree-taxon-pointer" key={j}
+                                    x={0} y={d.y - 3}
+                                    width={8} height={8} />
+                           )}
+                       </g>)}
+                   </g>}
 
                    {missing && missing.length &&
                    <g>
@@ -220,11 +240,12 @@ let getDendrogramSpecs = createSelector(
         state => state.inputGroupData.entities,
         (_, tid, alignToSide) => alignToSide,
         (_, tid, alignToSide, ignoreBranchLen) => ignoreBranchLen,
-        state => state.dendrogramSpec],
-    (tree, entities, side, ignoreBranchLen, spec) => {
+        state => state.dendrogramSpec,
+        state => state.referenceTree.membershipViewer],
+    (tree, entities, side, ignoreBranchLen, spec, membershipViewer) => {
 
         let {branches} = tree;
-        let aligned = side === 'left' || side === 'right';
+        let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
 
         let getTreeWidth = function() {
             let maxTopoWidth = 0, depth = 0;
@@ -245,7 +266,8 @@ let getDendrogramSpecs = createSelector(
 
             traverse(tree.rootBranch, 0, 1);
             let topologyWidth = ignoreBranchLen? maxTopoWidth: (aligned? spec.comparingTopologyWidth: spec.defaultTopologyWidth);
-            return {treeWidth: topologyWidth + longestEntity, topologyWidth, maxLength: maxTopoWidth, depth};
+            let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
+            return {treeWidth: topologyWidth + longestEntity + roomForMembership, topologyWidth, maxLength: maxTopoWidth, depth};
         };
         let {treeWidth, topologyWidth, maxLength, depth} = getTreeWidth();
 
@@ -346,6 +368,7 @@ let getDendrogramSpecs = createSelector(
 
         return {
             treeBoundingBox: {width: treeWidth, height: curY + 10},
+            topologyWidth,
             branchSpecs,
             verticalLines: connectLines,
             responsiveBoxes,
@@ -376,7 +399,7 @@ function mapStateToProps(state) {
             }
         }
     } else {
-        den = getDendrogramSpecs(state, null, null, state.referenceTree.universalBranchLen);
+        den = getDendrogramSpecs(state, null, state.referenceTree.membershipViewer.length > 0? 'right': null, state.referenceTree.universalBranchLen);
     }
 
     let ae = state.referenceTree.charts;
@@ -391,6 +414,7 @@ function mapStateToProps(state) {
         entities: state.inputGroupData.entities,
         metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
         rangeSelection: ae.activeSelectionId >= 0? ae.selection[ae.activeSelectionId]: null,
+        distributions: state.treeDistribution.data,
     };
 }
 

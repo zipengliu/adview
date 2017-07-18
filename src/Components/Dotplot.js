@@ -29,7 +29,8 @@ class Dotplot extends Component {
 
         let scale = scaleLinear().range([0, s]);
         let getDotsWithinBox = (coordinates, box) => {
-            return coordinates.filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, box)).map(d => d.tid);
+            return coordinates.filter(d => isDotWithinBox({x: scale(d.x), y: scale(d.y)}, box) && d.tid !== this.props.rid)
+                .map(d => d.tid);
         };
 
         // Reorder the coordinates array so that reference tree dot is rendered at last
@@ -110,7 +111,8 @@ let mapStateToProps = state => ({
     glyphs: getDotGlyph(state),
     rid: state.referenceTree.id,
     selectedTrees: state.selectedTrees,
-    hoveredTrees: state.hoveredTrees
+    hoveredTrees: state.hoveredTrees,
+    rid: state.referenceTree.id,
 });
 
 let mapDispatchToProps = dispatch => ({

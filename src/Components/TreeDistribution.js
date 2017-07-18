@@ -6,22 +6,52 @@ import React, {Component} from 'react';
 import {connect} from 'react-redux';
 import cn from 'classnames';
 import {scaleLinear} from 'd3';
-import {Button, ButtonGroup, Table, Badge, Glyphicon} from 'react-bootstrap';
-import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionCollapse, toggleHighlightSegment} from '../actions';
+import {Button, ButtonGroup, Table, Badge, Glyphicon, MenuItem} from 'react-bootstrap';
+import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionCollapse, toggleHighlightSegment,
+    toggleTDExtendedMenu, toggleTaxaMembershipView} from '../actions';
 
 
 class TreeDistribution extends Component {
     render() {
-        let {expandedBranches, sets, treeDistribution} = this.props;
-        let {showSubsets, tooltipMsg, collapsed, data} = treeDistribution;
+        let {expandedBranches, sets, treeDistribution, membershipViewer} = this.props;
+        let {showSubsets, tooltipMsg, collapsed, data, extendedMenu} = treeDistribution;
         let numTrees = sets[0].tids.length;
         let expandedArr = Object.keys(expandedBranches);
 
-        let renderBars = (d, bid) => {
+        let membershipMapping = {};
+        for (let i = 0; i < membershipViewer.length; i++) {
+            let m = membershipViewer[i];
+            if (!membershipMapping.hasOwnProperty(m.bid)) {
+                membershipMapping[m.bid] = {}
+            }
+            membershipMapping[m.bid][m.tid] = i + 1;
+        }
+        let fullNumbering = {};
+        for (let bid in data[0]) if (data[0].hasOwnProperty(bid) && membershipMapping.hasOwnProperty(bid)) {
+            fullNumbering[bid] = {};
+            for (let tid in membershipMapping[bid]) if (membershipMapping[bid].hasOwnProperty(tid)) {
+                fullNumbering[bid][data[0][bid].treeToBin[tid]] = membershipMapping[bid][tid];
+            }
+        }
+
+        let renderBars = (d, bid, setIndex) => {
             let fullLength = Math.floor(d.n / numTrees * 100);
             let x = scaleLinear().domain([0, d.n]).range([0, 100]);
             let branchNo = expandedBranches[bid];
             let curN = 0;
+            let numbering = {};
+            if (fullNumbering.hasOwnProperty(bid)) {
+                if (setIndex > 0) {
+                    for (let i = 0; i < d.bins.length; i++) {
+                        let tid = d.bins[i][0];
+                        if (fullNumbering[bid].hasOwnProperty(data[0][bid].treeToBin[tid])) {
+                            numbering[i] = fullNumbering[bid][data[0][bid].treeToBin[tid]];
+                        }
+                    }
+                } else {
+                    numbering = fullNumbering[bid];
+                }
+            }
             return (
                 <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #ccc'}}>
                     {d.bins.map((b, i) => {
@@ -33,7 +63,14 @@ class TreeDistribution extends Component {
                                  onMouseEnter={this.props.onHighlightSegment.bind(null, b, d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightSegment.bind(null, [], [], null)}
-                                 onClick={(e) => {this.props.onSelectTrees(b, e.shiftKey)}}
+                                 onClick={(e) => {
+                                     e.stopPropagation();
+                                     e.preventDefault();
+                                     if (e.altKey) {
+                                         this.props.onToggleTDExtendedMenu(bid, b[0], e.clientX, e.clientY);
+                                     } else {
+                                         this.props.onSelectTrees(b, e.shiftKey);
+                                     }}}
                             >
                                 {d.hasCompatibleTree && i === 0 &&
                                 <div style={{fontSize: '16px', position: 'relative', top: '50%', left: '2px', transform: 'translateY(-50%)'}}>
@@ -47,6 +84,8 @@ class TreeDistribution extends Component {
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
                                     border: '3px solid #000', zIndex: 50,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
+                                {numbering.hasOwnProperty(i) &&
+                                <div style={{position: 'absolute', top: '2px', right: '2px'}}>{numbering[i]}</div>}
                             </div>
                         )
                     })}
@@ -55,7 +94,8 @@ class TreeDistribution extends Component {
         };
 
         return (
-            <div id="tree-distribution" className={cn("view panel panel-default", {'panel-collapsed': collapsed})}>
+            <div id="tree-distribution" className={cn("view panel panel-default", {'panel-collapsed': collapsed})}
+                 onClick={() => {this.props.onToggleTDExtendedMenu()}}>
                 <div className="view-header panel-heading">
                     <div className="view-title">
                         Tree Distribution by Reference Partition
@@ -84,7 +124,7 @@ class TreeDistribution extends Component {
                                 </td>}
                                 <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{expandedBranches[bid]}</td>
                                 <td style={{height: '100%', padding: 0}}>
-                                    {renderBars(s[bid], bid)}
+                                    {renderBars(s[bid], bid, i)}
                                 </td>
                             </tr>
                         ))
@@ -99,6 +139,14 @@ class TreeDistribution extends Component {
                     <span> distribution for sub-collections. </span>
                     {!!tooltipMsg && <span>{tooltipMsg}</span>}
                 </div>
+
+                {extendedMenu.bid &&
+                <ul className="dropdown-menu open tree-distribution-extended-menu"
+                    style={{position: 'fixed', display: 'block', zIndex: '200', left: extendedMenu.x + 'px', top: extendedMenu.y + 'px'}}>
+                    <MenuItem onClick={this.props.onToggleTaxaMembershipView.bind(null, extendedMenu.bid, extendedMenu.tid)}>
+                        Inspect taxa membership
+                    </MenuItem>
+                </ul>}
             </div>
         )
     }
@@ -109,13 +157,16 @@ let mapStateToProps = state => ({
     expandedBranches: state.referenceTree.expanded,
     sets: state.sets,
     treeDistribution: state.treeDistribution,
+    membershipViewer: state.referenceTree.membershipViewer,
 });
 
 let mapDispatchToProps = dispatch => ({
     onToggleSubsetDistribution: () => {dispatch(toggleSubsetDistribution())},
     onHighlightSegment: (tids, entities, msg) => {dispatch(toggleHighlightSegment(tids, entities, msg))},
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
-    onToggleCollapsed: () => {dispatch(toggleTreeDistributionCollapse())}
+    onToggleCollapsed: () => {dispatch(toggleTreeDistributionCollapse())},
+    onToggleTDExtendedMenu: (bid=null, tid=null, x=null, y=null) => {dispatch(toggleTDExtendedMenu(bid, tid, x, y))},
+    onToggleTaxaMembershipView: (bid, tid) => {dispatch(toggleTaxaMembershipView(bid, tid))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TreeDistribution);

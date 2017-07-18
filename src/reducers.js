@@ -33,7 +33,7 @@ let initialState = {
         // width: 500,
         defaultTopologyWidth: 300,
         height: 840,
-        margin: {left: 5, right: 5, top: 10, bottom: 0},
+        margin: {left: 5, right: 5, top: 14, bottom: 0},
         marginOnEntity: 8,
         boundingBoxSideMargin: 5,
         minLabelWidth: 40,
@@ -44,7 +44,8 @@ let initialState = {
                                         //      used in pairwise comparison to save space
         minBranchLength: 3,              // the minimum length of a branch in pixel
         comparingTopologyWidth: 200,
-        comparingLabelWidth: 100
+        comparingLabelWidth: 100,
+        membershipViewerGap: 16,
     },
     referenceTree: {
         id: null,
@@ -62,6 +63,7 @@ let initialState = {
             x: null,
             y: null,
         },
+        membershipViewer: [],
 
         charts: {
             show: true,
@@ -163,6 +165,11 @@ let initialState = {
         tooltipMsg: null,
         data: [{}],                 // Data structure for the tree distribution.  data[0] is for the whole collection, data[i] is for the ith sub-collection.
                                     // Each item in the data array is a mapping from bid to a segmentation of trees.
+        extendedMenu: {
+            bid: null,
+            tid: null,
+            x: null, y: null,
+        }
     },
     // bipartitionDistribution: {
     //     collapsed: true,
@@ -299,7 +306,7 @@ let addHighlightGroup = (state, action, updateGroupIdx=null) => {
 
 function visphyReducer(state = initialState, action) {
     let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup, newReferenceTree;
-    let newDistData, newSets, sub, newHoveredTrees;
+    let newDistData, newSets, sub, newHoveredTrees, newSelectedTrees;
 
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
@@ -515,7 +522,8 @@ function visphyReducer(state = initialState, action) {
                     charts: {
                         ...state.referenceTree.charts,
                         activeSelectionId: null
-                    }
+                    },
+                    membershipViewer: []
                 },
                 highlight: {
                     ...state.highlight,
@@ -774,12 +782,28 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.END_SELECTION:
+            newSelectedTrees = createMappingFromArray(action.tids);
+            newDistData = [];
+            for (let i = 0; i < state.treeDistribution.data.length; i++) {
+                let d = state.treeDistribution.data[i];
+                newDistData.push({});
+                for (let bid in d) if (d.hasOwnProperty(bid)) {
+                    newDistData[i][bid] = {
+                        ...d[bid],
+                        selectCnt: getHighlightProportion(d[bid], newSelectedTrees)
+                    }
+                }
+            }
             return Object.assign({}, state, {
                 overview: {
                     ...state.overview,
                     isSelecting: false,
                 },
-                selectedTrees: createMappingFromArray(action.tids)
+                selectedTrees: newSelectedTrees,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    data: newDistData
+                }
             });
         case TYPE.CHANGE_SELECTION:
             return Object.assign({}, state, {
@@ -1267,7 +1291,7 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_SELECT_TREES:
-            let newSelectedTrees = action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids);
+            newSelectedTrees = action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids);
             newDistData = [];
             for (let i = 0; i < state.treeDistribution.data.length; i++) {
                 let d = state.treeDistribution.data[i];
@@ -1478,6 +1502,36 @@ function visphyReducer(state = initialState, action) {
                     tooltipMsg: action.tooltipMsg,
                     data: newDistData
                 },
+            };
+        case TYPE.TOGGLE_TD_EXTENDED_MENU:
+            return {
+                ...state,
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    extendedMenu: {
+                        ...state.treeDistribution.extendedMenu,
+                        bid: action.bid,
+                        tid: action.tid,
+                        x: action.x,
+                        y: action.y
+                    }
+                }
+            };
+        case TYPE.TOGGLE_TAXA_MEMBERSHIP_VIEW:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    membershipViewer: action.viewerIndex? state.referenceTree.membershipViewer.filter((_, i) => i !== action.viewerIndex):
+                        [...state.referenceTree.membershipViewer, {setIndex: action.setIndex, bid: action.bid, tid: action.tid}]
+                },
+                treeDistribution: {
+                    ...state.treeDistribution,
+                    extendedMenu: {
+                        ...state.extendedMenu,
+                        bid: null
+                    }
+                }
             };
 
         default:

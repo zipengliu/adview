@@ -150,3 +150,15 @@ rect.reference-tree-indicator {
     fill: #e41a1c;
     font-weight: bold;
 }
+
+.taxa-membership-markers>.taxa-membership-highlight-marker {
+    visibility: hidden;
+    fill: black;
+    stroke: none;
+}
+.taxa-membership-markers:hover>.taxa-membership-highlight-marker {
+    visibility: visible;
+}
+.taxa-membership-markers:hover>text {
+    fill: white;
+}
