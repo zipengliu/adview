@@ -11,10 +11,10 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees, isComparing} = this.props;
+        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
         let isClusterMode = mode.indexOf('cluster') !== -1;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
-        let {trees, blocks, branches, num, total, selectedCnt, rangeSelected} = this.props.data;
+        let {trees, blocks, branches, num, total, selectedCnt, rangeSelected} = data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
@@ -31,14 +31,14 @@ class AggregatedDendrogram extends Component {
         let onMouseEnterBlock = (b) => {
             timer = setTimeout(() => {
                 timer = null;
-                onToggleBlock(getCertainEntities(b), getUncertainEntities(b));
+                onToggleBlock(isClusterMode? trees: [data.tid], getCertainEntities(b), getUncertainEntities(b));
             }, 300);
         };
         let onMouseLeaveBlock = () => {
             if (timer) {
                 clearTimeout(timer);
             } else {
-                setTimeout(() => {onToggleBlock([], [])}, 0);
+                setTimeout(() => {onToggleBlock([], [], [])}, 0);
             }
         };
 

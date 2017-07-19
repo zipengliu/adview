@@ -9,8 +9,8 @@ import {scaleLinear, hcl, extent} from 'd3';
 import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Popover, Table} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, changeSorting, toggleAggregationMode, toggleHighlightEntities, toggleSelectTrees, toggleHighlightTrees} from '../actions';
-import {createMappingFromArray, getIntersection, isSubset} from '../utils';
+import {selectSet, changeSorting, toggleAggregationMode, toggleSelectTrees, toggleHighlightADBlock} from '../actions';
+import {createMappingFromArray, getIntersection} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
@@ -55,8 +55,6 @@ class DendrogramContainer extends Component {
                 <div className={cn("agg-dendro-box", {selected: isClusterMode? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
                      key={t.tid}
                      style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
-                     onMouseEnter={this.props.onHighlightTrees.bind(null, isClusterMode? t.trees: [t.tid])}
-                     onMouseLeave={this.props.onHighlightTrees.bind(null, null)}
                      onClick={(e) => {this.props.onSelectTrees(isClusterMode? t.trees: [t.tid], e.shiftKey)}}
                 >
                     <AggregatedDendrogram data={t} spec={spec} mode={mode}
@@ -478,11 +476,10 @@ let mapStateToProps = (state) => {
 
 let mapDispatchToProps = (dispatch) => ({
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
-    onHighlightTrees: (tids) => {dispatch(toggleHighlightTrees(tids))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onChangeSorting: (key) => {dispatch(changeSorting(key))},
     onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
-    onToggleBlock: (e, e1) => {dispatch(toggleHighlightEntities(e, e1))},
+    onToggleBlock: (tids, e, e1) => {dispatch(toggleHighlightADBlock(tids, e, e1))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

@@ -481,3 +481,10 @@ export function reverseSelection() {
         dispatch(toggleSelectTrees(others));
     }
 }
+
+export function toggleHighlightADBlock(tids, entities, uncertainEntities=[]) {
+    return (dispatch) => {
+        dispatch(toggleHighlightEntities(entities, uncertainEntities));
+        dispatch(toggleHighlightTrees(tids));
+    };
+}
