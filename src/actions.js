@@ -472,3 +472,12 @@ export function toggleTDExtendedMenu(bid, tid, x, y) {
 export function toggleTaxaMembershipView(bid, tid, viewerIndex=null) {
     return {type: TYPE.TOGGLE_TAXA_MEMBERSHIP_VIEW, bid, tid, viewerIndex};
 }
+
+export function reverseSelection() {
+    return (dispatch, getState) => {
+        let state = getState();
+        let tids = state.selectedTrees;
+        let others = Object.keys(state.inputGroupData.trees).filter(tid => !tids.hasOwnProperty(tid));
+        dispatch(toggleSelectTrees(others));
+    }
+}
