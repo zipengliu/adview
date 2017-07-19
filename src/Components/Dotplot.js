@@ -112,7 +112,6 @@ let mapStateToProps = state => ({
     rid: state.referenceTree.id,
     selectedTrees: state.selectedTrees,
     hoveredTrees: state.hoveredTrees,
-    rid: state.referenceTree.id,
 });
 
 let mapDispatchToProps = dispatch => ({

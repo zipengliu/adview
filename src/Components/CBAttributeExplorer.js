@@ -5,7 +5,7 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Button, FormGroup, Radio, OverlayTrigger, Tooltip, DropdownButton, MenuItem} from 'react-bootstrap';
+import {Button, DropdownButton, MenuItem} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
 import {toggleMoveHandle, moveControlHandle, changeActiveExpandedBranch,
 changeActiveRangeSelection, changeSelectionRange} from '../actions';

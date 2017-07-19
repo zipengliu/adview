@@ -38,7 +38,7 @@ class FullDendrogram extends Component {
             && branches.hasOwnProperty(d.bid) && branches[d.bid].hasOwnProperty(attribute)
             && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
 
-            let cbInRange = false;
+            // let cbInRange = false;
             // if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
             //     let corr = this.props.tree.branches[selected[0]][cb][tree.tid];
             //     if (corr) {

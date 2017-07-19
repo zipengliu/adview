@@ -181,7 +181,7 @@ let initialState = {
 
 let subCollectionGlyphs = ['circle', 'plus', 'triangle-right', 'square', 'diamond'];
 let getAvailableGlyph = sets => {
-    if (!sets || sets.length == 0) return subCollectionGlyphs[0];
+    if (!sets || sets.length === 0) return subCollectionGlyphs[0];
     for (let i = 0; i < subCollectionGlyphs.length; i++) {
         let j;
         for (j = 0; j < sets.length; j++) {
@@ -352,7 +352,6 @@ function visphyReducer(state = initialState, action) {
                     highlight: addHighlightGroup(state, action)
                 };
             }
-            return state;
         case TYPE.TOGGLE_CHECKING_BRANCH:
             return {
                 ...state,
@@ -1302,7 +1301,7 @@ function visphyReducer(state = initialState, action) {
             }
             // If select a different tree for pairwise comparison
             if (action.tids.length === 1 && state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
-                && (!action.isAdd || action.isAdd && !Object.keys(state.selectedTrees).length)) {
+                && (!action.isAdd || (action.isAdd && !Object.keys(state.selectedTrees).length))) {
                 // Update data for pairwise comparison and highlights
                 newColors = state.highlight.colors.slice();
                 let comparingTid = action.tids[0];
