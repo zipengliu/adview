@@ -1208,12 +1208,9 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 inputGroupData: {
                     ...state.inputGroupData,
-                    trees: {
-                        ...state.inputGroupData.trees,
-                        [state.referenceTree.id]: {
-                            ...state.inputGroupData.trees[state.referenceTree.id],          // Re-match the virtual branches
-                            branches: getGSF(state.inputGroupData.trees[state.referenceTree.id].branches, action.cb, Object.keys(state.inputGroupData.trees).length - 1, true)
-                        }
+                    referenceTree: {
+                        ...state.inputGroupData.referenceTree,
+                        branches: getGSF(state.inputGroupData.referenceTree.branches, action.cb, Object.keys(state.inputGroupData.trees).length, true)
                     }
                 },
                 cb: action.cb,
@@ -1374,7 +1371,7 @@ function visphyReducer(state = initialState, action) {
                 for (let bid in d) if (d.hasOwnProperty(bid)) {
                     newDistData[i][bid] = {
                         ...d[bid],
-                        selectCnt: 0
+                        selectCnt: (new Array(d[bid].bins.length)).fill(0)
                     }
                 }
             }

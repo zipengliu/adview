@@ -246,6 +246,7 @@ let getDendrogramSpecs = createSelector(
 
         let {branches} = tree;
         let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
+        let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
 
         let getTreeWidth = function() {
             let maxTopoWidth = 0, depth = 0;
@@ -266,7 +267,6 @@ let getDendrogramSpecs = createSelector(
 
             traverse(tree.rootBranch, 0, 1);
             let topologyWidth = ignoreBranchLen? maxTopoWidth: (aligned? spec.comparingTopologyWidth: spec.defaultTopologyWidth);
-            let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
             return {treeWidth: topologyWidth + longestEntity + roomForMembership, topologyWidth, maxLength: maxTopoWidth, depth};
         };
         let {treeWidth, topologyWidth, maxLength, depth} = getTreeWidth();
@@ -329,10 +329,10 @@ let getDendrogramSpecs = createSelector(
             //     height: missing.length * spec.marginOnEntity};
             // connectLines.push({x1: topologyWidth - 30, x2: topologyWidth - 30, y1: curY, y2: curY + (missing.length - 1) * spec.marginOnEntity});
             for (let i = 0; i < missing.length; i++) {
-                // let bid = 'm-' + missing[i];
+                let bid = 'm-' + missing[i];
                 // b[bid] = {bid, x1: topologyWidth - 30, x2: topologyWidth, y1: curY, y2: curY, isLeaf: true};
-                // boundingBox[bid] = {x: topologyWidth, y: curY - boxHalfWidth,
-                //     width: treeWidth - topologyWidth - spec.boundingBoxSideMargin, height: spec.responsiveAreaSize};
+                boundingBox[bid] = {x: topologyWidth + roomForMembership, y: curY - boxHalfWidth,
+                    width: treeWidth - topologyWidth - roomForMembership - spec.boundingBoxSideMargin, height: spec.responsiveAreaSize};
                 text.push({entity_id: missing[i],  x: !aligned? topologyWidth: (side === 'right'? topologyWidth: treeWidth - topologyWidth), y: curY});
                 curY += spec.marginOnEntity;
             }
@@ -348,7 +348,7 @@ let getDendrogramSpecs = createSelector(
 
         // Align the left, right side or none
         if (side === 'left') {
-            for (let bid in boundingBox) if (b.hasOwnProperty(bid)) {
+            for (let bid in boundingBox) if (boundingBox.hasOwnProperty(bid)) {
                 boundingBox[bid].x = treeWidth - boundingBox[bid].x - boundingBox[bid].width;
             }
             for (let i = 0; i < branchSpecs.length; i++) {
