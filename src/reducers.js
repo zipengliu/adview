@@ -970,6 +970,10 @@ function visphyReducer(state = initialState, action) {
                     }
                     return true;
                 });
+                // Revoke the consensus url
+                if (state.pairwiseComparison.tid.indexOf('consensus') !== -1) {
+                    window.URL.revokeObjectURL(state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL);
+                }
             }
             return {
                 ...state,
@@ -1221,11 +1225,15 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.CLOSE_TOAST:
+            if (state.toast.downloadingTreeUrl) {
+                window.URL.revokeObjectURL(state.toast.downloadingTreeUrl);
+            }
             return {
                 ...state,
                 toast: {
                     ...state.toast,
-                    msg: null
+                    msg: null,
+                    downloadingTreeUrl: null
                 }
             };
         case TYPE.TOGGLE_TAXA_LIST:
@@ -1447,7 +1455,8 @@ function visphyReducer(state = initialState, action) {
                         [action.data.tid]: {
                             ...action.data,
                             branches: prepareBranches(action.data.branches, action.data.rootBranch, [0, 1]),
-                            missing: findMissing(action.data, state.inputGroupData.entities)
+                            missing: findMissing(action.data, state.inputGroupData.entities),
+                            consensusURL: window.URL.createObjectURL(new Blob([action.data.newickString], {type: 'text/plain'}))
                         }
                     }
                 },

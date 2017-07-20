@@ -82,8 +82,8 @@ class ReferenceTreeContainer extends Component {
                             </OverlayTrigger>
                             {props.comparingTree.tid.indexOf('consensus') !== -1 &&
                             <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-export-consensus">Export consensus tree to a file</Tooltip>}>
-                                <Button onClick={Function.prototype}>
-                                    Export consensus tree
+                                <Button>
+                                    <a href={props.consensusURL} download="consensus.newick">Export consensus tree</a>
                                 </Button>
                             </OverlayTrigger>
                             }
@@ -232,6 +232,9 @@ let mapStateToProps = state => ({
     checkingBranchTid: state.referenceTree.checkingBranchTid,
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,
+
+    consensusURL: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1?
+        state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL: null,
 });
 
 let mapDispatchToProps = dispatch => ({
