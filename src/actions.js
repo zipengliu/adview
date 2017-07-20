@@ -488,3 +488,42 @@ export function toggleHighlightADBlock(tids, entities, uncertainEntities=[]) {
         dispatch(toggleHighlightTrees(tids));
     };
 }
+
+
+export function downloadSelectedTrees() {
+    return (dispatch, getState) => {
+        let state = getState();
+        dispatch(downloadSelectedTreesRequest());
+        let request = new FormData();
+        request.append('inputGroupId', state.inputGroupData.inputGroupId);
+        request.append('tids', Object.keys(state.selectedTrees).join(','));
+        return fetch(baseUrl + '/tree_newick', {method: 'POST', body: request}).then(response => {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(fetchInputGroupFailure(response.statusText))
+            }
+            return response.blob();
+        }).then(blob => {
+            let url = window.URL.createObjectURL(blob);
+            dispatch(downloadSelectedTreesSuccess(url));
+        }).catch(error => {
+            dispatch(downloadSelectedTreesFailure(error))
+        })
+    }
+}
+
+function downloadSelectedTreesRequest() {
+    return {type: TYPE.DOWNLOAD_SELECTED_TREES_REQUEST};
+}
+
+function downloadSelectedTreesSuccess(url) {
+    return {type: TYPE.DOWNLOAD_SELECTED_TREES_SUCCESS, url};
+}
+
+function downloadSelectedTreesFailure(error) {
+    return {type: TYPE.DOWNLOAD_SELECTED_TREES_FAILURE, error};
+}
+
+export function finishDownloadSelectedTrees() {
+    return {type: TYPE.FINISH_DOWNLOAD_SELECTED_TREES};
+}

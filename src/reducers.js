@@ -17,6 +17,7 @@ let initialState = {
     datasets: [],
     toast: {
         msg: null,
+        downloadingTreeUrl: null,
     },
     cb: 'cb2',                      // 'cb' means match with missing taxa, 'cb2' w/o
     inspector: {
@@ -1528,6 +1529,43 @@ function visphyReducer(state = initialState, action) {
                         bid: null
                     }
                 }
+            };
+        case TYPE.DOWNLOAD_SELECTED_TREES_REQUEST:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Preparing for download...',
+                }
+            };
+        case TYPE.DOWNLOAD_SELECTED_TREES_SUCCESS:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Click the following link to download:',
+                    downloadingTreeUrl: action.url
+                },
+            };
+        case TYPE.DOWNLOAD_SELECTED_TREES_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: action.error.toString()
+                }
+            };
+        case TYPE.FINISH_DOWNLOAD_SELECTED_TREES:
+            if (state.toast.downloadingTreeUrl) {
+                window.URL.revokeObjectURL(state.toast.downloadingTreeUrl);
+            }
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: null,
+                    downloadingTreeUrl: null
+                },
             };
 
         default:

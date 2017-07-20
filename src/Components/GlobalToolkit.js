@@ -7,7 +7,8 @@ import {connect} from 'react-redux';
 import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
-    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing, makeConsensus, reverseSelection} from '../actions';
+    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing, makeConsensus, reverseSelection,
+    downloadSelectedTrees} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
 
 class GlobalToolkit extends Component {
@@ -52,7 +53,7 @@ class GlobalToolkit extends Component {
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger placement="bottom" rootClose overlay={<Tooltip id="tooltip-export-selected-trees">Export the list of selected trees as text file</Tooltip>}>
-                                <Button disabled={!selectedTrees.length}>
+                                <Button disabled={!selectedTrees.length} onClick={this.props.onDownload}>
                                     <Glyphicon glyph="" /><span className="glyph-text">export selected trees</span>
                                 </Button>
                             </OverlayTrigger>
@@ -124,6 +125,7 @@ let mapDispatchToProps = dispatch => ({
     onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))},
     onMakeConsensus: (inputGroupId, tids) => {dispatch(makeConsensus(inputGroupId, tids))},
     onReverseSelection: () => {dispatch(reverseSelection())},
+    onDownload: () => {dispatch(downloadSelectedTrees())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(GlobalToolkit);

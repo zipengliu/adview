@@ -5,7 +5,7 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {Glyphicon, DropdownButton, MenuItem, Badge} from 'react-bootstrap';
-import {fetchInputGroup, closeToast, toggleTaxaList, toggleRefAttributeExplorer} from '../actions';
+import {fetchInputGroup, closeToast, toggleTaxaList, toggleRefAttributeExplorer, finishDownloadSelectedTrees} from '../actions';
 import cn from 'classnames';
 import ReferenceTreeContainer from './ReferenceTreeContainer';
 import Overview from './Overview';
@@ -32,6 +32,10 @@ class MainView extends Component {
             <div>
                 <div className={cn('toast', {show: toast.msg != null})}>
                     <p>{toast.msg}</p>
+                    {toast.downloadingTreeUrl &&
+                    <p onClick={() => {setTimeout(this.props.finishDownload, 0)}}><a href={toast.downloadingTreeUrl}
+                          download="tree.newick">trees.newick</a></p>
+                    }
                     <div style={{position: 'absolute', top: 5, right: 5, cursor: 'pointer'}} onClick={this.props.onCloseToast}>
                         <Glyphicon glyph="remove"/>
                     </div>
@@ -100,6 +104,7 @@ let mapDispatchToProps = dispatch => ({
     onCloseToast: () => {dispatch(closeToast())},
     toggleTaxaList: () => {dispatch(toggleTaxaList())},
     toggleAE: () => {dispatch(toggleRefAttributeExplorer())},
+    finishDownload: () => {dispatch(finishDownloadSelectedTrees())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(MainView);
