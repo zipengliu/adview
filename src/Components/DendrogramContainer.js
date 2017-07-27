@@ -12,7 +12,7 @@ import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleAggregationMode, toggleSelectTrees, toggleHighlightADBlock} from '../actions';
 import {createMappingFromArray, getIntersection} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
-import {calcFrondLayout, calcRemainderLayout} from '../aggregatedDendrogramLayout';
+import {calcFrondLayout, calcRemainderLayout, calcContainerLayout} from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
 
 
@@ -162,6 +162,7 @@ let getLayouts = createSelector(
 
         let layoutFunc = calcFrondLayout;
         if (mode === 'remainder') layoutFunc = calcRemainderLayout;
+        layoutFunc = calcContainerLayout;
 
         let layouts = {};
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {

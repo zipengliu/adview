@@ -125,6 +125,8 @@ let initialState = {
             frondLeafAngle: Math.PI / 4,
             frondBaseLength: 14,
             nestMargin: 4,
+            missingCompressRatio: .6,
+            verticalGapRatio: .12,
         },
         order: 'RF',                    // It can be RF or a branch ID
         shadedHistogram: {
