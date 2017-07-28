@@ -7,7 +7,7 @@ import {createMappingFromArray, subtractMapping, isMonophyly} from './utils';
 
 // Get the "pivot" branch for rendering an AD
 // The returned branch is called LCA for legacy reason
-let getPivotBranch = (tree, expanded) => {
+let getPivotBranch = (tree, expanded, lcaOnly=true) => {
     if (Object.keys(expanded).length === 0) {
         return {pivot: tree.rootBranch, distanceToLCA: null}
     }
@@ -29,14 +29,16 @@ let getPivotBranch = (tree, expanded) => {
     };
     getAncestorList(tree.rootBranch);
 
-    let lowestOutgroupBid = null;
-    for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
-        if (!expanded[bid].in && (lowestOutgroupBid === null || anc[bid].length > anc[lowestOutgroupBid].length)) {
-            lowestOutgroupBid = bid;
+    if (!lcaOnly) {
+        let lowestOutgroupBid = null;
+        for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
+            if (!expanded[bid].in && (lowestOutgroupBid === null || anc[bid].length > anc[lowestOutgroupBid].length)) {
+                lowestOutgroupBid = bid;
+            }
         }
-    }
-    if (lowestOutgroupBid) {
-        return {pivot: lowestOutgroupBid};
+        if (lowestOutgroupBid) {
+            return {pivot: lowestOutgroupBid};
+        }
     }
 
     // If they share a common ancestor at the same index, return true, otherwise false
@@ -454,7 +456,7 @@ export let calcFrondLayout = (tree, expanded, spec) => {
 };
 
 export let calcContainerLayout = (tree, expanded, spec) => {
-    let {pivot} = getPivotBranch(tree, expanded);
+    let {pivot} = getPivotBranch(tree, expanded, false);
     let {rootBranch, missing} = tree;
     let {verticalGap, size, branchLen} = spec;
     let width = size, height = size;

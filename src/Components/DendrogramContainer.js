@@ -83,16 +83,17 @@ class DendrogramContainer extends Component {
         return (
             <div className="view panel panel-default" id="aggregated-dendrograms">
                 <div className="view-header panel-heading">
-                        <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms</div>
+                        <div className="view-title" style={{display: 'inline-block'}}>Aggregated Dendrograms (AD)</div>
                 </div>
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
 
                     <div>
                         <FormGroup style={{display: 'inline-block'}}>
-                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>individual: frond</Radio>
+                            <Radio inline checked={mode === 'container'} onChange={this.props.onToggleMode.bind(null, 'container')}>individual: container</Radio>
                             <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
                             <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
+                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>frond</Radio>
                             <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
                                 <span style={{textDecoration: 'line-through'}}>remainder</span>
                             </Radio>
@@ -160,9 +161,9 @@ let getLayouts = createSelector(
     (referenceTree, expanded, cb, trees, mode, spec) => {
         console.log('getLayouts...');
 
-        let layoutFunc = calcFrondLayout;
+        let layoutFunc = calcContainerLayout;
+        if (mode === 'frond') layoutFunc = calcFrondLayout;
         if (mode === 'remainder') layoutFunc = calcRemainderLayout;
-        layoutFunc = calcContainerLayout;
 
         let layouts = {};
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
@@ -455,7 +456,8 @@ let mapStateToProps = (state) => {
     } else {
         layoutArray = sortLayouts(state, filteredLayouts);
     }
-    let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray), filteredLayouts);
+    // let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray), filteredLayouts);
+    let dendrograms = fillLayouts(state, layoutArray, filteredLayouts);
 
     return {
         ...state.aggregatedDendrogram,

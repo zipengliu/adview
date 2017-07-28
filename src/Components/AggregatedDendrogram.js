@@ -49,8 +49,8 @@ class AggregatedDendrogram extends Component {
 
         return (
             <svg width={svgWidth} height={svgHeight}>
-                {!isHighlighted && rangeSelected &&
-                <rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
+                {/*{!isHighlighted && rangeSelected &&*/}
+                {/*<rect className="range-selected-cb-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}*/}
                 {isHighlighted &&
                 <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
 

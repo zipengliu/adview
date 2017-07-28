@@ -48,7 +48,9 @@ let HistogramSlider = props => {
                     backgroundBins.map((b, i) =>
                         <OverlayTrigger key={i} placement="top" overlay={<Tooltip id={`background-bar-${i}`}>{b.length}</Tooltip>}>
                             <rect className="bar background" x={xScale(b.x0)} y={spec.chartHeight - yScale(b.length + 1)}
-                                  width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)} />
+                                  width={xScale(b.x1) - xScale(b.x0) - 1} height={yScale(b.length + 1)}
+                                  onClick={changeSelectionRange? changeSelectionRange.bind(null, b.x0, b.x1, selectionId): null}
+                            />
                         </OverlayTrigger>)
                     }
                     {foregroundBins &&

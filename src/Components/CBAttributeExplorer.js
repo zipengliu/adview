@@ -8,7 +8,7 @@ import {createSelector} from 'reselect';
 import {Button, DropdownButton, MenuItem} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
 import {toggleMoveHandle, moveControlHandle, changeActiveExpandedBranch,
-changeActiveRangeSelection, changeSelectionRange} from '../actions';
+    changeActiveRangeSelection, changeSelectionRange, changeActiveCollection} from '../actions';
 import Histogram from './HistogramSlider';
 import LineChart from './LineChart';
 
@@ -16,11 +16,11 @@ import './AttributeExplorer.css';
 
 class CBAttributeExplorer extends Component {
     render() {
-        let {expanded, data, attributes, activeSelectionId, activeExpandedBid} = this.props;
+        let {expanded, data, attributes, activeSelectionId, activeExpandedBid, activeSetId, sets} = this.props;
         let shownAsHistogram = true;
 
-        let renderChart = (data, att, id) => shownAsHistogram?
-            (<Histogram foregroundBins={data} backgroundBins={null} attributeName={att}
+        let renderChart = (data, foregroundData=null, att, id) => shownAsHistogram?
+            (<Histogram foregroundBins={foregroundData} backgroundBins={data} attributeName={att}
                         selectionId={id}
                         selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
@@ -56,8 +56,17 @@ class CBAttributeExplorer extends Component {
                 <div className="view-body panel-body">
 
                     <div>
+                        <span>For tree collection</span>
+                        <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-col" title={sets[activeSetId].title}
+                                        style={{marginLeft: '5px'}}
+                                        onSelect={this.props.onChangeActiveCollection}>
+                            {sets.map((s, i) =>
+                                <MenuItem key={i} eventKey={i}>{s.title}</MenuItem>)}
+                        </DropdownButton>
+                    </div>
+                    <div>
                         <span>For reference tree branch</span>
-                        <DropdownButton bsSize="xsmall" id="cb-ae-select-branch" title={expanded[activeExpandedBid]}
+                        <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-branch" title={expanded[activeExpandedBid]}
                                         style={{marginLeft: '5px'}}
                                         onSelect={this.props.onChangeActiveExpandedBranch}>
                             {Object.keys(expanded).map(bid =>
@@ -65,12 +74,12 @@ class CBAttributeExplorer extends Component {
                         </DropdownButton>
                     </div>
 
-                    {data.map((d, i) => <div key={i}>
-                        {renderChart(d, attributes[i].displayName, i)}
+                    {data.bins.map((d, i) => <div key={i}>
+                        {renderChart(d, data.binsForExact[i], attributes[i].displayName, i)}
                         {getSelectionButton(i, false)}
                     </div>)}
 
-                    <Button bsSize="xsmall" style={{width: '90%', marginTop: '20px'}}>Create customized chart</Button>
+                    {/*<Button bsSize="xsmall" style={{width: '90%', marginTop: '20px'}}>Create customized chart</Button>*/}
 
                     {/*<OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>*/}
                         {/*<div className="attribute-heading">&diams; Corresponding branches to*/}
@@ -122,15 +131,20 @@ let getCBHistograms = createSelector(
     [state => state.cbAttributeExplorer.activeExpandedBid,
     state => state.inputGroupData.referenceTree,
     state => state.inputGroupData.trees,
+    state => state.sets[state.cbAttributeExplorer.activeSetId],
     state => state.cbAttributeExplorer.attributes,
     state => state.cb],
-    (bid, referenceTree, trees, attributes, cb) => {
+    (bid, referenceTree, trees, activeSet, attributes, cb) => {
         if (!bid) return null;
         let values = [];
+        let valuesForExact = [];
         for (let i = 0; i < attributes.length; i++) {
             values.push([]);
+            valuesForExact.push([]);
         }
-        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+        for (let i = 0; i < activeSet.tids.length; i++) {
+        // for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+            let tid = activeSet.tids[i];
             let corr = referenceTree.branches[bid][cb];
             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
                 for (let i = 0; i < attributes.length; i++) {
@@ -141,10 +155,16 @@ let getCBHistograms = createSelector(
                         v = trees[tid].branches[corr[tid].bid][attributes[i].propertyName];
                     }
                     values[i].push(v);
+                    if (corr[tid].jac === 1.0) {
+                        valuesForExact[i].push(v);
+                    }
                 }
             }
         }
-        return values.map(v => getBinsFromArray(v));
+        return {
+            bins: values.map(v => getBinsFromArray(v)),
+            binsForExact: valuesForExact.map(v => getBinsFromArray(v))
+        };
     }
 );
 
@@ -156,6 +176,7 @@ let mapStateToProps = state => {
         expanded: state.referenceTree.expanded,
         spec: state.attributeChartSpec,
         data,
+        sets: state.sets,
     };
 };
 
@@ -165,6 +186,7 @@ let mapDispatchToProps = dispatch => ({
     onChangeActiveRangeSelection: (id) => {dispatch(changeActiveRangeSelection(id))},
     onChangeSelectionRange: (l, r, c) => {dispatch(changeSelectionRange(l, r, c))},
     onChangeActiveExpandedBranch: (bid) => {dispatch(changeActiveExpandedBranch(bid))},
+    onChangeActiveCollection: (index) => {dispatch(changeActiveCollection(index))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(CBAttributeExplorer);

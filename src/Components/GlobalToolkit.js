@@ -29,7 +29,7 @@ class GlobalToolkit extends Component {
                                 </Button>
                             </OverlayTrigger>
                             <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-consensus">Make a consensus tree of selected trees and pairwise compare with the reference tree</Tooltip>}>
-                                <Button disabled={selectedTrees.length < 2}
+                                <Button disabled={selectedTrees.length < 2} bsStyle={isConsensusNotConsistent? 'warning': 'default'}
                                         onClick={this.props.onMakeConsensus.bind(null, inputGroupId, selectedTrees)}>
                                     <Glyphicon glyph="zoom-in" /><span className="glyph-text">{isConsensusNotConsistent? 're-':''}make consensus</span>
                                 </Button>
