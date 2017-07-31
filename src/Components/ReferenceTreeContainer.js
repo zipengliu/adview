@@ -44,7 +44,7 @@ class ReferenceTreeContainer extends Component {
         };
 
         return (
-            <div className="view panel panel-default" style={{height: '100%'}} id="reference-tree">
+            <div className="view panel panel-default"  id="reference-tree">
                 <div className="view-body panel-body" >
                     {props.charts.show && !props.charts.float && <ReferenceTreeAttributeExplorer/>}
 
@@ -167,52 +167,36 @@ class ReferenceTreeContainer extends Component {
                     </div>
                     }
                 </div>
-                {/*<div className="view-footer legends" style={{height: '40px'}}>*/}
-                {/*<svg width="0" height="40">*/}
-                {/*<g transform="translate(2, 10)">*/}
-                {/*<g>*/}
-                {/*<line className="branch-line selected" x1="0" y1="0" x2="20" y2="0"/>*/}
-                {/*<text x="22" dy="4">expanded branch</text>*/}
-                {/*</g>*/}
-                {/*<g transform="translate(150, 0)">*/}
-                {/*<line className="branch-line selected" x1="0" y1="0" x2="20" y2="0"/>*/}
-                {/*<line className="branch-line last-selected-indicator" x1="0" y1="-3" x2="20" y2="-3"/>*/}
-                {/*<line className="branch-line last-selected-indicator" x1="0" y1="3" x2="20" y2="3"/>*/}
-                {/*<text x="22" dy="4">last expanded branch</text>*/}
-                {/*</g>*/}
-                {/*<g transform="translate(290, 0)">*/}
-                {/*<line className="branch-line" x1="0" y1="0" x2="20" y2="0"/>*/}
-                {/*<circle className="metric-branch-indicator" r="4" cx="10" cy="0"/>*/}
-                {/*<text x="22" dy="4">branch for distance metric in Overview</text>*/}
-                {/*</g>*/}
-
-                {/*<g transform="translate(0, 12)">*/}
-                {/*<g>*/}
-                {/*<rect className="hover-box" x="0" y="-4" width="20" height="8"/>*/}
-                {/*<text x="22" dy="4">highlighted monophyly</text>*/}
-                {/*</g>*/}
-                {/*<g transform="translate(150,0)">*/}
-                {/*<line className="branch-line range-selected" x1="0" y1="0" x2="20" y2="0"/>*/}
-                {/*<text x="22" dy="4">range selecting branch</text>*/}
-                {/*</g>*/}
-                {/*<g transform="translate(290, 0)">*/}
-                {/*<rect className="block range-selected" x="0" y="-4" width="20" height="8"/>*/}
-                {/*<text x="22" dy="4">block that has >=1 range selecting branch</text>*/}
-                {/*</g>*/}
-                {/*</g>*/}
-
-                {/*<g transform="translate(0, 24)">*/}
-                {/*<g>*/}
-                {/*<g className="proportion">*/}
-                {/*<rect className="total" x="0" y="-4" width="20" height="8"/>*/}
-                {/*<rect className="num" x="0" y="-4" width="10" height="8"/>*/}
-                {/*</g>*/}
-                {/*</g>*/}
-                {/*<text x="22" dy="4">proportion of trees represented by the cluster</text>*/}
-                {/*</g>*/}
-                {/*</g>*/}
-                {/*</svg>*/}
-                {/*</div>*/}
+                <div className="panel-footer">
+                    <div className="legend">
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '5px', width: '12px', background: 'purple'}}></div>
+                            <span>branch falls into attribute range</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '7px', width: '12px', background: 'black'}}></div>
+                            <span>branch being inspected</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '1px', width: '20px', background: 'black', border: 'none', position: 'relative', verticalAlign: 'middle'}}>
+                                <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'grey', position: 'absolute', left: '6px', top: '-3px'}}></div>
+                            </div>
+                            <span>branch for tree similarity plot</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '5px', width: '12px', background: 'red'}}></div>
+                            <span>branch being matched</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{width: '7px', height: '7px', borderRadius: '50%', background: 'black'}}></div>
+                            <span>taxon hovered</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{width: '7px', height: '7px', borderRadius: '50%', background: 'none', border: '1px solid black'}}></div>
+                            <span>uncertain taxon hovered</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         )
     }

@@ -105,6 +105,13 @@ class TreeDistribution extends Component {
                     </div>
                 </div>
 
+                {expandedArr.length === 0 &&
+                <div className="panel-body">
+                    There is no branch of interest yet. Please select from the reference tree (Alt + click a branch).
+                </div>
+                }
+
+                {expandedArr.length > 0 &&
                 <Table condensed bordered>
                     <thead>
                     <tr>
@@ -131,13 +138,39 @@ class TreeDistribution extends Component {
                     )}
                     </tbody>
                 </Table>
+                }
+
                 <div className="panel-footer">
-                    <ButtonGroup bsSize="xsmall">
-                        <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
-                        <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
-                    </ButtonGroup>
-                    <span> distribution for sub-collections. </span>
+                    {sets.length > 1 &&
+                    <div style={{display: 'inline-block'}}>
+                        <ButtonGroup bsSize="xsmall">
+                            <Button active={showSubsets} onClick={this.props.onToggleSubsetDistribution}>Show</Button>
+                            <Button active={!showSubsets} onClick={this.props.onToggleSubsetDistribution}>Hide</Button>
+                        </ButtonGroup>
+                        <span> distribution for sub-collections. </span>
+                    </div>
+                    }
                     {!!tooltipMsg && <span>{tooltipMsg}</span>}
+
+                    <div className="legend">
+                        <span>Trees can be: </span>
+                        <div className="legend-item">
+                            <span>matched by ref. (</span>
+                            <Glyphicon glyph="registration-mark" style={{fontSize: '12px'}} />
+                            <span>)</span>
+                        </div>
+                        <div className="legend-item">
+                            <span>hovered (</span>
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '12px', background: '#b82e2e', opacity: '.6'}}></div>
+                            <span>)</span>
+                        </div>
+                        <div className="legend-item">
+                            <span>selected (</span>
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px', border: '1px solid black'}}></div>
+                            <span>)</span>
+                        </div>
+                    </div>
+
                 </div>
 
                 {extendedMenu.bid &&

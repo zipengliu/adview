@@ -5,7 +5,7 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Button, DropdownButton, MenuItem} from 'react-bootstrap';
+import {Button, DropdownButton, MenuItem, Clearfix} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
 import {toggleMoveHandle, moveControlHandle, changeActiveExpandedBranch,
     changeActiveRangeSelection, changeSelectionRange, changeActiveCollection} from '../actions';
@@ -114,6 +114,17 @@ class CBAttributeExplorer extends Component {
 
                     {/*</div>*/}
 
+                    <Clearfix/>
+                    <div className="legend" style={{marginTop: '5px'}}>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'grey'}}></div>
+                            <span>trees in chosen collection</span>
+                        </div>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'black'}}></div>
+                            <span>trees with exact match</span>
+                        </div>
+                    </div>
                 </div>
                 }
             </div>

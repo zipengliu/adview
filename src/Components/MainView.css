@@ -10,11 +10,15 @@
     align-items: stretch;
 }
 .left-column {
-    flex: 0 0 auto;
+    flex: auto;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
 }
 .right-column {
-    flex: 1 1 auto;
+    flex: auto;
     margin: 0 5px;
     height: 100%;
 
@@ -25,6 +29,7 @@
 }
 
 .chapter-title {
+    flex: 0 0 auto;
     font-size: 18px;
     font-weight: 600;
     text-align: center;
@@ -108,8 +113,7 @@
 
 #taxa-list {
     width: 200px;
-    height: 300px;
-    z-index: 100;
+    z-index: 600;
 }
 
 #reference-tree-attribute-explorer {
@@ -130,6 +134,7 @@
 #aggregated-dendrograms {
     flex: 1 1 auto;
     min-height: 200px;
+    margin-bottom: 0;
 }
 #tree-distribution {
     flex: 0 0 auto;
@@ -179,10 +184,21 @@
 }
 
 
-.legends {
-    font-size: 10px;
-}
-
 .panel-collapsed .table {
     display: none !important;
+}
+
+.legend {
+    font-size: 10px;
+    display: flex;
+    flex-flow: row wrap;
+}
+.legend .legend-item {
+    flex: 0 0 auto;
+    margin: 0 5px;
+}
+
+.legend .legend-item .mark {
+    display: inline-block;
+    margin: 0 2px;
 }

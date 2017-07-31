@@ -481,17 +481,6 @@ function visphyReducer(state = initialState, action) {
                 };
                 delete newReferenceTree.branches[virtualBid];
             } else {
-                let full = clusterTreesByBranch(state.inputGroupData.trees, state.inputGroupData.referenceTree, state.cb, virtualBid);
-                let subs = state.treeDistribution.showSubsets? getSubsetDistribution(full, state.sets, virtualBid): null;
-                for (let i = 0; i < newDistData.length; i++) {
-                    d = i === 0? full: subs[i - 1];
-                    d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
-                    d.selectCnt = getHighlightProportion(d, state.selectedTrees);
-                    newDistData[i] = {
-                        ...newDistData[i],
-                        [virtualBid]: d
-                    };
-                }
 
                 newExpanded[virtualBid] = action.group;
                 // Compile a list of all taxa in that taxa group and construct a virtual branch of these taxa
@@ -509,6 +498,18 @@ function visphyReducer(state = initialState, action) {
                 };
                 let cbData = getAllCB(newReferenceTree, virtualBid, state.inputGroupData.trees, false);
                 Object.assign(newReferenceTree.branches[virtualBid], cbData);
+
+                let full = clusterTreesByBranch(state.inputGroupData.trees, newReferenceTree, state.cb, virtualBid);
+                let subs = state.treeDistribution.showSubsets? getSubsetDistribution(full, state.sets, virtualBid): null;
+                for (let i = 0; i < newDistData.length; i++) {
+                    d = i === 0? full: subs[i - 1];
+                    d.highlightCnt = getHighlightProportion(d, state.hoveredTrees);
+                    d.selectCnt = getHighlightProportion(d, state.selectedTrees);
+                    newDistData[i] = {
+                        ...newDistData[i],
+                        [virtualBid]: d
+                    };
+                }
 
                 // In case the taxa group is previously highlighted but now it got changed
                 newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bids, targetEntities: entities, virtualBid}, highlightIdx);

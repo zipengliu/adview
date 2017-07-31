@@ -46,7 +46,7 @@ class MainView extends Component {
                 <div>
                     <TaxaList/>
                     {charts.show && charts.float && <ReferenceTreeAttributeExplorer/>}
-                    <div className="mainview-container" style={{height: (getWindowHeight() - 60) + 'px'}}>
+                    <div className="mainview-container" style={{height: (getWindowHeight() - 40) + 'px'}}>
                         <div className="left-column">
                             <div className="chapter-title">
                                 <Glyphicon glyph="registration-mark"/>eference Tree

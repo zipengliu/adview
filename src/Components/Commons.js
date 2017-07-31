@@ -15,13 +15,13 @@ let glyphStyle = {
     color: 'black'
 };
 
-export function renderSubCollectionGlyph(glyph) {
+export function renderSubCollectionGlyph(glyph, color='black') {
     switch (glyph) {
-        case 'circle': return <div style={{...glyphStyle, borderRadius: '5px', backgroundColor: 'black'}} />;
+        case 'circle': return <div style={{...glyphStyle, borderRadius: '5px', backgroundColor: color}} />;
         case 'plus':
-        case 'triangle-right': return <Glyphicon glyph={glyph} style={glyphStyle} />;
-        case 'square': return <div style={{...glyphStyle, backgroundColor: 'black'}} />;
-        case 'diamond': return <div style={{...glyphStyle, backgroundColor: 'black', marginRight: '4px', transform: 'rotate(45deg)'}} />;
+        case 'triangle-right': return <Glyphicon glyph={glyph} style={{...glyphStyle, color}} />;
+        case 'square': return <div style={{...glyphStyle, backgroundColor: color}} />;
+        case 'diamond': return <div style={{...glyphStyle, backgroundColor: color, marginRight: '4px', transform: 'rotate(45deg)'}} />;
         default:
     }
 }

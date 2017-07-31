@@ -48,7 +48,7 @@ class DendrogramContainer extends Component {
                     </tr>)}
                     </tbody>
                 </Table>}
-                {t.cbInfo.length === 0 && <p>There is no branch of interest yet. Please select from the reference tree.</p>}
+                {t.cbInfo.length === 0 && <p>There is no branch of interest yet. Please select from the reference tree (Alt + click a branch).</p>}
             </Popover>;
 
             let div = (
@@ -141,6 +141,28 @@ class DendrogramContainer extends Component {
 
                     <div className="dendrogram-container">
                         {dendrograms.map(getDendroBox)}
+                    </div>
+                </div>
+
+                <div className="panel-footer">
+                    <div className="legend">
+                        <span>block: </span>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '1px solid grey'}}></div>
+                            <span>context</span>
+                        </div>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '2px solid black'}}></div>
+                            <span>exact matched (taxa membership)</span>
+                        </div>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '2px dashed black'}}></div>
+                            <span>inexact matched</span>
+                        </div>
+                        <div className="legend-item">
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '1px dotted grey', borderRadius: '3px'}}></div>
+                            <span>missing taxa</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -408,41 +430,41 @@ let fillLayouts = createSelector(
     }
 );
 
-let selectLayoutsByAttribute = createSelector(
-    [state => state.inputGroupData.trees,
-        state => state.inputGroupData.referenceTree,
-        state => state.cbAttributeExplorer.activeSelectionId >= 0? state.cbAttributeExplorer.activeExpandedBid: null,
-        state => state.cb,
-        state => state.cbAttributeExplorer.activeSelectionId >= 0?
-            state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId]: null,
-        (_, layouts) => layouts],
-    (trees, referenceTree, bid, cb, selection, layouts) => {
-        if (!bid || !selection) return layouts;
-        let corr = referenceTree.branches[bid][cb];
-        let res = [];
-        for (let i = 0; i < layouts.length; i++) {
-            let tid = layouts[i].tid;
-            if (corr.hasOwnProperty(tid) && corr[tid].bid) {
-                // Get the CB attribute value
-                let v;
-                if (selection.attribute === 'similarity') {
-                    v = corr[tid].jac;
-                } else {
-                    v = trees[tid].branches[corr[tid].bid][selection.attribute];
-                }
-
-                // Check if in range selection
-                res.push({
-                    ...layouts[i],
-                    rangeSelected: selection.range[0] <= v && v <= selection.range[1],
-                });
-            } else {
-                res.push(layouts[i]);
-            }
-        }
-        return res;
-    }
-);
+// let selectLayoutsByAttribute = createSelector(
+//     [state => state.inputGroupData.trees,
+//         state => state.inputGroupData.referenceTree,
+//         state => state.cbAttributeExplorer.activeSelectionId >= 0? state.cbAttributeExplorer.activeExpandedBid: null,
+//         state => state.cb,
+//         state => state.cbAttributeExplorer.activeSelectionId >= 0?
+//             state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId]: null,
+//         (_, layouts) => layouts],
+//     (trees, referenceTree, bid, cb, selection, layouts) => {
+//         if (!bid || !selection) return layouts;
+//         let corr = referenceTree.branches[bid][cb];
+//         let res = [];
+//         for (let i = 0; i < layouts.length; i++) {
+//             let tid = layouts[i].tid;
+//             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
+//                 // Get the CB attribute value
+//                 let v;
+//                 if (selection.attribute === 'similarity') {
+//                     v = corr[tid].jac;
+//                 } else {
+//                     v = trees[tid].branches[corr[tid].bid][selection.attribute];
+//                 }
+//
+//                 // Check if in range selection
+//                 res.push({
+//                     ...layouts[i],
+//                     rangeSelected: selection.range[0] <= v && v <= selection.range[1],
+//                 });
+//             } else {
+//                 res.push(layouts[i]);
+//             }
+//         }
+//         return res;
+//     }
+// );
 
 
 let mapStateToProps = (state) => {

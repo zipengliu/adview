@@ -339,6 +339,7 @@ export let clusterTreesByBranch = (trees, ref, cb, bid) => {
     console.log('Binning trees by ', bid, ' in reference tree under mode ', cb);
     let bins = [], treeToBin = {};
     let withoutMissing = cb === 'cb2';
+    // FIXME: what if USTG!!!!!
     let correspondingBranches = ref.branches[bid][cb];
 
     // Push the exact matching trees first

@@ -3,11 +3,13 @@
  */
 
 import React from 'react';
-import {Button, ButtonGroup, OverlayTrigger, Tooltip} from 'react-bootstrap';
+import {Button, ButtonGroup, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import Dotplot from './Dotplot';
 import PopupWindow from './PopupWindow';
 import { changeDistanceMetric} from '../actions';
+import {renderSubCollectionGlyph} from './Commons';
+
 
 let Overview = props => (
     <div id="overview" className="view panel panel-default">
@@ -33,7 +35,29 @@ let Overview = props => (
 
             <Dotplot />
 
-            <Button bsSize="xsmall" style={{width: '100%'}}> Create plot for local similarity </Button>
+            {/*<Button bsSize="xsmall" style={{width: '100%'}}> Create plot for local similarity </Button>*/}
+            <div className="legend">
+                <div className="legend-item" style={{color: 'grey'}}>
+                    {renderSubCollectionGlyph('circle', 'grey')}
+                    {renderSubCollectionGlyph('plus', 'grey')}
+                    {renderSubCollectionGlyph('triangle-right', 'grey')}
+                    {renderSubCollectionGlyph('square', 'grey')}
+                    {renderSubCollectionGlyph('diamond', 'grey')}
+                    <span>sub-collection mark</span>
+                </div>
+                <div className="legend-item">
+                    <Glyphicon glyph="registration-mark" style={{fontSize: '12px', margin: '0 2px'}} />
+                    <span>ref.</span>
+                </div>
+                <div className="legend-item">
+                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', border: '1px solid black', background: 'grey'}}></div>
+                    <span>selected</span>
+                </div>
+                <div className="legend-item">
+                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: '#b82e2e'}}></div>
+                    <span>hovered</span>
+                </div>
+            </div>
         </div>
 
         <PopupWindow />

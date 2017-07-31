@@ -614,7 +614,7 @@ export let calcContainerLayout = (tree, expanded, spec) => {
         let b = blocks[blockId];
         for (let i = 0; i < b.children.length; i++) {
             let c = b.children[i];
-            blocks[c].height = blocks[c].height * unitHeight;
+            blocks[c].height *= unitHeight;
             blocks[c].y = b.y + curY;
             curY += blocks[c].height + spec.verticalGapRatio * unitHeight;
             if (blocks[c].children.length) {
@@ -658,8 +658,8 @@ export let calcContainerLayout = (tree, expanded, spec) => {
         branches[pivot].x1 = leftBlockWidth;
         branches[pivot].x2 = leftBlockWidth + branchLen;
     }
-    blocks['pivot-right'].width = width - branchLen - leftBlockWidth;
-    blocks['pivot-right'].x = leftBlockWidth + branchLen;
+    blocks['pivot-right'].width = width - ('pivot-left' in blocks? branchLen: 0) - leftBlockWidth;
+    blocks['pivot-right'].x = leftBlockWidth + ('pivot-left' in blocks? branchLen: 0);
     fillX('pivot-right');
 
     return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
