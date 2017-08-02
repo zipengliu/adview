@@ -152,13 +152,16 @@ rect.reference-tree-indicator {
 }
 
 .taxa-membership-markers>.taxa-membership-highlight-marker {
-    visibility: hidden;
+    /*visibility: hidden;*/
     fill: black;
     stroke: none;
 }
-.taxa-membership-markers:hover>.taxa-membership-highlight-marker {
-    visibility: visible;
-}
-.taxa-membership-markers:hover>text {
+/*.taxa-membership-markers:hover>.taxa-membership-highlight-marker {*/
+    /*visibility: visible;*/
+/*}*/
+/*.taxa-membership-markers:hover>text {*/
+    /*fill: white;*/
+/*}*/
+.taxa-membership-markers>text {
     fill: white;
 }

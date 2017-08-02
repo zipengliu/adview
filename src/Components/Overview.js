@@ -43,7 +43,7 @@ let Overview = props => (
                     {renderSubCollectionGlyph('triangle-right', 'grey')}
                     {renderSubCollectionGlyph('square', 'grey')}
                     {renderSubCollectionGlyph('diamond', 'grey')}
-                    <span>sub-collection mark</span>
+                    <span style={{color: 'black'}}>sub-collection mark</span>
                 </div>
                 <div className="legend-item">
                     <Glyphicon glyph="registration-mark" style={{fontSize: '12px', margin: '0 2px'}} />

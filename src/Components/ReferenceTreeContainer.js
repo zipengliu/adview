@@ -18,7 +18,7 @@ import {getVirtualBid} from '../tree';
 class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
-        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches} = props;
+        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches, colorScheme} = props;
         let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
         let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
         let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
@@ -169,31 +169,56 @@ class ReferenceTreeContainer extends Component {
                 </div>
                 <div className="panel-footer">
                     <div className="legend">
+                        <div className="legend-section-title">
+                            Branch:
+                        </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '5px', width: '12px', background: 'purple'}}></div>
-                            <span>branch falls into attribute range</span>
+                            <span>in attribute range</span>
                         </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '7px', width: '12px', background: 'black'}}></div>
-                            <span>branch being inspected</span>
+                            <span>hovered</span>
                         </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '1px', width: '20px', background: 'black', border: 'none', position: 'relative', verticalAlign: 'middle'}}>
                                 <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'grey', position: 'absolute', left: '6px', top: '-3px'}}></div>
                             </div>
-                            <span>branch for tree similarity plot</span>
+                            <span>for tree similarity</span>
                         </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '5px', width: '12px', background: 'red'}}></div>
-                            <span>branch being matched</span>
+                            <span>matched</span>
+                        </div>
+                    </div>
+                    <div className="legend">
+                        <div className="legend-section-title">
+                            Taxon:
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{width: '7px', height: '7px', borderRadius: '50%', background: 'black'}}></div>
+                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'black'}}></div>
                             <span>taxon hovered</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{width: '7px', height: '7px', borderRadius: '50%', background: 'none', border: '1px solid black'}}></div>
+                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'none', border: '1px solid black'}}></div>
                             <span>uncertain taxon hovered</span>
+                        </div>
+                        <div className="legend-item">
+                            {[1,2,3].map(i =>
+                                <div className="mark" style={{width: '12px', height: '12px', borderRadius: '50%', background: 'black', color: 'white', textAlign: 'center'}}>{i}</div>
+                            )}
+                            <span>for partition segments</span>
+                        </div>
+                    </div>
+                    <div className="legend">
+                        <div className="legend-section-title">
+                            Monophyly:
+                        </div>
+                        <div className="legend-item">
+                            {colorScheme.map((c, i) =>
+                                <div className="mark" key={i} style={{width: '10px', height: '10px', background: c, opacity: .5}}></div>
+                            )}
+                            <span>highlight 1-5</span>
                         </div>
                     </div>
                 </div>
@@ -219,6 +244,8 @@ let mapStateToProps = state => ({
 
     consensusURL: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1?
         state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL: null,
+
+    colorScheme: state.highlight.colorScheme
 });
 
 let mapDispatchToProps = dispatch => ({

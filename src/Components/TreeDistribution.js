@@ -153,9 +153,9 @@ class TreeDistribution extends Component {
                     {!!tooltipMsg && <span>{tooltipMsg}</span>}
 
                     <div className="legend">
-                        <span>Trees can be: </span>
+                        <span>Segment (group of trees): </span>
                         <div className="legend-item">
-                            <span>matched by ref. (</span>
+                            <span>shared same taxa membership with ref. (</span>
                             <Glyphicon glyph="registration-mark" style={{fontSize: '12px'}} />
                             <span>)</span>
                         </div>

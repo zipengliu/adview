@@ -197,8 +197,15 @@
     flex: 0 0 auto;
     margin: 0 5px;
 }
+.legend .legend-section-title {
+    flex: 0 0 55px;
+    text-align: left;
+}
 
 .legend .legend-item .mark {
     display: inline-block;
     margin: 0 2px;
+    padding: 0;
+    background: none;
+    vertical-align: middle;
 }

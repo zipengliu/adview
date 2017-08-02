@@ -86,7 +86,7 @@ let initialState = {
     },
     highlight: {
         // colorScheme: scaleOrdinal(schemeCategory10),
-        colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6", "#dd4477" ],
+        colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6"],
         limit: 5,
         currentColor: 0,
         bids: [],
@@ -1486,8 +1486,7 @@ function visphyReducer(state = initialState, action) {
             let consensusTid = action.data.tid;
             newBids = state.highlight.bids.map(h => (
                 {...h, tgt: consensusTid,
-                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
-                        getTreeByTid(state, consensusTid))}
+                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]), action.data)}
             ));
             newColors = state.highlight.colors;
             return {

@@ -6,7 +6,7 @@ import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {scaleLinear, hcl, extent} from 'd3';
-import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Popover, Table} from 'react-bootstrap';
+import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Popover, Table, Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleAggregationMode, toggleSelectTrees, toggleHighlightADBlock} from '../actions';
@@ -146,22 +146,38 @@ class DendrogramContainer extends Component {
 
                 <div className="panel-footer">
                     <div className="legend">
-                        <span>block: </span>
+                        <div className="legend-section-title" style={{flexBasis: '30px'}}>Block: </div>
                         <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '1px solid grey'}}></div>
+                            <div className="mark" style={{height: '10px', width: '14px', border: '1px solid grey'}}></div>
                             <span>context</span>
                         </div>
                         <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '2px solid black'}}></div>
+                            <div className="mark" style={{height: '10px', width: '14px', border: '2px solid black'}}></div>
                             <span>exact matched (taxa membership)</span>
                         </div>
                         <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '2px dashed black'}}></div>
+                            <div className="mark" style={{height: '10px', width: '18px', border: '2px dotted black'}}></div>
                             <span>inexact matched</span>
                         </div>
                         <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '14px', border: '1px dotted grey', borderRadius: '3px'}}></div>
+                            <div className="mark" style={{height: '12px', width: '16px', border: '2px dotted #888', borderRadius: '5px'}}></div>
                             <span>missing taxa</span>
+                        </div>
+                    </div>
+
+                    <div className="legend">
+                        <div className="legend-section-title" style={{flexBasis: '30px'}}>Tree: </div>
+                        <div className="legend-item">
+                            <div className="mark"><Glyphicon glyph="eye-open"/></div>
+                            <span>pairwise target</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', border: '2px solid black'}}></div>
+                            <span>(bounding box) selected</span>
+                        </div>
+                        <div className="legend-item">
+                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', backgroundColor: '#b82e2e', opacity: '.6'}}></div>
+                            <span>hovered</span>
                         </div>
                     </div>
                 </div>
