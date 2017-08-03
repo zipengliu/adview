@@ -13,24 +13,26 @@ import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionColla
 
 class TreeDistribution extends Component {
     render() {
-        let {expandedBranches, sets, treeDistribution, membershipViewer} = this.props;
+        let {expandedBranches, sets, treeDistribution, membershipViewer, banMembershipViewer} = this.props;
         let {showSubsets, tooltipMsg, collapsed, data, extendedMenu} = treeDistribution;
         let numTrees = sets[0].tids.length;
         let expandedArr = Object.keys(expandedBranches);
 
         let membershipMapping = {};
-        for (let i = 0; i < membershipViewer.length; i++) {
-            let m = membershipViewer[i];
-            if (!membershipMapping.hasOwnProperty(m.bid)) {
-                membershipMapping[m.bid] = {}
-            }
-            membershipMapping[m.bid][m.tid] = i + 1;
-        }
         let fullNumbering = {};
-        for (let bid in data[0]) if (data[0].hasOwnProperty(bid) && membershipMapping.hasOwnProperty(bid)) {
-            fullNumbering[bid] = {};
-            for (let tid in membershipMapping[bid]) if (membershipMapping[bid].hasOwnProperty(tid)) {
-                fullNumbering[bid][data[0][bid].treeToBin[tid]] = membershipMapping[bid][tid];
+        if (!banMembershipViewer) {
+            for (let i = 0; i < membershipViewer.length; i++) {
+                let m = membershipViewer[i];
+                if (!membershipMapping.hasOwnProperty(m.bid)) {
+                    membershipMapping[m.bid] = {}
+                }
+                membershipMapping[m.bid][m.tid] = i + 1;
+            }
+            for (let bid in data[0]) if (data[0].hasOwnProperty(bid) && membershipMapping.hasOwnProperty(bid)) {
+                fullNumbering[bid] = {};
+                for (let tid in membershipMapping[bid]) if (membershipMapping[bid].hasOwnProperty(tid)) {
+                    fullNumbering[bid][data[0][bid].treeToBin[tid]] = membershipMapping[bid][tid];
+                }
             }
         }
 
@@ -67,7 +69,7 @@ class TreeDistribution extends Component {
                                      e.stopPropagation();
                                      e.preventDefault();
                                      if (e.altKey) {
-                                         this.props.onToggleTDExtendedMenu(bid, b[0], e.clientX, e.clientY);
+                                         this.props.onToggleTDExtendedMenu(bid, b[0], e.clientX, e.clientY, i in numbering? numbering[i] - 1: null);
                                      } else {
                                          this.props.onSelectTrees(b, e.shiftKey);
                                      }}}
@@ -85,7 +87,9 @@ class TreeDistribution extends Component {
                                     border: '3px solid #000', zIndex: 50,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
                                 {numbering.hasOwnProperty(i) &&
-                                <div style={{position: 'absolute', top: '2px', right: '2px'}}>{numbering[i]}</div>}
+                                <div style={{position: 'absolute', top: '2px', right: '2px', width: '14px', height: '14px',
+                                    background: 'black', color: 'white', borderRadius: '50%', textAlign: 'center', verticalAlign: 'middle'}}>
+                                    {numbering[i]}</div>}
                             </div>
                         )
                     })}
@@ -173,11 +177,13 @@ class TreeDistribution extends Component {
 
                 </div>
 
-                {extendedMenu.bid &&
+                {!banMembershipViewer && extendedMenu.bid &&
                 <ul className="dropdown-menu open tree-distribution-extended-menu"
                     style={{position: 'fixed', display: 'block', zIndex: '200', left: extendedMenu.x + 'px', top: extendedMenu.y + 'px'}}>
-                    <MenuItem onClick={this.props.onToggleTaxaMembershipView.bind(null, extendedMenu.bid, extendedMenu.tid)}>
-                        Inspect taxa membership
+                    <MenuItem onClick={extendedMenu.viewerIndex === null?
+                        this.props.onToggleTaxaMembershipView.bind(null, extendedMenu.bid, extendedMenu.tid, null):
+                        this.props.onToggleTaxaMembershipView.bind(null, null, null, extendedMenu.viewerIndex)}>
+                        {extendedMenu.viewerIndex === null? 'I': 'Cancel i'}nspect taxa membership
                     </MenuItem>
                 </ul>}
             </div>
@@ -191,6 +197,7 @@ let mapStateToProps = state => ({
     sets: state.sets,
     treeDistribution: state.treeDistribution,
     membershipViewer: state.referenceTree.membershipViewer,
+    banMembershipViewer: state.inputGroupData.hasMissingTaxa && state.cb === 'cb2'
 });
 
 let mapDispatchToProps = dispatch => ({
@@ -198,8 +205,8 @@ let mapDispatchToProps = dispatch => ({
     onHighlightSegment: (tids, entities, msg) => {dispatch(toggleHighlightSegment(tids, entities, msg))},
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onToggleCollapsed: () => {dispatch(toggleTreeDistributionCollapse())},
-    onToggleTDExtendedMenu: (bid=null, tid=null, x=null, y=null) => {dispatch(toggleTDExtendedMenu(bid, tid, x, y))},
-    onToggleTaxaMembershipView: (bid, tid) => {dispatch(toggleTaxaMembershipView(bid, tid))},
+    onToggleTDExtendedMenu: (bid=null, tid=null, x=null, y=null, v=null) => {dispatch(toggleTDExtendedMenu(bid, tid, x, y, v))},
+    onToggleTaxaMembershipView: (bid, tid, v=null) => {dispatch(toggleTaxaMembershipView(bid, tid, v))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(TreeDistribution);

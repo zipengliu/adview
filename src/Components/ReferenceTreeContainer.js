@@ -205,7 +205,8 @@ class ReferenceTreeContainer extends Component {
                         </div>
                         <div className="legend-item">
                             {[1,2,3].map(i =>
-                                <div className="mark" style={{width: '12px', height: '12px', borderRadius: '50%', background: 'black', color: 'white', textAlign: 'center'}}>{i}</div>
+                                <div className="mark" key={i} style={{width: '14px', height: '14px', borderRadius: '50%', background: 'black', color: 'white',
+                                    textAlign: 'center', verticalAlign: 'middle'}}>{i}</div>
                             )}
                             <span>for partition segments</span>
                         </div>

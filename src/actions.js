@@ -469,8 +469,8 @@ export function toggleHighlightSegment(tids, entities, tooltipMsg) {
     return {type: TYPE.TOGGLE_HIGHLIGHT_SEGMENT, tids, entities, tooltipMsg};
 }
 
-export function toggleTDExtendedMenu(bid, tid, x, y) {
-    return {type: TYPE.TOGGLE_TD_EXTENDED_MENU, bid, tid, x, y};
+export function toggleTDExtendedMenu(bid, tid, x, y, viewerIndex=null) {
+    return {type: TYPE.TOGGLE_TD_EXTENDED_MENU, bid, tid, x, y, viewerIndex};
 }
 
 export function toggleTaxaMembershipView(bid, tid, viewerIndex=null) {

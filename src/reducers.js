@@ -34,7 +34,7 @@ let initialState = {
         // width: 500,
         defaultTopologyWidth: 300,
         height: 840,
-        margin: {left: 5, right: 5, top: 14, bottom: 0},
+        margin: {left: 5, right: 5, top: 15, bottom: 0},
         marginOnEntity: 8,
         boundingBoxSideMargin: 5,
         minLabelWidth: 40,
@@ -173,6 +173,7 @@ let initialState = {
             bid: null,
             tid: null,
             x: null, y: null,
+            viewerIndex: null,
         }
     },
     // bipartitionDistribution: {
@@ -1562,7 +1563,8 @@ function visphyReducer(state = initialState, action) {
                         bid: action.bid,
                         tid: action.tid,
                         x: action.x,
-                        y: action.y
+                        y: action.y,
+                        viewerIndex: action.viewerIndex
                     }
                 }
             };
@@ -1571,14 +1573,15 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
-                    membershipViewer: action.viewerIndex? state.referenceTree.membershipViewer.filter((_, i) => i !== action.viewerIndex):
+                    membershipViewer: action.viewerIndex !== null? state.referenceTree.membershipViewer.filter((_, i) => i !== action.viewerIndex):
                         [...state.referenceTree.membershipViewer, {setIndex: action.setIndex, bid: action.bid, tid: action.tid}]
                 },
                 treeDistribution: {
                     ...state.treeDistribution,
                     extendedMenu: {
                         ...state.extendedMenu,
-                        bid: null
+                        bid: null,
+                        viewerIndex: null,
                     }
                 }
             };
