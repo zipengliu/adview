@@ -6,8 +6,7 @@ import * as TYPE from './actionTypes';
 import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
 // import BipartitionList from './bipartitions';
-import {getGSF, getEntitiesByBid, prepareBranches, findMissing, findEntities, getAllCB, getVirtualBid,
-    clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
+import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
 
 let initialState = {
     isFetching: false,
@@ -127,6 +126,10 @@ let initialState = {
             nestMargin: 4,
             missingCompressRatio: .6,
             verticalGapRatio: .12,
+            skeletonLayout: {
+                showDepth: 2,           // Granularity
+                collapsedBlock: null
+            },
         },
         order: 'RF',                    // It can be RF or a branch ID
         shadedHistogram: {
@@ -283,11 +286,11 @@ let getTreesBySelection = (state) => {
 
 let addHighlightGroup = (state, action, updateGroupIdx=null) => {
     let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
-    let tgtEntities = action.targetEntities || getEntitiesByBid(getTreeByTid(state, action.tid), action.bid);
+    let tgtEntities = action.targetEntities || getTreeByTid(state, action.tid).getEntitiesByBid(action.bid);
     let bids;
 
     if (otherTid) {
-        bids = findEntities(tgtEntities, getTreeByTid(state, otherTid));
+        bids = getTreeByTid(state, otherTid).findEntities(tgtEntities);
     }
 
     // create a new highlight group
@@ -488,17 +491,9 @@ function visphyReducer(state = initialState, action) {
                 let bids = state.referenceTree.userSpecifiedByGroup[action.group];
                 let entities = bids.reduce((acc, bid) => (acc.concat(state.inputGroupData.referenceTree.branches[bid].entities)), []);
 
-                newReferenceTree = {
-                    ...state.inputGroupData.referenceTree,
-                    branches: {
-                        ...state.inputGroupData.referenceTree.branches,
-                        [virtualBid]: {
-                            entities,
-                        }
-                    }
-                };
-                let cbData = getAllCB(newReferenceTree, virtualBid, state.inputGroupData.trees, false);
-                Object.assign(newReferenceTree.branches[virtualBid], cbData);
+                newReferenceTree = state.inputGroupData.referenceTree.clone(true);
+                newReferenceTree.branches[virtualBid] = {entities};
+                newReferenceTree.getAllCB(virtualBid, state.inputGroupData.trees, false);
 
                 let full = clusterTreesByBranch(state.inputGroupData.trees, newReferenceTree, state.cb, virtualBid);
                 let subs = state.treeDistribution.showSubsets? getSubsetDistribution(full, state.sets, virtualBid): null;
@@ -599,10 +594,7 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 inputGroupData: {
                     ...state.inputGroupData,
-                    referenceTree: {
-                        ...action.data,
-                        branches: getGSF(action.data.branches, state.cb, Object.keys(state.inputGroupData.trees).length, false)
-                    }
+                    referenceTree: action.data
                 },
                 toast: {
                     ...state.toast,
@@ -979,8 +971,8 @@ function visphyReducer(state = initialState, action) {
                 // Entering pairwise comparison mode
                 newBids = state.highlight.bids.map(h => (
                     {...h, tgt: action.tid,
-                        [action.tid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
-                            getTreeByTid(state, action.tid))}
+                        [action.tid]: getTreeByTid(state, action.tid).findEntities(
+                            getTreeByTid(state, h.src).getEntitiesByBid(h.virtualBid || h[h.src][0]))}
                 ));
                 newColors = state.highlight.colors;
             } else {
@@ -1152,20 +1144,23 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
             let newCB = action.data.hasMissingTaxa? 'cb2': 'cb';
+            let trees = {};
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
-                // action.data.trees[tid].tid = tid;
-                action.data.trees[tid].branches = prepareBranches(action.data.trees[tid].branches,
-                    action.data.trees[tid].rootBranch, action.data.supportRange);
-                action.data.trees[tid].missing = findMissing(action.data.trees[tid], action.data.entities);
+                trees[tid] = new Tree(action.data.trees[tid]);
+                trees[tid].prepareBranches(action.data.supportRange).findMissing(action.data.entities);
             }
-            action.data.referenceTree.branches =
-                getGSF(prepareBranches(action.data.referenceTree.branches, action.data.referenceTree.rootBranch, action.data.supportRange),
-                    newCB, Object.keys(action.data.trees).length);
-            action.data.referenceTree.missing = findMissing(action.data.referenceTree, action.data.entities);
+            newReferenceTree = new Tree(action.data.referenceTree);
+            newReferenceTree.prepareBranches(action.data.supportRange)
+                .getGSF(newCB, Object.keys(action.data.trees).length)
+                .findMissing(action.data.entities);
 
             return Object.assign({}, state, {
                 isFetching: false,
-                inputGroupData: action.data,
+                inputGroupData: {
+                    ...action.data,
+                    trees,
+                    referenceTree: newReferenceTree
+                },
                 // bipartitions: new BipartitionList(action.data.referenceTree, action.data.trees, action.data.entities),
                 toast: {
                     ...state.toast,
@@ -1190,7 +1185,7 @@ function visphyReducer(state = initialState, action) {
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(action.data.referenceTree, action.data.trees, newCB, true, null)
+                    coordinates: getCoordinates(newReferenceTree, trees, newCB, true, null)
                 },
                 cb: newCB,
                 cbAttributeExplorer: {
@@ -1257,10 +1252,8 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 inputGroupData: {
                     ...state.inputGroupData,
-                    referenceTree: {
-                        ...state.inputGroupData.referenceTree,
-                        branches: getGSF(state.inputGroupData.referenceTree.branches, action.cb, Object.keys(state.inputGroupData.trees).length, true)
-                    }
+                    referenceTree: (state.inputGroupData.referenceTree.clone(true))
+                        .getGSF(action.cb, Object.keys(state.inputGroupData.trees).length)
                 },
                 cb: action.cb,
                 overview: {
@@ -1367,8 +1360,8 @@ function visphyReducer(state = initialState, action) {
                     return true;
                 }).map(h => (
                     {...h, tgt: comparingTid,
-                        [comparingTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]),
-                            getTreeByTid(state, comparingTid))}
+                        [comparingTid]: getTreeByTid(state, comparingTid).findEntities(
+                            getTreeByTid(state, h.src).getEntitiesByBid(h.virtualBid || h[h.src][0]))}
                 ));
                 return {
                     ...state,
@@ -1485,23 +1478,22 @@ function visphyReducer(state = initialState, action) {
         case TYPE.MAKE_CONSENSUS_SUCCESS:
             // Copy from the TYPE.COMPARE_WITH_REFERENCE
             let consensusTid = action.data.tid;
+            let consensusTree = new Tree(action.data);
             newBids = state.highlight.bids.map(h => (
                 {...h, tgt: consensusTid,
-                    [consensusTid]: findEntities(getEntitiesByBid(getTreeByTid(state, h.src), h.virtualBid || h[h.src][0]), action.data)}
+                    [consensusTid]: consensusTree.findEntities(getTreeByTid(state, h.src).getEntitiesByBid(h.virtualBid || h[h.src][0]))}
             ));
             newColors = state.highlight.colors;
+            consensusTree.prepareBranches([0, 1]).findMissing(state.inputGroupData.entities);
+            consensusTree.consensusURL = window.URL.createObjectURL(new Blob([action.data.newickString], {type: 'text/plain'}));
+
             return {
                 ...state,
                 inputGroupData: {
                     ...state.inputGroupData,
                     trees: {
                         ...state.inputGroupData.trees,
-                        [action.data.tid]: {
-                            ...action.data,
-                            branches: prepareBranches(action.data.branches, action.data.rootBranch, [0, 1]),
-                            missing: findMissing(action.data, state.inputGroupData.entities),
-                            consensusURL: window.URL.createObjectURL(new Blob([action.data.newickString], {type: 'text/plain'}))
-                        }
+                        [consensusTid]: consensusTree
                     }
                 },
                 pairwiseComparison: {

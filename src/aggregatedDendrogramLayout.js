@@ -6,7 +6,8 @@ import {scaleLog} from 'd3';
 import {createMappingFromArray, subtractMapping, isMonophyly} from './utils';
 
 // Get the "pivot" branch for rendering an AD
-// The returned branch is called LCA for legacy reason
+// If there is branch matched to outgroup, use the lowest one
+// otherwise get the LCA
 let getPivotBranch = (tree, expanded, lcaOnly=true) => {
     if (Object.keys(expanded).length === 0) {
         return {pivot: tree.rootBranch, distanceToLCA: null}
@@ -62,6 +63,8 @@ let getPivotBranch = (tree, expanded, lcaOnly=true) => {
     return {pivot: anc[eitherOne][i - 1], distanceToLCA};
 };
 
+
+
 // Get the height of the missing block given the number of missing and present taxa
 let getMissingHeight = (missing, present, spec) => {
     return missing / (missing +  present) * (spec.size - spec.verticalGap) * spec.missingCompressRatio;
@@ -72,7 +75,7 @@ let getMissingHeight = (missing, present, spec) => {
 // a dictionary of branches to be expanded,
 // and size specification (spec)
 // Return the dictionary of blocks and branches
-export let calcRemainderLayout = (tree, expanded, spec) => {
+let calcRemainderLayout = (tree, expanded, spec) => {
     let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, size} = spec;
     let height = size, width = size;
 
@@ -191,7 +194,7 @@ export let calcRemainderLayout = (tree, expanded, spec) => {
     return {blocks, branches, rootBlockId, tid: tree.tid, name: tree.name, missing: createMappingFromArray(tree.missing)};
 };
 
-export let calcFrondLayout = (tree, expanded, spec) => {
+let calcFrondLayout = (tree, expanded, spec) => {
     let expansion = Object.keys(expanded);
     if (expansion.length !== 2) return calcRemainderLayout(tree, expanded, spec);
 
@@ -455,7 +458,7 @@ export let calcFrondLayout = (tree, expanded, spec) => {
     return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
 };
 
-export let calcContainerLayout = (tree, expanded, spec) => {
+let calcContainerLayout = (tree, expanded, spec) => {
     let {pivot} = getPivotBranch(tree, expanded, false);
     let {rootBranch, missing} = tree;
     let {verticalGap, size, branchLen} = spec;
@@ -514,6 +517,7 @@ export let calcContainerLayout = (tree, expanded, spec) => {
             children: [],
         };
         p.children.push(bid);
+        p.entities = subtractMapping(p.entities, blocks[bid].entities);
     };
 
     let traverseIngroup = (bid, parentBlockId) => {
@@ -664,3 +668,282 @@ export let calcContainerLayout = (tree, expanded, spec) => {
 
     return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
 };
+
+let getMissingBlock = (tree, spec) => {
+    let {missing, rootBranch} = tree;
+    let missingHeight = getMissingHeight(missing.length, tree.branches[rootBranch].entities.length, spec);
+    return {
+        id: 'missing',
+        isMissing: true,
+        context: true,
+        height: missingHeight,
+        width: spec.size,
+        x: 0, y: spec.size - missingHeight,
+        n: missing.length,          // the number of entities this block represents
+        entities: createMappingFromArray(missing)
+    };
+};
+
+let calcSkeletonLayout = (tree, expanded, spec) => {
+    let {rootBranch, missing} = tree;
+    let {verticalGap, size, branchLen} = spec;
+    let width = size, height = size;
+    let rootBlockId = 'root';
+
+    let expandedOutgroup = [], expandedIngroup = [];
+    let pivot = null;
+    for (let bid in expanded) if (expanded.hasOwnProperty(bid)) {
+        if (expanded[bid].in) {
+            expandedIngroup.push(bid);
+        } else {
+            expandedOutgroup.push(bid);
+            if (pivot === null || tree.branches[bid].depth > tree.branches[pivot].depth) {
+                pivot = bid;
+            }
+        }
+    }
+    if (pivot === null) {
+        // pivot = getPivotBranch(tree, expanded, true).pivot;
+        if (expandedIngroup.length >= 2) {
+            pivot = tree.getLCAforMultiple(expandedIngroup).lca;
+        } else if (expandedIngroup.length === 1) {
+            pivot = expandedIngroup[0];
+        }
+
+    }
+
+    let blocks = {}, branches = {};
+    if (missing) {
+        blocks.missing = getMissingBlock(tree, spec);
+        height -= blocks.missing.height - verticalGap;
+    }
+    if (pivot === null) {
+        // There is no expanded branch
+        blocks[rootBlockId] = {
+            id: rootBlockId,
+            n: tree.entities.length,
+            entities: createMappingFromArray(tree.entities),
+            x: 0, y: 0,
+            width, height,
+            context: true,
+            children: []
+        };
+        // Exit
+        return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
+    } else {
+        blocks[rootBlockId] = {
+            id: rootBlockId,
+            n: 0, children: ['pivot-left', 'pivot-right']
+        }
+    }
+    console.log('pivot=', pivot);
+
+    let createNewBlock = (bid, parentBlockId, attributes={}) => {
+        let e = tree.branches[bid].entities;
+        let p = blocks[parentBlockId];
+        blocks[bid] = {
+            id: bid,
+            context: false,
+            no: bid in expanded? expanded[bid].no: null,
+            matched: bid in expanded? expanded[bid].jac === 1.0: false,
+            height: 1,
+            width: 0,
+            x: 0, y: 0,
+            entities: createMappingFromArray(e),
+            n: e.length,
+            children: [],
+            ...attributes
+        };
+        p.children.push(bid);
+        // p.entities = subtractMapping(p.entities, blocks[bid].entities);
+    };
+
+    // Get all the expanded blocks
+    let traverseIngroup = (bid, parentBlockId) => {
+        let b = tree.branches[bid];
+        let newParent = parentBlockId;
+        if (expanded.hasOwnProperty(bid)) {
+            createNewBlock(bid, parentBlockId);
+            newParent = bid;
+        }
+        if (!b.isLeaf) {
+            traverseIngroup(b.left, newParent);
+            traverseIngroup(b.right, newParent);
+        }
+    };
+    blocks['pivot-right'] = {
+        id: 'pivot-right',
+        no: 0,
+        children: [],
+    };
+    blocks['pivot-left'] = {
+        id: 'pivot-left',
+        no: 0,
+        children: [],
+    };
+    traverseIngroup(pivot, 'pivot-right');
+
+    let traverseOutgroup = (bid, parentBlockId) => {
+        let b = tree.branches[bid];
+        let newParent = parentBlockId;
+        if (expanded.hasOwnProperty(bid)) {
+            createNewBlock(bid, parentBlockId);
+            newParent = bid;
+        }
+
+        if (bid !== rootBranch) {
+            let p = b.parent;
+            traverseOutgroup(p, newParent);
+            traverseIngroup(tree.branches[p].left === bid? tree.branches[p].right: tree.branches[p].left, newParent);
+        }
+    };
+
+    let entitiesMapping = createMappingFromArray(tree.branches[pivot].entities);
+    if (expandedOutgroup.length > 0) {
+        traverseOutgroup(pivot, 'pivot-left');
+    } else if (pivot !== rootBranch) {
+        // Create a outgroup context block
+        let outgroupEntities = subtractMapping(createMappingFromArray(tree.entities), entitiesMapping);
+        let num = Object.keys(outgroupEntities).length;
+        blocks['out-' + pivot] = {
+            id: 'out-' + pivot,
+            n: num,
+            entities: outgroupEntities,
+            context: true,
+            height: 0,
+            width: 0,
+            x: 0, y: 0,
+            children: []
+        };
+        blocks['pivot-left'].children.push('out-' + pivot);
+    }
+
+
+    // Connect the blocks with branches
+    // 'h-': horizontal lines; 'v-': vertical ones
+    branches = {
+        'h-pivot-left': {
+            left: 'v-pivot',
+            right: blocks['pivot-left'].children[0],
+        },
+        'h-pivot-right': {
+            left: 'v-pivot',
+            // if there are multiple expansion (in parallel) on the right side, the partition branches must be shown
+            right: blocks['pivot-right'].children.length > 1? 'v-' + pivot: blocks['pivot-right'].children[0]
+        },
+        'v-pivot': {
+            top: 'h-pivot-left', bottom: 'h-pivot-right',
+        }
+    };
+
+    let connectBlocks = (parentBranchId, parentBlockId) => {
+        let block = blocks[parentBlockId];
+        let merged = block.children.slice();
+        // Merge all children to the LCA
+        while (merged.length > 1) {
+            // Find the nearest pair
+            let nearest, lca, distanceToLCA, minDist = 9999999;
+            for (let i = 0; i < merged.length - 1; i++) {
+                let tmp = tree.getLCAforMultiple([merged[i], merged[i + 1]], true);
+                let dist = tmp.distanceToLCA[merged[i]] + tmp.distanceToLCA[merged[i + 1]];
+                if (dist < minDist) {
+                    minDist = dist;
+                    lca = tmp.lca;
+                    distanceToLCA = tmp.distanceToLCA;
+                    nearest = i;
+                }
+            }
+
+            // merge the pair by connecting them
+            let x = merged[nearest], y = merged[nearest + 1];
+            // x, y must be on the LCA's left and right subtree respectively
+            if (tree.branches[x].order > tree.branches[y].order) {
+                let t = x; x = y; y = t;
+            }
+            merged.splice(nearest + 1, 1);
+            merged[nearest] = lca;
+
+            // Add the connecting branches
+            let l = tree.branches[lca].left, r = tree.branches[lca].right;
+            // First, the three branches under LCA
+            Object.assign(branches, {
+                ['v-' + lca]: {
+                    top: l, bottom: r
+                },
+                ['h-' + l]: {
+                    left: 'v-' + lca, right: null
+                },
+                ['h-' + r]: {
+                    left: 'v-' + lca, right: null
+                }
+            });
+
+            let processBranchesBetweenBranches = (l, x) => {
+                if (tree.branches[l].isLeaf) {
+                    // Leave it empty
+                    branches['h-' + l].right = tree.branches[l].entities[0];
+                } else if (l in blocks) {
+                    // Attach to a block
+                    branches['h-' + l].right = l;
+                } else if (distanceToLCA[x] > spec.skeletonLayout.showDepth) {
+                    // Hide all stuff in the middle with a glyph
+                    branches['h-' + l].right = 'h1-' + x;
+                    branches['h1-' + x] = {left: 'h-' + l, right: x, collapsed: true};
+                } else {
+                    // Show branches from l to x
+
+                    // Traverse from x up to l
+                    let up = (bid) => {
+                        let b = tree.branches[bid];
+                        let p = tree.branches[b.parent];
+                        Object.assign(branches, {
+                            ['v-' + b.parent]: {top: p.left, bottom: p.right},
+                            ['h-' + p.left]: {left: 'v-' + b.parent, },
+                            ['h-' + p.right]: {left: 'v-' + b.parent, }
+                        });
+                        if (p.left === bid) {
+                            branches['h-' + p.left].right = bid === x? x: 'v-' + bid;
+                            branches['h-' + p.right].right = p.right;
+                            createNewBlock(p.right, parentBlockId, {collapsed: true});
+                        } else {
+                            branches['h-' + p.right].right = bid === x? x: 'v-' + bid;
+                            branches['h-' + p.left].right = p.left;
+                            createNewBlock(p.left, parentBlockId, {collapsed: true});
+                        }
+                        if (b.parent !== l) up(b.parent);
+                    };
+                    up(x);
+                }
+            };
+            // Second, branches from LCA's left to x
+            processBranchesBetweenBranches(l, x);
+            // Third, branches from LCA's right to y
+            processBranchesBetweenBranches(r, y);
+        }
+
+        // Recursively deal with the expanded children
+        for (let c of block.children) {
+            if (!blocks[c].collapsed && blocks[c].children.length > 0) {
+                connectBlocks(c, c);
+            }
+        }
+    };
+    connectBlocks(pivot, 'pivot-right');
+    // connectBlocks(pivot, 'pivot-left');          // TODO
+
+    // Determine the height of the blocks
+
+
+    console.log(blocks);
+    console.log(branches);
+    return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
+};
+
+let layoutAlgorithms = {
+    'skeleton': calcSkeletonLayout,
+    'remainder': calcRemainderLayout,
+    'container': calcContainerLayout,
+    'frond': calcFrondLayout
+};
+
+export default layoutAlgorithms;

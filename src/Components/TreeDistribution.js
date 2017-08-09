@@ -62,7 +62,7 @@ class TreeDistribution extends Component {
                         return (
                             <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none',
                                 top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
-                                 onMouseEnter={this.props.onHighlightSegment.bind(null, b, d.entities[i],
+                                 onMouseEnter={this.props.onHighlightSegment.bind(null, b, banMembershipViewer? []: d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightSegment.bind(null, [], [], null)}
                                  onClick={(e) => {

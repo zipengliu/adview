@@ -336,7 +336,9 @@ export function rerootReferenceTree(rid) {
             setTimeout(() => {
                 // Do the heavy lifting of re-root
                 let {trees, referenceTree} = state.inputGroupData;
-                let newReferenceTree = reroot(referenceTree, rid, trees);
+                let newReferenceTree = referenceTree.clone(true);
+                console.log('new missing: ', newReferenceTree.missing);
+                newReferenceTree.reroot(rid, trees).getGSF(state.cb, Object.keys(state.inputGroupData.trees).length);
                 dispatch(rerootSuccess(newReferenceTree));
             }, 0);
         }).catch(err => {

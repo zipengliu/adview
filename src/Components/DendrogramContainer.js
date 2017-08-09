@@ -12,7 +12,7 @@ import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleAggregationMode, toggleSelectTrees, toggleHighlightADBlock} from '../actions';
 import {createMappingFromArray, getIntersection} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
-import {calcFrondLayout, calcRemainderLayout, calcContainerLayout} from '../aggregatedDendrogramLayout';
+import layoutAlgorithms from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
 
 
@@ -94,6 +94,7 @@ class DendrogramContainer extends Component {
                             <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
                             <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
                             <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>frond</Radio>
+                            <Radio inline checked={mode === 'skeleton'} onChange={this.props.onToggleMode.bind(null, 'skeleton')}>skeleton</Radio>
                             <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
                                 <span style={{textDecoration: 'line-through'}}>remainder</span>
                             </Radio>
@@ -199,9 +200,7 @@ let getLayouts = createSelector(
     (referenceTree, expanded, cb, trees, mode, spec) => {
         console.log('getLayouts...');
 
-        let layoutFunc = calcContainerLayout;
-        if (mode === 'frond') layoutFunc = calcFrondLayout;
-        if (mode === 'remainder') layoutFunc = calcRemainderLayout;
+        let layoutFunc = layoutAlgorithms[mode];
 
         let layouts = {};
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {

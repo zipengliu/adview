@@ -108,9 +108,16 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {mode !== 'supercluster' && b.n > 1 && (((b.context || b.isMissing) && b.height > 12) || b.height > 22) &&
-                                    <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>}
-                                    {mode !== 'supercluster' && b.no && <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
+                                    {mode !== 'supercluster' && b.n > 1 && b.width > 12 &&
+                                    <g>
+                                        {((b.context || b.isMissing) && b.height > 12) || b.height > 22?
+                                            <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>:
+                                            (b.width > 22? <text className="label" x={b.x + b.width} y={b.y} dx="-2" dy="10" style={{textAnchor: 'end'}}>{b.n}</text>:
+                                                <g></g>)
+                                        }
+                                    </g>}
+                                    {mode !== 'supercluster' && b.no && b.width > 12 &&
+                                    <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
                                 </g>
                             )}
                         </g>
