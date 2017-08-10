@@ -406,7 +406,7 @@ let fillLayouts = createSelector(
 
         for (let k = 0; k < filledLayouts.length; k++) {
             let t = filledLayouts[k];
-            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid)) {
+            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid) && !!t.blocks[bid].entities) {        // TODO doesn't work with cluster mode!
                 let b = t.blocks[bid];
 
                 if (isClusterMode) {

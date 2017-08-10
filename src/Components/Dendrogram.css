@@ -66,6 +66,9 @@
     /*stroke-width: 1px;*/
     /*stroke: black;*/
 /*}*/
+.branch.collapsed {
+    stroke-dasharray: 1 1;
+}
 
 .label {
     font-size: 10px;

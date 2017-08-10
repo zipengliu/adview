@@ -110,7 +110,7 @@ let initialState = {
     hoveredTrees: {},
     aggregatedDendrogram: {
         activeSetIndex: 0,
-        mode: 'container',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
+        mode: 'skeleton',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
         spec: {
             size: 80,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
@@ -128,7 +128,13 @@ let initialState = {
             verticalGapRatio: .12,
             skeletonLayout: {
                 showDepth: 2,           // Granularity
-                collapsedBlock: null
+                collapsedBlockHeight: 6,
+                collapsedBlockWidth: 20,
+                matchedBlockMinHeight: 12,
+                matchedBlockDefaultWidth: 40,
+                nestingBlockGapInside: 3,
+                nestingBlockExtraWidth: 20,
+                collapsedBranchLength: 12
             },
         },
         order: 'RF',                    // It can be RF or a branch ID

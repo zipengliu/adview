@@ -71,8 +71,8 @@ class AggregatedDendrogram extends Component {
                        <g className="blocks" >
                             {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
-                                    <rect className={cn('block', {expanded: !b.context && b.id !== 'missing',
-                                        fuzzy: !b.context && !b.matched, 'is-missing': b.isMissing})}
+                                    <rect className={cn('block', {expanded: !b.collapsed && !b.context && b.id !== 'missing',
+                                        fuzzy: !b.context && !b.collapsed && !b.matched, 'is-missing': b.isMissing})}
                                           rx={b.isMissing? 5: 0} ry={b.isMissing? 5: 0}
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                     />
@@ -123,9 +123,15 @@ class AggregatedDendrogram extends Component {
                         </g>
                         <g className="branches">
                             {branchArr.map(b =>
-                                <line className={cn('branch', {background: (mode === 'fine-grained' || mode === 'frond') && !b.expanded})}
-                                      key={b.bid}
-                                      x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
+                                b.collapsed?
+                                    <g key={b.bid}>
+                                        <line className="branch collapsed"
+                                              x1={b.x1 + 4} y1={b.y1} x2={b.x2} y2={b.y2} />
+                                        <line className="branch" x1={b.x1} y1={b.y1 - 4} x2={b.x1} y2={b.y1 + 4} />
+                                        <line className="branch" x1={b.x1 + 4} y1={b.y1 - 4} x2={b.x1 + 4} y2={b.y1 + 4} />
+                                    </g>:
+                                    <line className='branch' key={b.bid}
+                                          x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                         </g>
                     </g>
                 </g>
