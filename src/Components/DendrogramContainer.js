@@ -9,7 +9,7 @@ import {scaleLinear, hcl, extent} from 'd3';
 import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Popover, Table, Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, changeSorting, toggleAggregationMode, toggleSelectTrees, toggleHighlightADBlock} from '../actions';
+import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock, changeLayoutAlgorithm, changeClusterAlgorithm} from '../actions';
 import {createMappingFromArray, getIntersection} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
@@ -18,8 +18,8 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, mode, order, dendrograms, selectedTrees, rangeSelection, expandedBranches} = this.props;
-        let isClusterMode = mode.indexOf('cluster') !== -1;
+        let {spec, layoutAlg, clusterAlg, order, dendrograms, selectedTrees, rangeSelection, expandedBranches} = this.props;
+        let isClusterMode = clusterAlg !== 'none';
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
@@ -57,7 +57,7 @@ class DendrogramContainer extends Component {
                      style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
                      onClick={(e) => {this.props.onSelectTrees(isClusterMode? t.trees: [t.tid], e.shiftKey)}}
                 >
-                    <AggregatedDendrogram data={t} spec={spec} mode={mode}
+                    <AggregatedDendrogram data={t} spec={spec} clusterAlg={clusterAlg}
                                           isReferenceTree={t.tid === this.props.referenceTid}
                                           isComparing={t.tid === this.props.comparingTid}
                                           hoveredTrees={this.props.hoveredTrees}
@@ -89,18 +89,25 @@ class DendrogramContainer extends Component {
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
 
                     <div>
-                        <FormGroup style={{display: 'inline-block'}}>
-                            <Radio inline checked={mode === 'container'} onChange={this.props.onToggleMode.bind(null, 'container')}>individual: container</Radio>
-                            <Radio inline checked={mode === 'supercluster'} onChange={this.props.onToggleMode.bind(null, 'supercluster')}>cluster: relaxed-topo</Radio>
-                            <Radio inline checked={mode === 'topo-cluster'} onChange={this.props.onToggleMode.bind(null, 'topo-cluster')}>cluster: topo</Radio>
-                            <Radio inline checked={mode === 'frond'} onChange={this.props.onToggleMode.bind(null, 'frond')}>frond</Radio>
-                            <Radio inline checked={mode === 'skeleton'} onChange={this.props.onToggleMode.bind(null, 'skeleton')}>skeleton</Radio>
-                            <Radio inline checked={mode === 'remainder'} onChange={this.props.onToggleMode.bind(null, 'remainder')}>
-                                <span style={{textDecoration: 'line-through'}}>remainder</span>
-                            </Radio>
-                        </FormGroup>
+                        <span>Layout algorithm: </span>
+                        <DropdownButton bsSize="xsmall" title={layoutAlg} id="dropdown-layout"
+                                        onSelect={this.props.onChangeLayout}>
+                            <MenuItem eventKey="frond">frond</MenuItem>
+                            <MenuItem eventKey="container">container</MenuItem>
+                            <MenuItem eventKey="skeleton">skeleton</MenuItem>
+                            <MenuItem eventKey="remainder"><span style={{textDecoration: 'line-through'}}>remainder</span></MenuItem>
+                        </DropdownButton>
 
-                        <div style={{marginLeft: '20px', display: 'inline-block'}}>
+                        <span style={{marginLeft: '5px'}}>Cluster by: </span>
+                        <DropdownButton bsSize="xsmall" title={clusterAlg} id="dropdown-cluster"
+                                        onSelect={this.props.onChangeCluster}>
+                            <MenuItem eventKey="none">none</MenuItem>
+                            <MenuItem eventKey="topo">topology of all blocks (w/ #taxa)</MenuItem>
+                            <MenuItem eventKey="relaxed-topo">topology of all blocks (w/o #taxa)</MenuItem>
+                            <MenuItem eventKey="relaxed-topo">topology of matched blocks (TODO)</MenuItem>
+                        </DropdownButton>
+
+                        <div style={{marginLeft: '5px', display: 'inline-block'}}>
                             <span>Sort by the </span>
                             {isClusterMode? <span>#trees of a cluster</span>:
                                 (expandedArr.length === 0? 'RF distance ':
@@ -195,12 +202,12 @@ let getLayouts = createSelector(
     state => state.referenceTree.expanded,
     state => state.cb,
     state => state.inputGroupData.trees,
-    state => state.aggregatedDendrogram.mode,
+    state => state.aggregatedDendrogram.layoutAlg,
     state => state.aggregatedDendrogram.spec],
-    (referenceTree, expanded, cb, trees, mode, spec) => {
+    (referenceTree, expanded, cb, trees, layoutAlg, spec) => {
         console.log('getLayouts...');
 
-        let layoutFunc = layoutAlgorithms[mode];
+        let layoutFunc = layoutAlgorithms[layoutAlg];
 
         let layouts = {};
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
@@ -249,7 +256,7 @@ let filterLayouts = createSelector(
 // Return a dictionary of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let clusterLayoutsByTopology = createSelector(
-    [state => state.aggregatedDendrogram.mode === 'supercluster',
+    [state => state.aggregatedDendrogram.clusterAlg === 'relaxed-topo',
         (_, layouts) => layouts],
     (isSuperCluster, layouts) => {
         console.log('Clustering layouts by topology...');
@@ -334,7 +341,7 @@ let clusterLayoutsByTopology = createSelector(
 );
 
 let sortLayouts = createSelector(
-    [state => state.aggregatedDendrogram.mode.indexOf('cluster') !== -1,
+    [state => state.aggregatedDendrogram.clusterAlg !== 'none',
         state => state.aggregatedDendrogram.order,
         (_, layouts) => layouts,
         state => state.inputGroupData.referenceTree,
@@ -397,10 +404,9 @@ let fillLayouts = createSelector(
     [(_, layouts) => layouts,
         (_, layouts, layoutsMapping) => layoutsMapping,
         state => state.highlight,
-        state => state.aggregatedDendrogram.mode,
+        state => state.aggregatedDendrogram.clusterAlg !== 'none',
         state => state.aggregatedDendrogram.shadedHistogram],
-    (layouts, layoutsMapping, highlight, mode, shadedHistogramSpec) => {
-        let isClusterMode = mode.indexOf('cluster') !== -1;
+    (layouts, layoutsMapping, highlight, isClusterMode, shadedHistogramSpec) => {
         let filledLayouts = layouts.slice();
         let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
 
@@ -483,11 +489,11 @@ let fillLayouts = createSelector(
 
 
 let mapStateToProps = (state) => {
-    let mode = state.aggregatedDendrogram.mode;
+    let isCluster = state.aggregatedDendrogram.clusterAlg !== 'none';
     let layouts = getLayouts(state);
     let filteredLayouts = filterLayouts(state, layouts);
     let layoutArray;
-    if (mode.indexOf('cluster') !== -1) {
+    if (isCluster) {
         let clusteredLayouts = clusterLayoutsByTopology(state, filteredLayouts);
         layoutArray = sortLayouts(state, clusteredLayouts);
     } else {
@@ -518,7 +524,8 @@ let mapDispatchToProps = (dispatch) => ({
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onChangeSorting: (key) => {dispatch(changeSorting(key))},
-    onToggleMode: (m) => {dispatch(toggleAggregationMode(m))},
+    onChangeLayout: (l) => {dispatch(changeLayoutAlgorithm(l))},
+    onChangeCluster: (c) => {dispatch(changeClusterAlgorithm(c))},
     onToggleBlock: (tids, e, e1) => {dispatch(toggleHighlightADBlock(tids, e, e1))},
 });
 

@@ -262,8 +262,12 @@ export function changeSorting(order) {
     return {type: TYPE.CHANGE_SORTING, order}
 }
 
-export function toggleAggregationMode(mode) {
-    return {type: TYPE.TOGGLE_AGGREGATION_MODE, mode};
+export function changeLayoutAlgorithm(layout) {
+    return {type: TYPE.CHANGE_LAYOUT_ALGORITHM, layout};
+}
+
+export function changeClusterAlgorithm(cluster) {
+    return {type: TYPE.CHANGE_CLUSTER_ALGORITHM, cluster};
 }
 
 export function toggleHighlightEntities(entities, uncertainEntities=[]) {

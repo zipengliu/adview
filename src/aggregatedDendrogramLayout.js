@@ -689,6 +689,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     let {verticalGap, size, branchLen} = spec;
     let width = size, height = size;
     let rootBlockId = 'root';
+    let hasNoOutgroup = false;
 
     let expandedOutgroup = [], expandedIngroup = [];
     let pivot = null;
@@ -705,7 +706,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     if (pivot === null) {
         // pivot = getPivotBranch(tree, expanded, true).pivot;
         if (expandedIngroup.length >= 2) {
-            pivot = tree.getLCAforMultiple(expandedIngroup).lca;
+            pivot = tree.getLCAforMultiple(expandedIngroup);
         } else if (expandedIngroup.length === 1) {
             pivot = expandedIngroup[0];
         }
@@ -737,6 +738,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         }
     }
     console.log(tree.tid, ' pivot=', pivot, expanded);
+    console.log(tree.branches);
 
     let allEntitiesMapping = createMappingFromArray(tree.entities);
     let createNewBlock = (bid, parentBlockId, attributes={}, insertBefore=null) => {
@@ -771,7 +773,6 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                 p.children.push(bid);
             }
         }
-        // p.entities = subtractMapping(p.entities, blocks[bid].entities);
     };
 
     // Get all the expanded blocks
@@ -819,18 +820,16 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     if (expandedOutgroup.length > 0) {
         traverseOutgroup(pivot, 'pivot-left');
         if (blocks['pivot-right'].children.length === 0) {
-            blocks['out-' + pivot] = {
-                id: 'out-' + pivot,
+            // All matched to outgroup, we need to add an in-group context block
+            blocks['in-' + pivot] = {
+                id: 'in-' + pivot,
                 n: tree.branches[pivot].entities.length,
-                entities: entitiesMapping,
+                entities: createMappingFromArray(tree.branches[pivot].entities),
                 context: true,
-                height: 0,
-                width: 0,
-                x: 0, y: 0,
-                isOutgroup: true,
+                height: 0, width: 0, x: 0, y: 0,
                 children: []
             };
-            blocks['pivot-right'].children.push('out-' + pivot);
+            blocks['pivot-right'].children.push('in-' + pivot);
         }
     } else if (pivot !== rootBranch) {
         // Create a outgroup context block
@@ -848,53 +847,61 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             children: []
         };
         blocks['pivot-left'].children.push('out-' + pivot);
+    } else {
+        hasNoOutgroup = true;           // should be dealt with differently
     }
 
 
     // Connect the blocks with branches
     // 'h-': horizontal lines; 'v-': vertical ones
     branches = {
-        'h-pivot-left': {
-            left: 'v-pivot',
-            right: blocks['pivot-left'].children[0],
-        },
-        'h-pivot-right': {
-            left: 'v-pivot',
-            // if there are multiple expansion (in parallel) on the right side, the partition branches must be shown
-            right: blocks['pivot-right'].children.length > 1? 'v-' + pivot: blocks['pivot-right'].children[0]
-        },
+        // 'h-pivot-left': {
+        //     left: 'v-pivot',
+        //     right: blocks['pivot-left'].children[0],
+        // },
+        // 'h-pivot-right': {
+        //     left: 'v-pivot',
+        //     // if there are multiple expansion (in parallel) on the right side, the partition branches must be shown
+        //     right: blocks['pivot-right'].children.length > 1? 'v-' + pivot: blocks['pivot-right'].children[0]
+        // },
         'v-pivot': {
-            top: 'h-pivot-left', bottom: 'h-pivot-right',
+            top: null, bottom: null,
         }
     };
 
-    let connectBlocks = (parentBranchId, parentBlockId, ADparentBranchId) => {
+    let getBranchIdFromBlockId = (blockId) => {
+        let p = blockId.indexOf('-');
+        return p === -1? blockId: blockId.substring(p + 1);
+    };
+
+    // Draw branches between an ancestor to all its direct children
+    // (in the blocks hierarchy data structure, not the tree)
+    // Return the id the highest branch
+    let connectBlocks = (parentBranchId, parentBlockId, branchToAttach, isOutgroup=false) => {
         let block = blocks[parentBlockId];
-        let merged = block.children.slice();
 
-        let addBranchesBetween = (upper, x) => {
-            console.log('adding branches in between ', upper, x);
-            let upperBranchName = upper === pivot? ADparentBranchId: 'h-' + upper;
-            if (!(upperBranchName in branches)) {
-                console.error('upper branch is not in branches: ', upper, x, upperBranchName);
-            }
+        // Add branches between two branches.
+        // upper is a branch id in branches, which is higher in the hierarchy.
+        // x is either a block id in blocks, or a branch id in tree.branches ('v-' + x is the branch id in branches)
+        // Return the leftmost branch id
+        let addBranchesBetween = (upper, x, branchToAttach, isOutgroup=false) => {
+            console.log('adding branches in between branches', upper, x, branchToAttach);
 
-            if (tree.branches[upper].isLeaf) {
-                // Leave it empty
-                branches[upperBranchName].right = tree.branches[upper].entities[0];
-            } else if (upper === x || 'out-' + upper === x) {
-                // If it is already assigned, it should be an outgroup.  don't touch it
-                if (!branches[upperBranchName].right) {
-                    // Attach to a block
-                    branches[upperBranchName].right = upper;
-                }
-            } else if (Math.abs(tree.branches[x].depth - tree.branches[upper].depth) > spec.skeletonLayout.showDepth) {
+            let xBranchId = getBranchIdFromBlockId(x);
+
+            let leftMostBid = 'h-' + (isOutgroup? 'out-': '') + upper;
+            if (xBranchId === upper) {
+                // A single branch to connect them
+                branches[leftMostBid] = {left: branchToAttach, right: x in blocks && (isOutgroup === !!blocks[x].isOutgroup)? x: 'v-' + x};
+            } else if (Math.abs(tree.branches[xBranchId].depth - tree.branches[upper].depth) > spec.skeletonLayout.showDepth) {
                 // Hide all stuff in the middle with a glyph
-                branches[upperBranchName].right = 'h1-' + x;
-                branches['h1-' + x] = {left: upperBranchName, right: x, collapsed: true};
+                // TODO check if x is an outgroup
+                branches[leftMostBid] = {left: branchToAttach, right: x in blocks? x: 'v-' + x, collapsed: true};
             } else {
                 // Show branches from upper to x
-                console.log('calling up: ', upper, x);
+                console.log(`up(${x})`);
+
+                branches[leftMostBid] = {left: branchToAttach};
 
                 // Traverse from x up to upper
                 let up = (bid) => {
@@ -906,11 +913,11 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                         ['h-' + p.right]: {left: 'v-' + b.parent, }
                     });
                     if (p.left === bid) {
-                        branches['h-' + p.left].right = bid === x? x: 'v-' + bid;
+                        branches['h-' + p.left].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.right].right = p.right;
                         createNewBlock(p.right, parentBlockId, {collapsed: true});
                     } else {
-                        branches['h-' + p.right].right = bid === x? x: 'v-' + bid;
+                        branches['h-' + p.right].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.left].right = p.left;
                         createNewBlock(p.left, parentBlockId, {collapsed: true}, p.right);
                         // This new collapsed block should go before its right siblings
@@ -919,74 +926,64 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                     if (b.parent !== upper) {
                         up(b.parent);
                     } else {
-                        branches[upperBranchName].right = 'v-' + b.parent;
+                        branches[leftMostBid].right = 'v-' + b.parent;
                     }
                 };
                 up(x);
             }
+            return leftMostBid;
         };
 
-        // Merge all children to the LCA
-        while (merged.length > 1) {
-            // Find the nearest pair
-            let nearest, lca, minDist = 9999999;
-            for (let i = 0; i < merged.length - 1; i++) {
-                let p = tree.getLCAforMultiple([merged[i], merged[i + 1]]).lca;
-                // let dist = tmp.distanceToLCA[merged[i]] + tmp.distanceToLCA[merged[i + 1]];
-                let dist = Math.abs(tree.branches[merged[i]].depth - tree.branches[p].depth) +
-                    Math.abs(tree.branches[merged[i + 1]].depth - tree.branches[p].depth);
-                if (dist < minDist) {
-                    minDist = dist;
-                    lca = p;
-                    // distanceToLCA = tmp.distanceToLCA;
-                    nearest = i;
+        let mergeChildren = (children) => {
+            console.log('Merge children', children);
+            if (children.length === 1) {
+                return children[0];
+            } else {
+                let lca = tree.getLCAforMultiple(children);
+                let l = tree.branches[lca].left, r = tree.branches[lca].right;
+                let x, y;
+                if (children.length === 2) {
+                    x = children[0];
+                    y = children[1];
+                    if (tree.branches[x].order > tree.branches[y].order) {
+                        let t = x; x = y; y = t;
+                    }
+                } else {
+                    console.log('split on lca', lca);
+                    let leftChildren = children.filter(c => tree.branches[c].order <= tree.branches[lca].order);
+                    let rightChildren = children.filter(c => tree.branches[c].order > tree.branches[lca].order);
+                    console.assert(leftChildren.length > 0, 'OH NO LEFT');
+                    console.assert(rightChildren.length > 0, 'OH NO RIGHT');
+                    x = mergeChildren(leftChildren);
+                    y = mergeChildren(rightChildren);
                 }
+
+                let lcaBranchId = 'v-' + lca;
+                branches[lcaBranchId] = {
+                    top: addBranchesBetween(l, x, lcaBranchId),       // branches from LCA's left to x
+                    bottom: addBranchesBetween(r, y, lcaBranchId)     // branches from LCA's right to y
+                };
+                return lca;
             }
-
-            // merge the pair by connecting them
-            let x = merged[nearest], y = merged[nearest + 1];
-            // x, y must be on the LCA's left and right subtree respectively
-            if (tree.branches[x].order > tree.branches[y].order) {
-                let t = x; x = y; y = t;
-            }
-            merged.splice(nearest + 1, 1);
-            merged[nearest] = lca;
-
-            // Add the connecting branches
-            let l = tree.branches[lca].left, r = tree.branches[lca].right;
-            // First, the three branches under LCA
-            Object.assign(branches, {
-                ['v-' + lca]: {
-                    top: 'h-' + l, bottom: 'h-' + r
-                },
-                ['h-' + l]: {
-                    left: 'v-' + lca, right: null
-                },
-                ['h-' + r]: {
-                    left: 'v-' + lca, right: null
-                }
-            });
-
-            // Second, branches from LCA's left to x
-            addBranchesBetween(l, x);
-            // Third, branches from LCA's right to y
-            addBranchesBetween(r, y);
-        }
+        };
+        let dangle = mergeChildren(block.children);
 
         // Connect the converged branch with the outside: from merged[0] to parentBranchId
-        if (parentBranchId !== merged[0]) {
-            addBranchesBetween(parentBranchId, merged[0]);
-        }
+        let attachingBranch = addBranchesBetween(parentBranchId, dangle, branchToAttach, isOutgroup);
 
         // Recursively deal with the expanded children
         for (let c of block.children) {
             if (!blocks[c].collapsed && blocks[c].children.length > 0) {
-                connectBlocks(c, c, ADparentBranchId);
+                connectBlocks(c, c);            // TODO: need a new field to attach a branch to a branch that is already attached to a block (cuz the nesting)
             }
         }
+
+        return attachingBranch;
     };
-    connectBlocks(pivot, 'pivot-right', 'h-pivot-right');
-    // connectBlocks(pivot, 'pivot-left');          // TODO:  reverse the depth difference function
+    branches['v-pivot'].bottom = connectBlocks(pivot, 'pivot-right', 'v-pivot');
+    if (!hasNoOutgroup) {
+        branches['v-pivot'].top = connectBlocks(pivot, 'pivot-left', 'v-pivot', true);          // TODO
+    }
 
     // Determine the height of the blocks: top-down approach
     let calcHeight = () => {
@@ -1011,12 +1008,13 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             }
         };
         traverseBlocks('pivot-right');
-        traverseBlocks('pivot-left');
+        if (!hasNoOutgroup) {
+            traverseBlocks('pivot-left');
+        }
 
-        let fixedHeights = blocks['pivot-left'].heightFixed + blocks['pivot-right'].heightFixed + verticalGap;
-        let logHeights = blocks['pivot-left'].heightLog + blocks['pivot-right'].heightLog;
+        let fixedHeights = (hasNoOutgroup? 0: blocks['pivot-left'].heightFixed + verticalGap) + blocks['pivot-right'].heightFixed;
+        let logHeights = (hasNoOutgroup? 0: blocks['pivot-left'].heightLog) + blocks['pivot-right'].heightLog;
         let k = (height - fixedHeights) / logHeights;
-        console.log(height, fixedHeights, logHeights, k);
 
         let fillHeights = (blockId, curY) => {
             let b = blocks[blockId];
@@ -1033,15 +1031,19 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                 b.height = k * b.heightLog + b.heightFixed;
             }
         };
-        fillHeights('pivot-left', 0);
-        let pivotRightCurY = blocks['pivot-left'].height + verticalGap;
+        if (!hasNoOutgroup) {
+            fillHeights('pivot-left', 0);
+        }
+        let pivotRightCurY = hasNoOutgroup? 0: blocks['pivot-left'].height + verticalGap;
         fillHeights('pivot-right', pivotRightCurY);
     };
+    console.log('Calc height');
     calcHeight();
 
 
     let calcWidth = () => {
         let traverseBranches = (branchId, curX) => {
+            console.log(`traverseBranches(${branchId}, ${curX})`);
             let b = branches[branchId];
             let bLen = b.collapsed? spec.skeletonLayout.collapsedBranchLength: branchLen;
             if (branchId.startsWith('v-')) {
@@ -1052,7 +1054,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                     y1: branches[b.top].y1,
                     y2: branches[b.bottom].y1,
                 });
-            } else if (branchId.startsWith('h-') || branchId.startsWith('h1-')) {
+            } else if (branchId.startsWith('h-')) {
                 if (b.right in blocks) {
                     // The right side of this branch connects to a block
                     Object.assign(b, {
@@ -1064,7 +1066,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                     blocks[b.right].width = Math.min(blocks[b.right].collapsed?
                         spec.skeletonLayout.collapsedBlockWidth: spec.skeletonLayout.matchedBlockDefaultWidth,
                         width - curX - bLen);
-                } else if (b.right.startsWith('h1-') || b.right.startsWith('v-')) {
+                } else if (b.right.startsWith('v-')) {
                     traverseBranches(b.right, curX + bLen);
                     Object.assign(b, {
                         x1: curX, x2: curX + bLen,
@@ -1072,15 +1074,20 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                         y2: (branches[b.right].y1 + branches[b.right].y2) / 2
                     })
                 } else {
-                    console.log('THIS SHOULD NEVER HAPPEN', branchId, b);
+                    console.error('THIS SHOULD NEVER HAPPEN', branchId, b);
                 }
             } else {
                 console.error('WHAAAAAT?', branchId, b);
             }
         };
 
-        traverseBranches('v-pivot', 0);
+        if (hasNoOutgroup) {
+            traverseBranches(branches['v-pivot'].bottom, 0);
+        } else {
+            traverseBranches('v-pivot', 0);
+        }
     };
+    console.log('Calc width');
     calcWidth();
 
     // Fill a bid to the branches in order to have the "key" attribute for react component

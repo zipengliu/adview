@@ -361,14 +361,9 @@ export class Tree {
     }
 
     // Get the LCA branch for an array of branches
-    // optional: also get the distance from LCA to each branch
-    getLCAforMultiple(bids, getDistance=false) {
+    getLCAforMultiple(bids) {
         let {branches, ancestors} = this;
         let pointers = bids.slice();
-        let distance = {};
-        if (getDistance) {
-            for (let p of pointers) distance[p] = 0;
-        }
         // Find the highest depth branch
         let highest = bids[0];
         for (let bid of bids) {
@@ -381,7 +376,6 @@ export class Tree {
                 let p = pointers[j];
                 if (ancestors[p].length > i && ancestors[p][i] !== -1 && branches[ancestors[p][i]].depth >= branches[highest].depth) {
                     pointers[j] = ancestors[p][i];
-                    distance[bids[j]] += 1 << i;
                 }
             }
         }
@@ -396,34 +390,29 @@ export class Tree {
                 for (let j = 1; j < pointers.length; j++) {
                     let p = pointers[j];
                     if (ancestors[p].length <= step || ancestors[p][step] === -1) return false;
-                    if (branches[ancestors[p][step]].depth !== branches[ancestors[pointers[0]][step]].depth) return false;
+                    if (ancestors[p][step] !== ancestors[pointers[0]][step]) return false;
                 }
                 return true;
             }
         };
         // Check if they already converged
         if (isConverged()) {
-            return {lca: pointers[0], distanceToLCA: distance};
+            return pointers[0];
         }
 
         // Move all pointers up until they converge to a single node (branch)
         let i;
         for (i = ancestors[pointers[0]].length - 1; i >= 0; i--) {
-            if (ancestors[pointers[0][i] !== -1]) {
+            if (ancestors[pointers[0]][i] !== -1) {
                 if (!isConverged(i)) {
                     for (let j = 0; j < pointers.length; j++) {
                         pointers[j] = ancestors[pointers[j]][i];
-                        distance[bids[j]] += (1 << i);
                     }
                 }
             }
         }
 
-        for (let j = 0; j < pointers.length; j++) {
-            distance[bids[j]] += 1;
-        }
-
-        return {lca: ancestors[pointers[0]][0], distanceToLCA: distance};
+        return ancestors[pointers[0]][0];
     }
 }
 

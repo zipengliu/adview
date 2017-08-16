@@ -11,8 +11,8 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         // console.log(this.props.data);
-        let {spec, mode, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
-        let isClusterMode = mode.indexOf('cluster') !== -1;
+        let {spec, clusterAlg, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
+        let isClusterMode = clusterAlg !== 'none';
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {trees, blocks, branches, num, total, selectedCnt} = data;
         let blockArr = createArrayFromMapping(blocks);
@@ -108,7 +108,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {mode !== 'supercluster' && b.n > 1 && b.width > 12 &&
+                                    {clusterAlg !== 'relaxed-topo' && b.n > 1 && b.width > 12 &&
                                     <g>
                                         {((b.context || b.isMissing) && b.height > 12) || b.height > 22?
                                             <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>:
@@ -116,7 +116,7 @@ class AggregatedDendrogram extends Component {
                                                 <g></g>)
                                         }
                                     </g>}
-                                    {mode !== 'supercluster' && b.no && b.width > 12 &&
+                                    {clusterAlg !== 'relaxed-topo' && b.no && b.width > 12 &&
                                     <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
                                 </g>
                             )}
@@ -126,9 +126,11 @@ class AggregatedDendrogram extends Component {
                                 b.collapsed?
                                     <g key={b.bid}>
                                         <line className="branch collapsed"
-                                              x1={b.x1 + 4} y1={b.y1} x2={b.x2} y2={b.y2} />
-                                        <line className="branch" x1={b.x1} y1={b.y1 - 4} x2={b.x1} y2={b.y1 + 4} />
-                                        <line className="branch" x1={b.x1 + 4} y1={b.y1 - 4} x2={b.x1 + 4} y2={b.y1 + 4} />
+                                              x1={b.x1} y1={b.y1} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y2} />
+                                        <line className="branch collapsed"
+                                              x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1} x2={b.x2} y2={b.y2} />
+                                        <line className="branch" x1={(b.x1 + b.x2) / 2 - 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y1 + 4} />
+                                        <line className="branch" x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 + 2} y2={b.y1 + 4} />
                                     </g>:
                                     <line className='branch' key={b.bid}
                                           x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}

@@ -55,13 +55,13 @@ class TreeDistribution extends Component {
                 }
             }
             return (
-                <div style={{position: 'relative', height: '100%', width: fullLength + '%', border: '1px solid #ccc'}}>
+                <div style={{position: 'relative', height: '100%', minHeight: '10px', width: fullLength + '%', border: '1px solid #ccc'}}>
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
                         return (
-                            <div key={i} style={{position: 'absolute', height: '100%', borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none',
-                                top: 0, left: leftPos + '%', width: x(b.length) + '%'}}
+                            <div key={i} style={{ borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none', position: 'absolute',
+                             top: 0, height: '100%', left: leftPos + '%', width: x(b.length) + '%'}}
                                  onMouseEnter={this.props.onHighlightSegment.bind(null, b, banMembershipViewer? []: d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightSegment.bind(null, [], [], null)}
@@ -93,6 +93,7 @@ class TreeDistribution extends Component {
                             </div>
                         )
                     })}
+                    {'\u200B'}
                 </div>
             )
         };

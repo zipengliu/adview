@@ -110,11 +110,12 @@ let initialState = {
     hoveredTrees: {},
     aggregatedDendrogram: {
         activeSetIndex: 0,
-        mode: 'skeleton',            // topo-cluster, taxa-cluster, supercluster, remainder, fine-grained, frond
+        layoutAlg: 'skeleton',
+        clusterAlg: 'none',
         spec: {
             size: 80,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
-            verticalGap: 5,
+            verticalGap: 3,
             branchLen: 6,
             leaveHeight: 4,
             leaveHighlightWidth: 16,
@@ -134,7 +135,7 @@ let initialState = {
                 matchedBlockDefaultWidth: 40,
                 nestingBlockGapInside: 3,
                 nestingBlockExtraWidth: 20,
-                collapsedBranchLength: 12
+                collapsedBranchLength: 16
             },
         },
         order: 'RF',                    // It can be RF or a branch ID
@@ -906,12 +907,20 @@ function visphyReducer(state = initialState, action) {
                     order: action.order
                 }
             };
-        case TYPE.TOGGLE_AGGREGATION_MODE:
+        case TYPE.CHANGE_LAYOUT_ALGORITHM:
             return {
                 ...state,
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
-                    mode: action.mode,
+                    layoutAlg: action.layout
+                }
+            };
+        case TYPE.CHANGE_CLUSTER_ALGORITHM:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    clusterAlg: action.cluster
                 }
             };
         case TYPE.TOGGLE_HIGHLIGHT_ENTITIES:
