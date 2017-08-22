@@ -132,7 +132,12 @@ class FullDendrogram extends Component {
 
                    {membershipViewer.length > 0 &&
                    <g transform={`translate(${side === 'left'? dendrogram.treeBoundingBox.width - dendrogram.topologyWidth - spec.membershipViewerGap * membershipViewer.length: dendrogram.topologyWidth + spec.membershipViewerGap},0)`}>
-                       {membershipViewer.map((_, i) => <g key={i} className="taxa-membership-markers" transform={`translate(${i * spec.membershipViewerGap},0)`}>
+                       <circle r="7" cx={tree.tid === referenceTree.id? -spec.membershipViewerGap + 4: membershipViewer.length * spec.membershipViewerGap + 3}
+                               cy={-8} className="taxa-membership-highlight-marker" />
+                       <text dx={tree.tid === referenceTree.id? -spec.membershipViewerGap: membershipViewer.length * spec.membershipViewerGap}
+                             dy={-4} style={{fill: 'white'}}>H</text>
+                       {membershipViewer.map((_, i) => <g key={i} className="taxa-membership-markers"
+                                                          transform={`translate(${(tree.tid === referenceTree.id? i: membershipViewer.length - 1 - i) * spec.membershipViewerGap},0)`}>
                            <circle r="7" cx={3} cy={-8} className="taxa-membership-highlight-marker" />
                            <text dy={-4}>{i + 1}</text>
                            {textSpecs.filter(d => taxaMembership[i].hasOwnProperty(d.entity_id)).map((d, j) =>

@@ -104,7 +104,7 @@ class DendrogramContainer extends Component {
                             <MenuItem eventKey="none">none</MenuItem>
                             <MenuItem eventKey="topo">topology of all blocks (w/ #taxa)</MenuItem>
                             <MenuItem eventKey="relaxed-topo">topology of all blocks (w/o #taxa)</MenuItem>
-                            <MenuItem eventKey="relaxed-topo">topology of matched blocks (TODO)</MenuItem>
+                            <MenuItem eventKey="matched-block-topo">topology of matched blocks (TODO)</MenuItem>
                         </DropdownButton>
 
                         <div style={{marginLeft: '5px', display: 'inline-block'}}>
@@ -156,7 +156,7 @@ class DendrogramContainer extends Component {
                     <div className="legend">
                         <div className="legend-section-title" style={{flexBasis: '30px'}}>Block: </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '10px', width: '14px', border: '1px solid grey'}}></div>
+                            <div className="mark" style={{height: '8px', width: '14px', border: '1px solid grey'}}></div>
                             <span>context</span>
                         </div>
                         <div className="legend-item">
@@ -256,25 +256,42 @@ let filterLayouts = createSelector(
 // Return a dictionary of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let clusterLayoutsByTopology = createSelector(
-    [state => state.aggregatedDendrogram.clusterAlg === 'relaxed-topo',
+    [state => state.aggregatedDendrogram.clusterAlg,
         (_, layouts) => layouts],
-    (isSuperCluster, layouts) => {
+    (clusterAlg, layouts) => {
         console.log('Clustering layouts by topology...');
+        let isSuperCluster = clusterAlg === 'relaxed-topo';
         let numLayouts = Object.keys(layouts).length;
 
-        let getHash = (blocks, rootBlockId) => {
-            // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
-            let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
-            let traverse = (bid) => {
-                let b = blocks[bid];
-                if (b.children && b.children.length > 0) {
-                    return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
-                } else {
-                    return getBlockRep(b);
-                }
+        let getHash;
+        if (clusterAlg === 'matched-block-topo') {      // TODO
+            getHash = (blocks, rootBlockId) => {
+                let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
+                let traverse = (bid) => {
+                    let b = blocks[bid];
+                    if (b.children && b.children.length > 0) {
+                        return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
+                    } else {
+                        return getBlockRep(b);
+                    }
+                };
+                return traverse(rootBlockId);
             };
-            return traverse(rootBlockId);
-        };
+        } else {
+            getHash = (blocks, rootBlockId) => {
+                // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
+                let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
+                let traverse = (bid) => {
+                    let b = blocks[bid];
+                    if (b.children && b.children.length > 0) {
+                        return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
+                    } else {
+                        return getBlockRep(b);
+                    }
+                };
+                return traverse(rootBlockId);
+            };
+        }
 
         let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
             let traverse = (clusterBid, addingBid) => {

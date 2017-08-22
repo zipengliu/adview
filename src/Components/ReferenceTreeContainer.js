@@ -204,11 +204,13 @@ class ReferenceTreeContainer extends Component {
                             <span>uncertain taxon hovered</span>
                         </div>
                         <div className="legend-item">
+                            <div className="mark" style={{width: '14px', height: '14px', borderRadius: '50%', background: 'black', color: 'white',
+                                textAlign: 'center', verticalAlign: 'middle'}}>H</div>
                             {[1,2,3].map(i =>
                                 <div className="mark" key={i} style={{width: '14px', height: '14px', borderRadius: '50%', background: 'black', color: 'white',
                                     textAlign: 'center', verticalAlign: 'middle'}}>{i}</div>
                             )}
-                            <span>for partition segments</span>
+                            <span>for partition segments hovered / inspected</span>
                         </div>
                     </div>
                     <div className="legend">

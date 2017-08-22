@@ -132,7 +132,7 @@ let initialState = {
                 collapsedBlockHeight: 6,
                 collapsedBlockWidth: 20,
                 matchedBlockMinHeight: 12,
-                matchedBlockDefaultWidth: 40,
+                matchedBlockDefaultWidth: 60,
                 nestingBlockGapInside: 3,
                 nestingBlockExtraWidth: 20,
                 collapsedBranchLength: 16
