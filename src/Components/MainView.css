@@ -193,6 +193,10 @@
     display: flex;
     flex-flow: row wrap;
 }
+.hidden-legend {
+    height: 18px;
+    overflow: hidden;
+}
 .legend .legend-item {
     flex: 0 0 auto;
     margin: 0 5px;

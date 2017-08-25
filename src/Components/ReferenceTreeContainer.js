@@ -3,7 +3,7 @@
  */
 
 import React, {Component} from 'react';
-import {OverlayTrigger, ButtonGroup, Button, Tooltip, MenuItem, DropdownButton} from 'react-bootstrap';
+import {OverlayTrigger, ButtonGroup, Button, Tooltip, MenuItem, DropdownButton, Glyphicon} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import cn from 'classnames';
 import FullDendrogram from './FullDendrogram';
@@ -11,14 +11,14 @@ import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import {compareWithReference, toggleUniversalBranchLength, toggleExtendedMenu, changeDistanceMetric,
     selectBranchOnFullDendrogram, toggleHighlightMonophyly, rerootReferenceTree,
     createUserSpecifiedTaxaGroup, addToUserSpecifiedTaxaGroup, removeFromUserSpecifiedTaxaGroup,
-    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup} from '../actions';
+    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleReferenceTreeLegends} from '../actions';
 import {createMappingFromArray} from '../utils';
 import {getVirtualBid} from '../tree';
 
 class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
-        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches, colorScheme} = props;
+        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches, colorScheme, showLegends} = props;
         let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
         let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
         let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
@@ -167,7 +167,10 @@ class ReferenceTreeContainer extends Component {
                     </div>
                     }
                 </div>
-                <div className="panel-footer">
+                <div className={cn("panel-footer", {'hidden-legend': !showLegends})} style={{position: 'relative'}}>
+                    <div style={{position: 'absolute', right: '5px', top: '2px', cursor: 'pointer'}}>
+                        <Glyphicon glyph={showLegends? "triangle-bottom": 'triangle-top'} onClick={this.props.toggleLegends} />
+                    </div>
                     <div className="legend">
                         <div className="legend-section-title">
                             Branch:
@@ -244,6 +247,7 @@ let mapStateToProps = state => ({
     checkingBranchTid: state.referenceTree.checkingBranchTid,
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,
+    showLegends: state.referenceTree.showLegends,
 
     consensusURL: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1?
         state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL: null,
@@ -265,7 +269,8 @@ let mapDispatchToProps = dispatch => ({
     addToUSTG: (bid, group) => {dispatch(addToUserSpecifiedTaxaGroup(bid, group))},
     removeFromUSTG: (bid, group) => {dispatch(removeFromUserSpecifiedTaxaGroup(bid, group))},
     removeUSTG: group => {dispatch(removeUserSpecifiedTaxaGroup(group))},
-    expandUSTG: (group, collapse=false) => {dispatch(expandUserSpecifiedTxaGroup(group, collapse))}
+    expandUSTG: (group, collapse=false) => {dispatch(expandUserSpecifiedTxaGroup(group, collapse))},
+    toggleLegends: () => {dispatch(toggleReferenceTreeLegends())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

@@ -30,22 +30,14 @@ let initialState = {
         tids: [],
     },
     dendrogramSpec: {
-        // width: 500,
-        defaultTopologyWidth: 300,
-        height: 840,
         margin: {left: 5, right: 5, top: 15, bottom: 0},
         marginOnEntity: 8,
         boundingBoxSideMargin: 5,
-        minLabelWidth: 40,
-        labelUnitCharWidth: 4.5,          // an estimate of the width of a character in the label
-        labelWidth: 150,                // default max width for the label
-        responsiveAreaSize: 7,          // height of a transparent box over a branch to trigger interaction
-        unitBranchLength: 10,            // When using a unit length for branch in regardless of the length of the branch in the original dataset
-                                        //      used in pairwise comparison to save space
-        minBranchLength: 3,              // the minimum length of a branch in pixel
-        comparingTopologyWidth: 200,
-        comparingLabelWidth: 100,
-        membershipViewerGap: 16,
+        labelUnitCharWidth: 4.5,            // an estimate of the width of a character in the label
+        responsiveAreaSize: 7,              // height of a transparent box over a branch to trigger interaction
+        unitBranchLength: 12,               // How long is a branch with normalized length 1
+        uniformBranchLength: 10,            // How long is each branch when we do not encode branch length
+        membershipViewerGap: 16,            // How wide for one column of membership indication marks
     },
     referenceTree: {
         id: null,
@@ -63,6 +55,7 @@ let initialState = {
             x: null,
             y: null,
         },
+        showLegends: true,
         membershipViewer: [],
 
         charts: {
@@ -96,6 +89,7 @@ let initialState = {
     },
     sets: [],
     overview: {
+        collapsed: false,
         coordinates: [],
         metricMode: 'global',
         metricBranch: null,
@@ -103,7 +97,7 @@ let initialState = {
         currentTitle: '',
         dotplotSize: 0,
         isSelecting: false,
-        selectingArea: null
+        selectingArea: null,
     },
     selectedTrees: {},
     consensusTrees: null,
@@ -154,6 +148,7 @@ let initialState = {
         margin: {left: 25, right: 8, top: 20, bottom: 2}
     },
     cbAttributeExplorer: {
+        collapsed: false,
         activeExpandedBid: null,
         activeSetId: null,
         attributes: [
@@ -537,6 +532,14 @@ function visphyReducer(state = initialState, action) {
                     data: newDistData
                 }
             };
+        case TYPE.TOGGLE_REFERENCE_TREE_LEGENDS:
+            return {
+                ...state,
+                referenceTree: {
+                    ...state.referenceTree,
+                    showLegends: !state.referenceTree.showLegends
+                }
+            };
 
         case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
             return Object.assign({}, state, {
@@ -874,6 +877,14 @@ function visphyReducer(state = initialState, action) {
                     msg: action.error.toString()
                 }
             };
+        case TYPE.TOGGLE_TREE_SIMILARITY_COLLAPSE:
+            return {
+                ...state,
+                overview: {
+                    ...state.overview,
+                    collapsed: !state.overview.collapsed
+                }
+            };
 
 
         case TYPE.SELECT_SET:
@@ -1148,6 +1159,14 @@ function visphyReducer(state = initialState, action) {
                     activeSetId: action.setIndex
                 }
             };
+        case TYPE.TOGGLE_CBAE_COLLAPSE:
+            return {
+                ...state,
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    collapsed: !state.cbAttributeExplorer.collapsed
+                }
+            };
 
         case TYPE.FETCH_INPUT_GROUP_REQUEST:
             return Object.assign({}, state, {
@@ -1167,6 +1186,7 @@ function visphyReducer(state = initialState, action) {
             newReferenceTree = new Tree(action.data.referenceTree);
             newReferenceTree.prepareBranches(action.data.supportRange)
                 .getGSF(newCB, Object.keys(action.data.trees).length)
+                .normalizeBranchLength()
                 .findMissing(action.data.entities);
 
             return Object.assign({}, state, {

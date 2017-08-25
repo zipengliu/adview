@@ -51,6 +51,20 @@ export class Tree {
         return this;
     }
 
+    normalizeBranchLength() {
+        let {branches} = this;
+        let extend = [999999, 0];
+        let normScale = scaleLinear().domain(extend).range([0, 1]);
+        for (let bid in this.branches) if (branches.hasOwnProperty(bid)) {
+            extend[0] = Math.min(extend[0], branches[bid].length);
+            extend[1] = Math.max(extend[1], branches[bid].length);
+        }
+        for (let bid in branches) if (branches.hasOwnProperty(bid)) {
+            branches[bid].length = normScale(branches[bid].length);
+        }
+        return this;
+    }
+
     // Preprocess and get the ancestor data for the LCA online algorithm
     getAncestors() {
         let {branches, rootBranch} = this;

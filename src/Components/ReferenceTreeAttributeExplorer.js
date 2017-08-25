@@ -30,7 +30,7 @@ class ReferenceTreeAttributeExplorer extends Component {
                     </div>
                 </div>}
                 <div className="panel-body" style={{position: 'relative'}}>
-                    {!charts.float && <div style={{cursor: 'pointer', position: 'absolute', right: '5px', top: '5px', fontWeight: 'normal'}}>
+                    {!charts.float && <div style={{cursor: 'pointer', position: 'absolute', right: '5px', top: '5px', fontWeight: 'normal', color: 'grey'}}>
                         <Glyphicon glyph="modal-window" onClick={this.props.togglePopAE} />
                         <Glyphicon glyph="remove" onClick={this.props.toggleAE} />
                     </div>}

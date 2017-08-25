@@ -6,7 +6,6 @@ import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import cn from 'classnames';
-import {scaleLinear} from 'd3';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, toggleCheckingBranch,
     toggleHighlightDuplicate, toggleExtendedMenu} from '../actions';
 import {createMappingFromArray} from '../utils';
@@ -254,29 +253,31 @@ let getDendrogramSpecs = createSelector(
         let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
 
         let getTreeWidth = function() {
-            let maxTopoWidth = 0, depth = 0;
-            let longestEntity = aligned? spec.comparingLabelWidth: spec.minLabelWidth;
+            let topologyWidth = 0;
+            let maxTopoAndLabelWidth = 0;
+            let longestEntity = 0;
             let traverse = function(bid, cur, dep) {
                 let b = branches[bid];
-                cur += ignoreBranchLen? spec.unitBranchLength: b.length;
-                maxTopoWidth = Math.max(cur, maxTopoWidth);
-                depth = Math.max(depth, dep);
+                cur += ignoreBranchLen? spec.uniformBranchLength: b.length * spec.unitBranchLength;
+                topologyWidth = Math.max(cur, topologyWidth);
                 if ('left' in b) {
                     traverse(b.left, cur, dep + 1);
                     traverse(b.right, cur, dep + 1);
                 } else {
+                    maxTopoAndLabelWidth = Math.max(maxTopoAndLabelWidth, cur + entities[b.entity].name.length * spec.labelUnitCharWidth);
+                    // console.log(cur, entities[b.entity].name.length * spec.labelUnitCharWidth);
                     longestEntity = Math.max(longestEntity, entities[b.entity].name.length * spec.labelUnitCharWidth);
                 }
             };
             // longestEntity += 20;        // For the taxon pointer mark
 
             traverse(tree.rootBranch, 0, 1);
-            let topologyWidth = ignoreBranchLen? maxTopoWidth: (aligned? spec.comparingTopologyWidth: spec.defaultTopologyWidth);
-            return {treeWidth: topologyWidth + longestEntity + roomForMembership, topologyWidth, maxLength: maxTopoWidth, depth};
+            let treeWidth = aligned? topologyWidth + longestEntity + roomForMembership: maxTopoAndLabelWidth + roomForMembership;
+            return {treeWidth, topologyWidth};
         };
-        let {treeWidth, topologyWidth, maxLength, depth} = getTreeWidth();
+        let {treeWidth, topologyWidth} = getTreeWidth();
+        console.log('tree width:', treeWidth);
 
-        let xScale = ignoreBranchLen? null: scaleLinear().domain([0, maxLength]).range([0, topologyWidth - depth * spec.minBranchLength]);
         let b = {};
         let connectLines = [];
         let curY = 0;
@@ -288,7 +289,7 @@ let getDendrogramSpecs = createSelector(
 
         let traverse = (bid, curX) => {
             let bLength = branches[bid].length;
-            let t = ignoreBranchLen? spec.unitBranchLength: (xScale(bLength) + spec.minBranchLength);
+            let t = ignoreBranchLen? spec.uniformBranchLength: bLength * spec.unitBranchLength;
             b[bid] = {x1: curX, x2: curX + t};
             curX += t;
             if ('left' in branches[bid]) {
@@ -309,7 +310,6 @@ let getDendrogramSpecs = createSelector(
                 b[bid].y2 = curY;
                 if (aligned) {
                     b[bid].x2 = topologyWidth;
-                    // b[bid].x2 += Math.max(0, spec.labelWidth - entities[ent_id].name.length * 4.3 - 5);
                 }
                 boundingBox[bid] = {x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
                     width: treeWidth - b[bid].x1 - spec.boundingBoxSideMargin,

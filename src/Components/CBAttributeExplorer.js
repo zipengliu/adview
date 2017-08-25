@@ -5,10 +5,11 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
-import {Button, DropdownButton, MenuItem, Clearfix} from 'react-bootstrap';
+import cn from 'classnames';
+import {Button, DropdownButton, MenuItem, Clearfix, Glyphicon, Table} from 'react-bootstrap';
 import {histogram, scaleLinear} from 'd3';
 import {toggleMoveHandle, moveControlHandle, changeActiveExpandedBranch,
-    changeActiveRangeSelection, changeSelectionRange, changeActiveCollection} from '../actions';
+    changeActiveRangeSelection, changeSelectionRange, changeActiveCollection, toggleCBAECollapse} from '../actions';
 import Histogram from './HistogramSlider';
 import LineChart from './LineChart';
 
@@ -16,7 +17,7 @@ import './AttributeExplorer.css';
 
 class CBAttributeExplorer extends Component {
     render() {
-        let {expanded, data, attributes, activeSelectionId, activeExpandedBid, activeSetId, sets} = this.props;
+        let {expanded, data, attributes, activeSelectionId, activeExpandedBid, activeSetId, sets, collapsed, activeTreeCBInfo} = this.props;
         let shownAsHistogram = true;
 
         let renderChart = (data, foregroundData=null, att, id) => shownAsHistogram?
@@ -41,92 +42,90 @@ class CBAttributeExplorer extends Component {
             </Button>;
 
         return (
-            <div id="cb-attribute-explorer" className="view panel panel-default">
+            <div id="cb-attribute-explorer" className={cn("view panel panel-default", {'panel-collapsed': collapsed})}>
 
                 <div className="view-header panel-heading">
-                    <div className="view-title">Corresponding Branch Attributes</div>
+                    <div className="view-title">Corresponding Br. Attr.
+                        <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={this.props.onToggleCollapsed}>
+                        <Glyphicon glyph={collapsed? 'th-list': 'minus'}/>
+                        </span>
+                    </div>
                     {/*<FormGroup style={{textAlign: 'center'}}>*/}
-                        {/*<span style={{marginRight: '2px'}}>as</span>*/}
-                        {/*<Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>*/}
-                        {/*<Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>*/}
+                    {/*<span style={{marginRight: '2px'}}>as</span>*/}
+                    {/*<Radio inline checked={shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, true)}>histogram</Radio>*/}
+                    {/*<Radio inline checked={!shownAsHistogram} onChange={this.props.toggleHistogram.bind(null, false)}>CDF</Radio>*/}
                     {/*</FormGroup>*/}
                 </div>
 
-                {activeExpandedBid &&
                 <div className="view-body panel-body">
-
+                    {activeExpandedBid &&
                     <div>
-                        <span>For tree collection</span>
-                        <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-col" title={sets[activeSetId].title}
-                                        style={{marginLeft: '5px'}}
-                                        onSelect={this.props.onChangeActiveCollection}>
-                            {sets.map((s, i) =>
-                                <MenuItem key={i} eventKey={i}>{s.title}</MenuItem>)}
-                        </DropdownButton>
-                    </div>
-                    <div>
-                        <span>For reference tree branch</span>
-                        <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-branch" title={expanded[activeExpandedBid]}
-                                        style={{marginLeft: '5px'}}
-                                        onSelect={this.props.onChangeActiveExpandedBranch}>
-                            {Object.keys(expanded).map(bid =>
-                                <MenuItem key={bid} eventKey={bid}>{expanded[bid]}</MenuItem>)}
-                        </DropdownButton>
-                    </div>
-
-                    {data.bins.map((d, i) => <div key={i}>
-                        {renderChart(d, data.binsForExact[i], attributes[i].displayName, i)}
-                        {getSelectionButton(i, false)}
-                    </div>)}
-
-                    {/*<Button bsSize="xsmall" style={{width: '90%', marginTop: '20px'}}>Create customized chart</Button>*/}
-
-                    {/*<OverlayTrigger placement="right" overlay={<Tooltip id="corr-desc">branches that correspond to the last selected one on the reference tree </Tooltip>}>*/}
-                        {/*<div className="attribute-heading">&diams; Corresponding branches to*/}
-                            {/*{referenceTree.checkingBranch? ' hovered reference branch':*/}
-                                {/*(referenceTree.selected.length? ` branch ${referenceTree.selected.length}`: ' none')}</div>*/}
-                    {/*</OverlayTrigger>*/}
-                    {/*<div style={{marginLeft: '18px'}}>*/}
-                        {/*<ButtonGroup bsSize="xsmall">*/}
-                            {/*<OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-all-trees">*/}
-                                {/*Show distribution of attributes of corresponding branches from all trees in this dataset.</Tooltip>}>*/}
-                                {/*<Button active={modes.corr.scope === 'all'} onClick={onChangeMode.bind(null, 'corr', 'all', null)}>all trees</Button>*/}
-                            {/*</OverlayTrigger>*/}
-                            {/*<OverlayTrigger placement="top" overlay={<Tooltip id="att-corr-current-set">*/}
-                                {/*Show distribution of attributes of corresponding branches from trees of the current subset.</Tooltip>}>*/}
-                                {/*<Button active={modes.corr.scope === 'set'}*/}
-                                        {/*onClick={onChangeMode.bind(null, 'corr', 'set', null)}>cur. set</Button>*/}
-                            {/*</OverlayTrigger>*/}
-                        {/*</ButtonGroup>*/}
-                        {/*<FormGroup>*/}
-                            {/*<OverlayTrigger placement="right" overlay={<Tooltip id="att-corr-in-context">*/}
-                                {/*Show the global distribution as background and partial one as foreground</Tooltip>}>*/}
-                                {/*<Radio inline disabled={modes.corr.scope === 'all' || !shownAsHistogram} checked={modes.corr.context}*/}
-                                       {/*onChange={onChangeMode.bind(null, 'corr', null, !modes.corr.context)}>show in context</Radio>*/}
-                            {/*</OverlayTrigger>*/}
-                        {/*</FormGroup>*/}
-
-                        {/*{withSupport && renderChart(data.corr[attrName].fg, data.corr[attrName].bg, attrName, 1)}*/}
-                        {/*{withSupport && getSelectionButton(1, !data.corr[attrName].fg && !data.corr[attrName].bg)}*/}
-
-                        {/*{renderChart(data.corr.similarity.fg, data.corr.similarity.bg, 'similarity', 2)}*/}
-                        {/*{getSelectionButton(2, !data.corr.similarity.fg && !data.corr.similarity.bg)}*/}
-
-                    {/*</div>*/}
-
-                    <Clearfix/>
-                    <div className="legend" style={{marginTop: '5px'}}>
-                        <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'grey'}}></div>
-                            <span>trees in chosen collection</span>
+                        {activeTreeCBInfo.length > 0 &&
+                        <div>
+                            <div>Tree {this.props.isActiveHovered? 'hovered': 'selected'}: {this.props.activeTreeName}</div>
+                            <Table condensed>
+                                <thead>
+                                <tr>
+                                    <th>corr.br.</th>
+                                    <th>exact?</th>
+                                    {activeTreeCBInfo[0].support >= 0 && <th>support</th>}
+                                    <th>similarity</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {activeTreeCBInfo.map((v, i) => <tr key={i}>
+                                    <td style={{color: 'red'}}>{v.no}</td>
+                                    <td><Glyphicon glyph={v.isExact? 'ok': 'remove'} /></td>
+                                    <td>{v.similarity.toFixed(1)}</td>
+                                    {v.support >= 0 && <td>{v.support.toFixed(1)}</td>}
+                                </tr>)}
+                                </tbody>
+                            </Table>
                         </div>
-                        <div className="legend-item">
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'black'}}></div>
-                            <span>trees with exact match</span>
+                        }
+
+                        <div>
+                            <span>For tree collection</span>
+                            <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-col" title={sets[activeSetId].title}
+                                            style={{marginLeft: '5px'}}
+                                            onSelect={this.props.onChangeActiveCollection}>
+                                {sets.map((s, i) =>
+                                    <MenuItem key={i} eventKey={i}>{s.title}</MenuItem>)}
+                            </DropdownButton>
+                        </div>
+                        <div>
+                            <span>For reference tree branch</span>
+                            <DropdownButton bsSize="xsmall" pullRight id="cb-ae-select-branch" title={expanded[activeExpandedBid]}
+                                            style={{marginLeft: '5px'}}
+                                            onSelect={this.props.onChangeActiveExpandedBranch}>
+                                {Object.keys(expanded).map(bid =>
+                                    <MenuItem key={bid} eventKey={bid}>{expanded[bid]}</MenuItem>)}
+                            </DropdownButton>
+                        </div>
+
+                        {data.bins.map((d, i) => <div key={i}>
+                            {renderChart(d, data.binsForExact[i], attributes[i].displayName, i)}
+                            {getSelectionButton(i, false)}
+                        </div>)}
+
+                        {/*<Button bsSize="xsmall" style={{width: '90%', marginTop: '20px'}}>Create customized chart</Button>*/}
+
+
+                        <Clearfix/>
+                        <div className="legend" style={{marginTop: '5px'}}>
+                            <div className="legend-item">
+                                <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'grey'}}></div>
+                                <span>trees in chosen collection</span>
+                            </div>
+                            <div className="legend-item">
+                                <div style={{display: 'inline-block', margin: '0 2px', height: '16px', width: '5px', background: 'black'}}></div>
+                                <span>trees with exact match</span>
+                            </div>
                         </div>
                     </div>
+                    }
+                    {!activeExpandedBid && <p>No branch of interest yet.</p>}
                 </div>
-                }
             </div>
         )
     }
@@ -140,11 +139,11 @@ let getBinsFromArray = values => {
 
 let getCBHistograms = createSelector(
     [state => state.cbAttributeExplorer.activeExpandedBid,
-    state => state.inputGroupData.referenceTree,
-    state => state.inputGroupData.trees,
-    state => state.sets[state.cbAttributeExplorer.activeSetId],
-    state => state.cbAttributeExplorer.attributes,
-    state => state.cb],
+        state => state.inputGroupData.referenceTree,
+        state => state.inputGroupData.trees,
+        state => state.sets[state.cbAttributeExplorer.activeSetId],
+        state => state.cbAttributeExplorer.attributes,
+        state => state.cb],
     (bid, referenceTree, trees, activeSet, attributes, cb) => {
         if (!bid) return null;
         let values = [];
@@ -154,7 +153,7 @@ let getCBHistograms = createSelector(
             valuesForExact.push([]);
         }
         for (let i = 0; i < activeSet.tids.length; i++) {
-        // for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+            // for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             let tid = activeSet.tids[i];
             let corr = referenceTree.branches[bid][cb];
             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
@@ -181,12 +180,37 @@ let getCBHistograms = createSelector(
 
 let mapStateToProps = state => {
     let data = getCBHistograms(state);
+    let activeTreeCBInfo = [];
+    let t = Object.keys(state.hoveredTrees);
+    let t2 = Object.keys(state.selectedTrees);
+    let activeTreeName, isActiveHovered;
+    if (t.length === 1 || (t.length === 0 && t2.length === 1)) {
+        let tid = t.length === 1? t[0]: t2[0];
+        isActiveHovered = t.length === 1;
+        let {expanded} = state.referenceTree;
+        let {referenceTree, trees} = state.inputGroupData;
+        let {cb} = state;
+        activeTreeName = trees[tid].name;
+
+        for (let rBid in expanded) if (expanded.hasOwnProperty(rBid)) {
+            let corr = referenceTree.branches[rBid][cb];
+            if (corr.hasOwnProperty(tid) && corr[tid].bid) {
+                activeTreeCBInfo.push({no: expanded[rBid], isExact: corr[tid].jac === 1.0, similarity: corr[tid].jac});
+                if (trees[tid].branches[corr[tid].bid].support) {
+                    activeTreeCBInfo[activeTreeCBInfo.length - 1].support = trees[tid].branches[corr[tid].bid].support;
+                }
+            }
+        }
+    }
 
     return {
         ...state.cbAttributeExplorer,
         expanded: state.referenceTree.expanded,
         spec: state.attributeChartSpec,
         data,
+        activeTreeCBInfo,
+        activeTreeName,
+        isActiveHovered,
         sets: state.sets,
     };
 };
@@ -198,6 +222,7 @@ let mapDispatchToProps = dispatch => ({
     onChangeSelectionRange: (l, r, c) => {dispatch(changeSelectionRange(l, r, c))},
     onChangeActiveExpandedBranch: (bid) => {dispatch(changeActiveExpandedBranch(bid))},
     onChangeActiveCollection: (index) => {dispatch(changeActiveCollection(index))},
+    onToggleCollapsed: () => {dispatch(toggleCBAECollapse())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(CBAttributeExplorer);

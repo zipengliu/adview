@@ -4,17 +4,22 @@
 
 import React from 'react';
 import {Button, ButtonGroup, OverlayTrigger, Tooltip, Glyphicon} from 'react-bootstrap';
+import cn from 'classnames';
 import {connect} from 'react-redux';
 import Dotplot from './Dotplot';
 import PopupWindow from './PopupWindow';
-import { changeDistanceMetric} from '../actions';
+import {changeDistanceMetric, toggleTreeSimilarityCollapse} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
 
 
 let Overview = props => (
-    <div id="overview" className="view panel panel-default">
+    <div id="overview" className={cn("view panel panel-default", {'panel-collapsed': props.collapsed})}>
         <div className="view-header panel-heading">
-            <div className="view-title">Tree Similarity</div>
+            <div className="view-title">Tree Similarity
+                <span style={{marginLeft: '10px', cursor: 'pointer', float: 'right'}} onClick={props.onToggleCollapsed}>
+                <Glyphicon glyph={props.collapsed? 'th-list': 'minus'}/>
+                </span>
+            </div>
         </div>
 
         <div className="view-body panel-body">
@@ -67,9 +72,11 @@ let Overview = props => (
 let mapStateToProps = state => ({
     metricMode: state.overview.metricMode,
     metricBranch: state.overview.metricBranch,
+    collapsed: state.overview.collapsed
 });
 let mapDispatchToProps = dispatch => ({
     onChangeMetricMode: (mode, bid) => {dispatch(changeDistanceMetric(mode, bid))},
+    onToggleCollapsed: () => {dispatch(toggleTreeSimilarityCollapse())},
 });
 
 

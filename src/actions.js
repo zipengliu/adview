@@ -211,6 +211,10 @@ export function changeActiveCollection(setIndex) {
     return {type: TYPE.CHANGE_ACTIVE_COLLECTION, setIndex};
 }
 
+export function toggleCBAECollapse() {
+    return {type: TYPE.TOGGLE_CBAE_COLLAPSE};
+}
+
 export function changeDistanceMetric(mode, bid) {
     return function (dispatch, getState) {
         let state = getState();
@@ -242,6 +246,10 @@ function changeDistanceMetricSuccess(coordinates) {
 
 function changeDistanceMetricFailure(error) {
     return {type: TYPE.CHANGE_DISTANCE_METRIC_FAILURE, error}
+}
+
+export function toggleTreeSimilarityCollapse() {
+    return {type: TYPE.TOGGLE_TREE_SIMILARITY_COLLAPSE}
 }
 
 
@@ -383,6 +391,10 @@ export function removeUserSpecifiedTaxaGroup(group) {
 
 export function expandUserSpecifiedTxaGroup(group, collapse=false) {
     return {type: TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP, group, collapse};
+}
+
+export function toggleReferenceTreeLegends() {
+    return {type: TYPE.TOGGLE_REFERENCE_TREE_LEGENDS};
 }
 
 export function fetchDatasets() {

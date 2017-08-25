@@ -4,6 +4,7 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
+import cn from 'classnames';
 import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
@@ -13,7 +14,7 @@ import {renderSubCollectionGlyph} from './Commons';
 
 class GlobalToolkit extends Component {
     render() {
-        let {selectedTrees, cb, inputGroupId, consensusTrees} = this.props;
+        let {selectedTrees, inputGroupId, consensusTrees} = this.props;
         let selectedTids = BitSet(selectedTrees.map(tid => tid.substring(1)));
         let isConsensusNotConsistent = consensusTrees && this.props.isComparingConsensus && !selectedTids.equals(consensusTrees);
 
@@ -42,57 +43,37 @@ class GlobalToolkit extends Component {
                                     <Glyphicon glyph="refresh" /><span className="glyph-text">reset</span>
                                 </Button>
                             </OverlayTrigger>
-                            <OverlayTrigger placement="bottom" rootClose overlay={<Tooltip id="tooltip-clear-selected-trees">Clear all selected trees</Tooltip>}>
-                                <Button disabled={!selectedTrees.length} onClick={this.props.onClearSelectedTrees}>
-                                    <Glyphicon glyph="" /><span className="glyph-text">clear selected trees</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="bottom" rootClose overlay={<Tooltip id="tooltip-reverse-selection">Reverse tree selection</Tooltip>}>
-                                <Button disabled={!selectedTrees.length} onClick={this.props.onReverseSelection}>
-                                    <span className="glyph-text">reverse selection</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="bottom" rootClose overlay={<Tooltip id="tooltip-export-selected-trees">Export the list of selected trees as text file</Tooltip>}>
-                                <Button disabled={!selectedTrees.length} onClick={this.props.onDownload}>
-                                    <Glyphicon glyph="" /><span className="glyph-text">export selected trees</span>
-                                </Button>
-                            </OverlayTrigger>
-                        </ButtonGroup>
-
-                        <span>Match monophyly </span>
-                        <ButtonGroup bsSize="xsmall">
-                            <Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>
-                            <Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>
-                        </ButtonGroup>
-                        <span> missing taxa. </span>
-                    </div>
-
-                    <div>
-                        <ButtonGroup bsSize="xsmall">
-                            <Button onClick={this.props.onCreateNewSet} disabled={!selectedTrees.length}>create sub-collection</Button>
-                            <DropdownButton bsSize="xsmall" title="add to sub-collection" id="add-to-set"
-                                            onSelect={this.props.onAddToSet}
-                                            disabled={!selectedTrees.length || this.props.sets.length === 0}>
-                                {this.props.sets.map((d, i) =>
-                                    <MenuItem eventKey={i} key={i}>
-                                        {renderSubCollectionGlyph(d.glyph)}
-                                        <span>{d.title}</span>
-                                        <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{d.tids.length}</Badge>
-                                    </MenuItem>
-                                )}
+                            <DropdownButton bsSize="xsmall" disabled={!selectedTrees.length} id="selected-trees-dropdown" title={`selected trees (${selectedTrees.length})`}>
+                                <MenuItem onSelect={() => {this.props.onClearSelectedTrees()}}>clear selection</MenuItem>
+                                <MenuItem onSelect={() => {this.props.onReverseSelection()}}>reverse selection</MenuItem>
+                                <MenuItem onSelect={() => {this.props.onDownload()}}>export as tree file (newick)</MenuItem>
                             </DropdownButton>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-from-set">Remove selected trees from the current sub-collection</Tooltip>}>
-                                <Button disabled={!selectedTrees.length} onClick={this.props.onRemoveFromSet.bind(null, selectedTrees, this.props.activeSetIndex)}>
-                                    <Glyphicon glyph="trash"/><span className="glyph-text">remove selected trees from sub-collection</span>
-                                </Button>
-                            </OverlayTrigger>
-                            <OverlayTrigger rootClose placement="bottom" overlay={<Tooltip id="tooltip-remove-set">Remove the current sub-collection</Tooltip>}>
-                                <Button disabled={this.props.activeSetIndex === 0}
-                                        onClick={this.props.onRemoveSet.bind(null, this.props.activeSetIndex)}>
-                                    <Glyphicon glyph="trash"/><span className="glyph-text">remove sub-collection</span>
-                                </Button>
-                            </OverlayTrigger>
                         </ButtonGroup>
+
+                        <DropdownButton bsSize="xsmall" title="sub-collection" id="sub-collection-dropdown" >
+                            <MenuItem disabled={!selectedTrees.length} onSelect={() => {this.props.onCreateNewSet()}}>create</MenuItem>
+                            <li className={cn('dropdown-submenu', {disabled: !selectedTrees.length || this.props.sets.length === 0})}>
+                                <a href="#">add to</a>
+                                <ul className="dropdown-menu" >
+                                    {this.props.sets.map((d, i) =>
+                                        <MenuItem eventKey={i} key={i} onSelect={this.props.onAddToSet}>
+                                            {renderSubCollectionGlyph(d.glyph)}
+                                            <span>{d.title}</span>
+                                            <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{d.tids.length}</Badge>
+                                        </MenuItem>
+                                    )}
+                                </ul>
+                            </li>
+                            <MenuItem disabled={!selectedTrees.length} onSelect={() => {this.props.onRemoveFromSet(selectedTrees, this.props.activeSetIndex)}}>remove selected trees</MenuItem>
+                            <MenuItem disabled={this.props.activeSetIndex === 0} onSelect={() => {this.props.onRemoveSet(this.props.activeSetIndex)}}>delete</MenuItem>
+                        </DropdownButton>
+
+                        {/*<span>Match monophyly </span>*/}
+                        {/*<ButtonGroup bsSize="xsmall">*/}
+                            {/*<Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>*/}
+                            {/*<Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>*/}
+                        {/*</ButtonGroup>*/}
+                        {/*<span> missing taxa. </span>*/}
                     </div>
                 </div>
             </div>
