@@ -108,16 +108,12 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {clusterAlg !== 'relaxed-topo' && b.n > 1 && b.width > 12 &&
+                                    {clusterAlg !== 'relaxed-topo' && b.n > 1 && b.width > 12 && b.height > 12 &&
                                     <g>
-                                        {((b.context || b.isMissing) && b.height > 12) || b.height > 22?
-                                            <text className="label" x={b.x} y={b.y} dx={1} dy={10}>{b.n}</text>:
-                                            (b.width > 22? <text className="label" x={b.x + b.width} y={b.y} dx="-2" dy="10" style={{textAnchor: 'end'}}>{b.n}</text>:
-                                                <g></g>)
-                                        }
+                                        <text className="label" x={b.x + b.width} y={b.y} dx="-2" dy="10" style={{textAnchor: 'end'}}>{b.n}</text>
+                                        {b.no && b.width > 24 &&
+                                        <text className="label" x={b.x} y={b.y} dx="1" dy="10">{b.no}</text>}
                                     </g>}
-                                    {clusterAlg !== 'relaxed-topo' && b.no && b.width > 12 &&
-                                    <text className="label" x={b.x} y={b.y + b.height} dx="1" dy="-2">{b.no}</text>}
                                 </g>
                             )}
                         </g>
