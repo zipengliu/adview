@@ -14,6 +14,7 @@ let initialState = {
     inputGroupData: null,
     // bipartitions: {},
     datasets: [],
+    stretchedMainView: false,
     toast: {
         msg: null,
         downloadingTreeUrl: null,
@@ -1553,6 +1554,12 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Failed to build consensus tree: ' + action.error.toString()
                 }
             };
+        case TYPE.TOGGLE_STRETCH_MAINVIEW:
+            return {
+                ...state,
+                stretchedMainView: !state.stretchedMainView
+            };
+
         case TYPE.TOGGLE_HIGHLIGHT_SEGMENT:
             // This is actually combination of HIGHLIGHT_TREES and HIGHLIGHT_ENTITIES
             newHoveredTrees = action.tids && action.tids.length? createMappingFromArray(action.tids): {};

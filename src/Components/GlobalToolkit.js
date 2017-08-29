@@ -9,12 +9,12 @@ import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
     removeFromSet, removeSet, compareWithReference, toggleJaccardMissing, makeConsensus, reverseSelection,
-    downloadSelectedTrees} from '../actions';
+    downloadSelectedTrees, toggleStretchedMainView} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
 
 class GlobalToolkit extends Component {
     render() {
-        let {selectedTrees, inputGroupId, consensusTrees} = this.props;
+        let {selectedTrees, inputGroupId, consensusTrees, stretchedMainView} = this.props;
         let selectedTids = BitSet(selectedTrees.map(tid => tid.substring(1)));
         let isConsensusNotConsistent = consensusTrees && this.props.isComparingConsensus && !selectedTids.equals(consensusTrees);
 
@@ -68,6 +68,10 @@ class GlobalToolkit extends Component {
                             <MenuItem disabled={this.props.activeSetIndex === 0} onSelect={() => {this.props.onRemoveSet(this.props.activeSetIndex)}}>delete</MenuItem>
                         </DropdownButton>
 
+                        <DropdownButton bsSize="xsmall" title="more" id="more-dropdown" style={{marginLeft: '10px'}}>
+                            <MenuItem onClick={this.props.onToggleMainView}>{stretchedMainView? 'restrain to single page frame': 'expand to full web page (for screenshot)'}</MenuItem>
+                        </DropdownButton>
+
                         {/*<span>Match monophyly </span>*/}
                         {/*<ButtonGroup bsSize="xsmall">*/}
                             {/*<Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>*/}
@@ -90,6 +94,7 @@ let mapStateToProps = state => ({
     activeSetIndex: state.aggregatedDendrogram.activeSetIndex,
     referenceTid: state.referenceTree.id,
     cb: state.cb,
+    stretchedMainView: state.stretchedMainView,
 });
 
 let mapDispatchToProps = dispatch => ({
@@ -107,6 +112,7 @@ let mapDispatchToProps = dispatch => ({
     onMakeConsensus: (inputGroupId, tids) => {dispatch(makeConsensus(inputGroupId, tids))},
     onReverseSelection: () => {dispatch(reverseSelection())},
     onDownload: () => {dispatch(downloadSelectedTrees())},
+    onToggleMainView: () => {dispatch(toggleStretchedMainView())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(GlobalToolkit);

@@ -85,6 +85,10 @@ function makeConsensusFailure(error) {
     return {type: TYPE.MAKE_CONSENSUS_FAILURE, error}
 }
 
+export function toggleStretchedMainView() {
+    return {type: TYPE.TOGGLE_STRETCH_MAINVIEW}
+}
+
 export function toggleHighlightMonophyly(tid, bid, addictive=false) {
     return {
         type: TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY,
