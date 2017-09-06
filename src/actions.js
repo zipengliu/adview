@@ -61,7 +61,7 @@ export function makeConsensus(inputGroupId, tids) {
         return fetch(baseUrl + '/consensus', {method: 'POST', body: requestBody}).then(function (response) {
             if (response.status >= 400) {
                 console.log("Bad response from server");
-                dispatch(fetchInputGroupFailure(response.statusText))
+                dispatch(makeConsensusFailure(response.statusText))
             }
             return response.json();
         }).then(function (data) {
@@ -84,6 +84,88 @@ function makeConsensusSuccess(data) {
 function makeConsensusFailure(error) {
     return {type: TYPE.MAKE_CONSENSUS_FAILURE, error}
 }
+
+
+
+export function changeUploadDataset(name, value) {
+    return {type: TYPE.CHANGE_UPLOAD_DATASET, name, value};
+}
+
+export function uploadDataset() {
+    return (dispatch, getState) => {
+        dispatch(uploadDatasetRequest());
+        let data = new FormData();
+        let state = getState();
+        for (let name in state.upload.rawData) if (state.upload.rawData.hasOwnProperty(name)) {
+            console.log(name, state.upload.rawData[name]);
+            data.append(name, state.upload.rawData[name]);
+        }
+        console.log('submitting dataset:');
+        console.log(data);
+
+        return fetch(baseUrl + '/dataset', {method: 'POST', body: data}).then((response) => {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(uploadDatasetFailure(response.statusText))
+            }
+            return response.json();
+        }).then(function (data) {
+            console.log('uploadind dataset succeeded!');
+            dispatch(uploadDatasetSuccess(data));
+        }).catch(function (error) {
+            dispatch(uploadDatasetFailure(error));
+        })
+    }
+}
+
+function uploadDatasetRequest() {
+    return {type: TYPE.UPLOAD_DATASET_REQUEST};
+}
+
+function uploadDatasetSuccess(data) {
+    return {type: TYPE.UPLOAD_DATASET_SUCCESS, data};
+}
+
+function uploadDatasetFailure(error) {
+    return {type: TYPE.UPLOAD_DATASET_FAILURE, error};
+}
+
+export function selectOutgroupTaxa(eid) {
+    return {type: TYPE.SELECT_OUTGROUP_TAXA, eid};
+}
+
+export function changeOutgroupTaxaFile(t) {
+    return {type: TYPE.CHANGE_OUTGROUP_TAXA_FILE, t};
+}
+
+export function uploadOutgroup() {
+    return (dispatch, getState) => {
+        dispatch(uploadDatasetRequest());
+
+        let state = getState();
+        let data = new FormData();
+        data.append('inputGroupId', state.upload.inputGroupId);
+        data.append('outgroup', Object.keys(state.upload.outgroupTaxa).map(eid => state.upload.entities[eid]).join(','));
+
+        return fetch(baseUrl + '/outgroup', {method: 'POST', body: data}).then(() => {
+
+        })
+    }
+}
+
+function uploadOutgroupRequest() {
+    return {type: TYPE.UPLOAD_OUTGROUP_REQUEST};
+}
+
+function uploadOutgroupSuccess() {
+    return {type: TYPE.UPLOAD_OUTGROUP_SUCCESS};
+}
+
+function uploadOutgroupFailure() {
+    return {type: TYPE.UPLOAD_DATASET_FAILURE};
+}
+
+
 
 export function toggleStretchedMainView() {
     return {type: TYPE.TOGGLE_STRETCH_MAINVIEW}

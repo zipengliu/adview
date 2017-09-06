@@ -9,6 +9,12 @@ import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, merge
 import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
 
 let initialState = {
+    upload: {
+        isProcessingEntities: false,
+        isMatching: false,
+        rawData: {},
+        outgroupTaxa: {}
+    },
     isFetching: false,
     isFetchFailed: false,
     inputGroupData: null,
@@ -1558,6 +1564,82 @@ function visphyReducer(state = initialState, action) {
             return {
                 ...state,
                 stretchedMainView: !state.stretchedMainView
+            };
+        case TYPE.CHANGE_UPLOAD_DATASET:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    rawData: {
+                        ...state.upload.rawData,
+                        [action.name]: action.value
+                    },
+                }
+            };
+        case TYPE.UPLOAD_DATASET_REQUEST:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    isProcessingEntities: true,
+                }
+            };
+        case TYPE.UPLOAD_DATASET_FAILURE:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    error: action.error
+                }
+            };
+        case TYPE.UPLOAD_DATASET_SUCCESS:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    ...action.data,
+                    isProcessingEntities: false,
+                    outgroupTaxa: {}
+                }
+            };
+        case TYPE.SELECT_OUTGROUP_TAXA:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    outgroupTaxa: state.upload.outgroupTaxa.hasOwnProperty(action.eid)?
+                        (() => {let r = {...state.upload.outgroupTaxa}; delete r[action.eid]; return r})():
+                        {...state.upload.outgroupTaxa, [action.eid]: true}
+                }
+            };
+        case TYPE.CHANGE_OUTGROUP_TAXA_FILE:
+            let newOutgroupTaxa = {};
+            let lines = action.t.split('\n');
+            for (let l of lines) {
+                for (let eid in state.upload.entities) if (state.upload.entities.hasOwnProperty(eid)) {
+                    if (state.upload.entities[eid].toLowerCase() === l.toLowerCase()) {
+                        newOutgroupTaxa[eid] = true; break;
+                    }
+                }
+            }
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    outgroupTaxa: newOutgroupTaxa
+                }
+            };
+
+        case TYPE.UPLOAD_OUTGROUP_REQUEST:
+            return {
+                ...state,
+                upload: {
+
+                }
+            };
+        case TYPE.UPLOAD_OUTGROUP_SUCCESS:
+            return {
+                ...state,
             };
 
         case TYPE.TOGGLE_HIGHLIGHT_SEGMENT:

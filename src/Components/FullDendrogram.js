@@ -243,7 +243,7 @@ let getDendrogramSpecs = createSelector(
     [(state, tid) => tid? state.inputGroupData.trees[tid]: state.inputGroupData.referenceTree,
         state => state.inputGroupData.entities,
         (_, tid, alignToSide) => alignToSide,
-        (_, tid, alignToSide, ignoreBranchLen) => ignoreBranchLen,
+        state => state.referenceTree.universalBranchLen,
         state => state.dendrogramSpec,
         state => state.referenceTree.membershipViewer],
     (tree, entities, side, ignoreBranchLen, spec, membershipViewer) => {
@@ -276,7 +276,6 @@ let getDendrogramSpecs = createSelector(
             return {treeWidth, topologyWidth};
         };
         let {treeWidth, topologyWidth} = getTreeWidth();
-        console.log('tree width:', treeWidth);
 
         let b = {};
         let connectLines = [];
@@ -384,14 +383,14 @@ let getDendrogramSpecs = createSelector(
 );
 
 
-function mapStateToProps(state) {
+function mapStateToProps(state, ownProps) {
     let ref = state.inputGroupData.referenceTree;
     let c = state.pairwiseComparison;
     let den, den1, den2;
     let compExp = {};
     if (c.tid) {
-        den1 = getDendrogramSpecs(state, null, 'right', state.referenceTree.universalBranchLen);
-        den2 = getDendrogramSpecs(state, c.tid, 'left', state.referenceTree.universalBranchLen);
+        den1 = getDendrogramSpecs(state, null, 'right');
+        den2 = getDendrogramSpecs(state, c.tid, 'left');
 
         // Get the corresponding branches in the comparing tree
         let refExp = state.referenceTree.expanded;
@@ -404,7 +403,7 @@ function mapStateToProps(state) {
             }
         }
     } else {
-        den = getDendrogramSpecs(state, null, state.referenceTree.membershipViewer.length > 0? 'right': null, state.referenceTree.universalBranchLen);
+        den = getDendrogramSpecs(state, null, state.referenceTree.membershipViewer.length > 0? 'right': null);
     }
 
     let ae = state.referenceTree.charts;

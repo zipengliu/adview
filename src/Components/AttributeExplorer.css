@@ -47,24 +47,24 @@
     text-align: left;
 }
 
-.form-group {
-    font-size: 12px;
-    margin-bottom: 0;
-}
-.form-group .checkbox {
-    margin-top: 0;
-    margin-bottom: 0;
-}
+/*.form-group {*/
+    /*font-size: 12px;*/
+    /*margin-bottom: 0;*/
+/*}*/
+/*.form-group .checkbox {*/
+    /*margin-top: 0;*/
+    /*margin-bottom: 0;*/
+/*}*/
 
-.form-group .checkbox input[type="checkbox"] {
-    margin-left: -16px;
-    width: 1em;
-    height: 1em;
-}
+/*.form-group .checkbox input[type="checkbox"] {*/
+    /*margin-left: -16px;*/
+    /*width: 1em;*/
+    /*height: 1em;*/
+/*}*/
 
-.form-group input[type="radio"] {
-    margin-left: -14px;
-    width: 1em;
-    height: 1em;
-}
+/*.form-group input[type="radio"] {*/
+    /*margin-left: -14px;*/
+    /*width: 1em;*/
+    /*height: 1em;*/
+/*}*/
 
