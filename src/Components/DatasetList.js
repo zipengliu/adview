@@ -4,8 +4,7 @@
 
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import {Form, FormGroup, ControlLabel, FormControl, HelpBlock, Col, Button, Radio, Checkbox} from 'react-bootstrap';
-import {fetchDatasets, changeUploadDataset, uploadDataset, uploadOutgroup, selectOutgroupTaxa, changeOutgroupTaxaFile} from '../actions';
+import {fetchDatasets} from '../actions';
 import './DatasetList.css';
 
 class DatasetList extends Component {
@@ -14,149 +13,20 @@ class DatasetList extends Component {
     }
 
     render() {
-        let {upload} = this.props;
-        let {entities, outgroupTaxa} = upload;
-        let outgroupTaxaArr;
-        if (outgroupTaxa) {
-            outgroupTaxaArr = Object.keys(outgroupTaxa);
-        }
-        let selectingOutgroup = !upload.isProcessingEntities && upload.referenceTree;
-
-        let labelCol = 4, formCol = 8;
-        let handleChange = (e) => {this.props.onChangeDataset(e.target.name, e.target.value)};
-        let handleChangeFile = (e) => {this.props.onChangeDataset(e.target.name, e.target.files[0])};
-
         return (
             <div style={{padding: '0 20px'}}>
                 <h1>Datasets</h1>
                 <div className="list-container">
-                    {this.props.datasets.map((d, i) => <div className="dataset-item" key={i}>
-                        <h3><a href={`/dataset/${d.inputGroupId}`}>{d.title}</a></h3>
-                        <p>Number of Trees: {d.numTrees}</p>
-                        <div style={{textAlign: 'left'}}>{d.description}</div>
-                    </div>)}
+                    {this.props.datasets.map((d, i) =>
+                        <div className="dataset-item" key={i}>
+                            <h3><a href={`/dataset/${d.inputGroupId}`}>{d.title}</a></h3>
+                            <p>{d.description}</p>
+                            <p>Reference tree: {d.referenceTreeFileName}<br/>
+                            # trees: {d.numTrees}<br/>
+                            # taxa: {d.numTaxa}</p>
+                            <div className="timestamp">{(new Date(d.timeCreated)).toLocaleString()}</div>
+                        </div>)}
                 </div>
-
-                <h1>Upload New Dataset</h1>
-                <div style={{maxWidth: '600px', fontSize: '14px'}}>
-                    <form className="form-horizontal" onSubmit={(e) => {e.preventDefault(); this.props.onUploadDataest()}}>
-                        <FormGroup>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Title</Col>
-                            <Col sm={formCol}>
-                                <FormControl type="text" name="title" onChange={handleChange}/>
-                            </Col>
-                        </FormGroup>
-                        <FormGroup>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Description</Col>
-                            <Col sm={formCol}>
-                                <FormControl type="text" name="description" onChange={handleChange} />
-                            </Col>
-                        </FormGroup>
-
-                        <FormGroup style={{marginBottom: '0'}}>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Reference Tree</Col>
-                            <Col sm={formCol}>
-                                <FormControl type="file" name="reference" onChange={handleChangeFile} />
-                            </Col>
-                            <Col sm={formCol}><HelpBlock>Tree must be in newick format. File name is taken as the name of reference tree. </HelpBlock></Col>
-                        </FormGroup>
-
-                        <FormGroup style={{marginBottom: '30px'}}>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Reference Rooting</Col>
-                            <Col sm={formCol}>
-                                <Radio inline name="isReferenceRooted" value="Y" onChange={handleChange}>rooted</Radio>
-                                <Radio inline name="isReferenceRooted" value="N" onChange={handleChange}>unrooted</Radio>
-                            </Col>
-                        </FormGroup>
-
-                        <FormGroup style={{marginBottom: '0'}}>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Tree Collection</Col>
-                            <Col sm={formCol}>
-                                <FormControl type="file" name="treeCollection" onChange={handleChangeFile} />
-                            </Col>
-                            <Col sm={formCol}><HelpBlock>Each line contains a tree in newick format.</HelpBlock></Col>
-                        </FormGroup>
-
-                        <FormGroup>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Tree Collection Rooting</Col>
-                            <Col sm={formCol}>
-                                <Radio inline name="isTCRooted" value="Y" onChange={handleChange}>rooted</Radio>
-                                <Radio inline name="isTCRooted" value="N" onChange={handleChange}>unrooted</Radio>
-                            </Col>
-                        </FormGroup>
-
-                        <FormGroup>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Tree Collection Names</Col>
-                            <Col sm={formCol}>
-                                <FormControl type="file" name="treeCollectionNames" onChange={handleChangeFile} />
-                            </Col>
-                            <Col sm={formCol}><HelpBlock>A name of tree each line corresponding to tree collection file. If omitted, random names will be assigned.</HelpBlock></Col>
-                        </FormGroup>
-
-                        <FormGroup>
-                            <Col componentClass={ControlLabel} sm={labelCol}>Support Values</Col>
-                            <Col sm={formCol}>
-                                <Radio inline name="supportValues" value="NA" onChange={handleChange}>NA</Radio>
-                                <Radio inline name="supportValues" value="1" onChange={handleChange}>range [0, 1]</Radio>
-                                <Radio inline name="supportValues" value="100" onChange={handleChange}>range [0, 100]</Radio>
-                            </Col>
-                        </FormGroup>
-
-                        <FormGroup>
-                            <Col smOffset={labelCol} sm={formCol}>
-                                <Button bsStyle={selectingOutgroup? 'success': 'primary'} type="submit">
-                                    {!selectingOutgroup? 'Upload': 'Uploaded'}
-                                </Button>
-                                {upload.isProcessingEntities &&
-                                <span style={{marginLeft: '10px'}}>Uploading and processing...</span>}
-                            </Col>
-                        </FormGroup>
-
-                    </form>
-                </div>
-
-
-                {selectingOutgroup &&
-                <div ref={(outgroupSection) => {this.outgroupSection = outgroupSection}}>
-                    <h1>Specify Outgroup</h1>
-                    <div id="outgroup-sel">
-                        <div id="outgroup-sel-taxa-list">
-                            <h3>Option 1: Check taxa in the outgroup</h3>
-                            <div style={{overflowX: 'scroll'}}>
-                                {Object.keys(entities).map(eid =>
-                                <div key={eid} className="list-item">
-                                    <Checkbox inline checked={outgroupTaxa.hasOwnProperty(eid)}
-                                              onChange={() => {this.props.onSelectOutgroupTaxa(eid)}}>{entities[eid]}</Checkbox>
-                                </div>)}
-                            </div>
-                        </div>
-                        <div id="outgroup-sel-dendrogram">
-                            <h3>Option 2: Click branch in the dendrogram</h3>
-                            <p>TODO</p>
-                        </div>
-                        <div id="outgroup-sel-file">
-                            <h3>Option 3: List taxa names</h3>
-                            <Form horizontal>
-                                <FormGroup>
-                                    <FormControl componentClass="textarea" rows="10"
-                                                 onChange={(e) => {this.props.onChangeOutgroupFile(e.target.value)}} />
-                                    <HelpBlock>One taxon name per line.  Names must be consistent with tree files provided before.</HelpBlock>
-                                </FormGroup>
-                            </Form>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h5>You have selected {outgroupTaxaArr.length} taxa as outgroup:</h5>
-                        <div>
-                            {outgroupTaxaArr.length === 0 && <span>none</span>}
-                            {outgroupTaxaArr.map(eid =>
-                                <span key={eid} style={{margin: '0 10px'}}>{entities[eid]}</span>)}
-                        </div>
-                        <Button bsStyle="primary" onClick={this.props.onUploadOutgroup}>Confirm</Button>
-                    </div>
-                </div>
-                }
             </div>
         )
     }
@@ -164,16 +34,10 @@ class DatasetList extends Component {
 
 let mapStateToProps = state => ({
     datasets: state.datasets,
-    upload: state.upload
 });
 
 let mapDispatchToProps = dispatch => ({
     onRequestDatasets: () => {dispatch(fetchDatasets())},
-    onChangeDataset: (n, v) => {dispatch(changeUploadDataset(n, v))},
-    onUploadDataest: () => {dispatch(uploadDataset())},
-    onSelectOutgroupTaxa: (eid) => {dispatch(selectOutgroupTaxa(eid))},
-    onChangeOutgroupFile: (v) => {dispatch(changeOutgroupTaxaFile(v))},
-    onUploadOutgroup: () => {dispatch(uploadOutgroup())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DatasetList);

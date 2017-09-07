@@ -1,0 +1,75 @@
+#outgroup-sel {
+    display: flex;
+}
+
+#outgroup-sel-taxa-list {
+    flex: 0 0 300px;
+    margin: 0 10px;
+    border-right: 1px solid grey;
+}
+#outgroup-sel-dendrogram {
+    flex: 1 0 auto;
+    margin: 0 10px;
+    border-right: 1px solid grey;
+}
+#outgroup-sel-file {
+    flex: 0 0 200px;
+    margin: 0 10px;
+}
+
+.upload-progress-steps {
+
+}
+
+.upload-progress-steps li.done {
+    color: green;
+}
+
+.upload-progress-steps li.doing {
+
+}
+
+.upload-progress-steps .progress {
+    max-width: 400px;
+}
+.upload-progress-steps .glyphicon {
+    margin-left: 10px;
+}
+
+.upload-progress-steps .glyphicon.spin{
+    -webkit-transform-origin: 50% 58%;
+    transform-origin:50% 58%;
+    -ms-transform-origin:50% 58%; /* IE 9 */
+    -webkit-animation: spin .2s infinite linear;
+    -moz-animation: spin .2s infinite linear;
+    -o-animation: spin .2s infinite linear;
+    animation: spin .2s infinite linear;
+}
+
+
+@-moz-keyframes spin {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes spin {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

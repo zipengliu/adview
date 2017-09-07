@@ -11,7 +11,11 @@ import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSu
 let initialState = {
     upload: {
         isProcessingEntities: false,
-        isMatching: false,
+        uploadState: null,          // one of SENDING, RECEIVED, PENDING, PROGRESS, SUCCESS, FAILURE
+        checkStatusRetry: 2,       // the number of times to retry if a check status request fail.  This should be reset on each upload outgroup request
+        progress: null,
+        checkStatusUrl: null,
+        datasetUrl: null,
         rawData: {},
         outgroupTaxa: {}
     },
@@ -1634,12 +1638,75 @@ function visphyReducer(state = initialState, action) {
             return {
                 ...state,
                 upload: {
-
+                    ...state.upload,
+                    uploadState: 'SENDING',
+                    checkStatusRetry: 2,
                 }
             };
         case TYPE.UPLOAD_OUTGROUP_SUCCESS:
             return {
                 ...state,
+                upload: {
+                    ...state.upload,
+                    uploadState: 'RECEIVED',
+                    checkStatusUrl: action.checkStatusUrl
+                }
+            };
+        case TYPE.UPLOAD_OUTGROUP_FAILURE:
+            return {
+                ...state,
+                upload: {
+                    uploadState: 'FAILURE',
+                    error: action.error,
+                }
+            };
+        case TYPE.CHECK_UPLOAD_STATUS_SUCCESS:
+            if (action.data.state === 'SUCCESS') {
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        uploadState: action.data.state,
+                        progress: null,
+                        datasetUrl: action.data.url
+                    }
+                }
+            } else if (action.data.state === 'PENDING') {
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        uploadState: action.data.state,
+                    }
+                };
+            } else if (action.data.state === 'PROGRESS') {
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        uploadState: action.data.state,
+                        progress: action.data
+                    }
+                };
+            } else {
+                // The upload has failed
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        uploadState: action.data.state,
+                        // progress: null,          // do not clear this out to see which step went wrong
+                        error: action.data.error
+                    }
+                }
+            }
+        case TYPE.CHECK_UPLOAD_STATUS_FAILUER:
+            return {
+                ...state,
+                upload: {
+                    ...state.upload,
+                    checkStatusRetry: state.upload.checkStatusRetry - 1
+                }
             };
 
         case TYPE.TOGGLE_HIGHLIGHT_SEGMENT:

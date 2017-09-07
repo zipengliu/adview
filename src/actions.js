@@ -140,15 +140,24 @@ export function changeOutgroupTaxaFile(t) {
 
 export function uploadOutgroup() {
     return (dispatch, getState) => {
-        dispatch(uploadDatasetRequest());
+        dispatch(uploadOutgroupRequest());
 
         let state = getState();
         let data = new FormData();
         data.append('inputGroupId', state.upload.inputGroupId);
         data.append('outgroup', Object.keys(state.upload.outgroupTaxa).map(eid => state.upload.entities[eid]).join(','));
 
-        return fetch(baseUrl + '/outgroup', {method: 'POST', body: data}).then(() => {
-
+        return fetch(baseUrl + '/outgroup', {method: 'POST', body: data}).then((response) => {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(uploadOutgroupFailure(response.statusText))
+            }
+            return response.json();
+        }).then(data => {
+            dispatch(uploadOutgroupSuccess(data));
+            dispatch(checkUploadStatus(baseUrl + '/upload_status/' + data.taskId));
+        }).catch(error => {
+            dispatch(uploadOutgroupFailure(error))
         })
     }
 }
@@ -157,14 +166,53 @@ function uploadOutgroupRequest() {
     return {type: TYPE.UPLOAD_OUTGROUP_REQUEST};
 }
 
-function uploadOutgroupSuccess() {
-    return {type: TYPE.UPLOAD_OUTGROUP_SUCCESS};
+function uploadOutgroupSuccess(checkStatusUrl) {
+    return {type: TYPE.UPLOAD_OUTGROUP_SUCCESS, checkStatusUrl};
 }
 
 function uploadOutgroupFailure() {
     return {type: TYPE.UPLOAD_DATASET_FAILURE};
 }
 
+export function checkUploadStatus(url) {
+    return (dispatch, getState) => {
+        // dispatch(checkUploadStatusRequest());
+        let retry = getState().upload.checkStatusRetry;
+
+        return fetch(url).then(response => {
+            if (response.status >= 400) {
+                console.log("Bad response from server");
+                dispatch(checkUploadStatusFailure(response.statusText))
+            }
+            return response.json();
+        }).then(status => {
+            if (status.state === 'PROGRESS') {
+                // Keep track of the progress
+                setTimeout(() => {
+                    dispatch(checkUploadStatus(url))
+                }, 2000);
+            }
+            dispatch(checkUploadStatusSuccess(status));     // reducer to act according to different state
+        }).catch(error => {
+            dispatch(checkUploadStatusFailure(error));
+            if (retry > 0) {
+                setTimeout(() => {
+                    dispatch(checkUploadStatus(url))
+                }, 2000);
+            }
+        })
+    }
+}
+
+function checkUploadStatusRequest() {}
+
+function checkUploadStatusSuccess(data) {
+    return {type: TYPE.CHECK_UPLOAD_STATUS_SUCCESS, data}
+}
+
+function checkUploadStatusFailure(error) {
+    return {type: TYPE.CHECK_UPLOAD_STATUS_FAILUER, error}
+}
 
 
 export function toggleStretchedMainView() {

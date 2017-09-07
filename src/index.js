@@ -15,6 +15,7 @@ import About from './Components/About';
 import DatasetList from './Components/DatasetList';
 import MainView from './Components/MainView';
 import UserManual from './Components/UserManual';
+import UploadDataset from './Components/UploadDataset';
 
 console.log('Welcome to VisPhy!');
 
@@ -33,6 +34,7 @@ let root = (
                 <Route path="about" component={About} />
                 <Route path="dataset-list" component={DatasetList}/>
                 <Route path="user-manual" component={UserManual}/>
+                <Route path="upload" component={UploadDataset}/>
             </Route>
         </Router>
     </Provider>
@@ -40,8 +42,3 @@ let root = (
 
 ReactDOM.render(root, document.getElementById('root'));
 
-
-// import {changeReferenceTree} from './actions';
-// setTimeout(function() {
-//     store.dispatch(changeReferenceTree('581be6867443ee23c7436421'))
-// }, 8000);
