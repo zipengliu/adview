@@ -29,7 +29,7 @@ let initialState = {
         msg: null,
         downloadingTreeUrl: null,
     },
-    cb: 'cb2',                      // 'cb' means match with missing taxa, 'cb2' w/o
+    cb: 'cb',
     inspector: {
         show: false,
         pairwiseComparison: null,
@@ -118,7 +118,7 @@ let initialState = {
         layoutAlg: 'skeleton',
         clusterAlg: 'none',
         spec: {
-            size: 80,
+            size: 120,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 3,
             branchLen: 6,
@@ -137,7 +137,7 @@ let initialState = {
                 collapsedBlockHeight: 6,
                 collapsedBlockWidth: 20,
                 matchedBlockMinHeight: 12,
-                matchedBlockDefaultWidth: 60,
+                firstNestedBlockVerticalGap: 12,
                 nestingBlockGapInside: 3,
                 nestingBlockExtraWidth: 20,
                 collapsedBranchLength: 16
@@ -1188,7 +1188,6 @@ function visphyReducer(state = initialState, action) {
                 }
             });
         case TYPE.FETCH_INPUT_GROUP_SUCCESS:
-            let newCB = action.data.hasMissingTaxa? 'cb2': 'cb';
             let trees = {};
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 trees[tid] = new Tree(action.data.trees[tid]);
@@ -1196,7 +1195,7 @@ function visphyReducer(state = initialState, action) {
             }
             newReferenceTree = new Tree(action.data.referenceTree);
             newReferenceTree.prepareBranches(action.data.supportRange)
-                .getGSF(newCB, Object.keys(action.data.trees).length)
+                .getGSF(state.cb, Object.keys(action.data.trees).length)
                 .normalizeBranchLength()
                 .findMissing(action.data.entities);
 
@@ -1231,9 +1230,8 @@ function visphyReducer(state = initialState, action) {
                 }],
                 overview: {
                     ...state.overview,
-                    coordinates: getCoordinates(newReferenceTree, trees, newCB, true, null)
+                    coordinates: getCoordinates(newReferenceTree, trees, state.cb, true, null)
                 },
-                cb: newCB,
                 cbAttributeExplorer: {
                     ...state.cbAttributeExplorer,
                     activeSetId: 0,
@@ -1287,27 +1285,26 @@ function visphyReducer(state = initialState, action) {
                     collapsed: !state.treeList.collapsed
                 }
             };
-        case TYPE.TOGGLE_JACCARD_MISSING:
-            // This is a quick hack to fall back to cb if cb2 is absent
-            if (state.inputGroupData.inputGroupId === 1 && action.cb === 'cb2') {
-                return state;
-            }
-            // TODO change the USTG match, treeDistribution
-            // Or a shortcut: clear first and then switch
-            return {
-                ...state,
-                inputGroupData: {
-                    ...state.inputGroupData,
-                    referenceTree: (state.inputGroupData.referenceTree.clone(true))
-                        .getGSF(action.cb, Object.keys(state.inputGroupData.trees).length)
-                },
-                cb: action.cb,
-                overview: {
-                    ...state.overview,
-                    coordinates: getCoordinates(state.inputGroupData.referenceTree, state.inputGroupData.trees, state.cb,
-                        state.overview.metricMode === 'global' || state.overview.metricBranch == null, state.overview.metricBranch)
-                }
-            };
+        // case TYPE.TOGGLE_JACCARD_MISSING:
+        //     // This is a quick hack to fall back to cb if cb2 is absent
+        //     if (state.inputGroupData.inputGroupId === 1 && action.cb === 'cb2') {
+        //         return state;
+        //     }
+        //     // Or a shortcut: clear first and then switch
+        //     return {
+        //         ...state,
+        //         inputGroupData: {
+        //             ...state.inputGroupData,
+        //             referenceTree: (state.inputGroupData.referenceTree.clone(true))
+        //                 .getGSF(action.cb, Object.keys(state.inputGroupData.trees).length)
+        //         },
+        //         cb: action.cb,
+        //         overview: {
+        //             ...state.overview,
+        //             coordinates: getCoordinates(state.inputGroupData.referenceTree, state.inputGroupData.trees, state.cb,
+        //                 state.overview.metricMode === 'global' || state.overview.metricBranch == null, state.overview.metricBranch)
+        //         }
+        //     };
         case TYPE.CLOSE_TOAST:
             if (state.toast.downloadingTreeUrl) {
                 window.URL.revokeObjectURL(state.toast.downloadingTreeUrl);

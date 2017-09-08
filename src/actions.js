@@ -186,7 +186,7 @@ export function checkUploadStatus(url) {
             }
             return response.json();
         }).then(status => {
-            if (status.state === 'PROGRESS') {
+            if (status.state === 'PROGRESS' || status.state === 'PENDING') {
                 // Keep track of the progress
                 setTimeout(() => {
                     dispatch(checkUploadStatus(url))
@@ -565,11 +565,6 @@ export function fetchDatasetsFailure(error) {
 
 export function toggleTreeListCollapse() {
     return {type: TYPE.TOGGLE_TREE_LIST_COLLAPSE};
-}
-
-
-export function toggleJaccardMissing(cb) {
-    return {type: TYPE.TOGGLE_JACCARD_MISSING, cb};
 }
 
 

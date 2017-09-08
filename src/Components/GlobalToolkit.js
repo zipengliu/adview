@@ -8,7 +8,7 @@ import cn from 'classnames';
 import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
 import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
-    removeFromSet, removeSet, compareWithReference, toggleJaccardMissing, makeConsensus, reverseSelection,
+    removeFromSet, removeSet, compareWithReference, makeConsensus, reverseSelection,
     downloadSelectedTrees, toggleStretchedMainView} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
 
@@ -71,13 +71,6 @@ class GlobalToolkit extends Component {
                         <DropdownButton bsSize="xsmall" title="more" id="more-dropdown" style={{marginLeft: '10px'}}>
                             <MenuItem onClick={this.props.onToggleMainView}>{stretchedMainView? 'restrain to single page frame': 'expand to full web page (for screenshot)'}</MenuItem>
                         </DropdownButton>
-
-                        {/*<span>Match monophyly </span>*/}
-                        {/*<ButtonGroup bsSize="xsmall">*/}
-                            {/*<Button active={cb === 'cb'} onClick={this.props.onChangeCB.bind(null, 'cb')}>with</Button>*/}
-                            {/*<Button active={cb === 'cb2'} onClick={this.props.onChangeCB.bind(null, 'cb2')}>without</Button>*/}
-                        {/*</ButtonGroup>*/}
-                        {/*<span> missing taxa. </span>*/}
                     </div>
                 </div>
             </div>
@@ -93,7 +86,6 @@ let mapStateToProps = state => ({
     inputGroupId: state.inputGroupData.inputGroupId,
     activeSetIndex: state.aggregatedDendrogram.activeSetIndex,
     referenceTid: state.referenceTree.id,
-    cb: state.cb,
     stretchedMainView: state.stretchedMainView,
 });
 
@@ -108,7 +100,6 @@ let mapDispatchToProps = dispatch => ({
 
     onCompareWithReference: (tid) => {dispatch(compareWithReference(tid))},
 
-    onChangeCB: (cb) => {dispatch(toggleJaccardMissing(cb))},
     onMakeConsensus: (inputGroupId, tids) => {dispatch(makeConsensus(inputGroupId, tids))},
     onReverseSelection: () => {dispatch(reverseSelection())},
     onDownload: () => {dispatch(downloadSelectedTrees())},
