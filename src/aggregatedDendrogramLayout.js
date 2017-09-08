@@ -742,6 +742,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             entities: createMappingFromArray(tree.branches[bid].entities),
             n: tree.branches[bid].entities.length,
             children: [],
+            isNested: parentBlockId !== rootBlockId,
             ...attributes
         };
         if (insertBefore === null) {

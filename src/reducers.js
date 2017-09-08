@@ -297,7 +297,7 @@ let getTreesBySelection = (state) => {
     return res;
 };
 
-let addHighlightGroup = (state, action, updateGroupIdx=null) => {
+let addHighlightGroup = (state, action, updateGroupIdx=null, no=null) => {
     let otherTid = action.tid === state.referenceTree.id? state.pairwiseComparison.tid: state.referenceTree.id;
     let tgtEntities = action.targetEntities || getTreeByTid(state, action.tid).getEntitiesByBid(action.bid);
     let bids;
@@ -308,7 +308,7 @@ let addHighlightGroup = (state, action, updateGroupIdx=null) => {
 
     // create a new highlight group
     let newHighlightGroup = {
-        src: action.tid, tgt: otherTid, [action.tid]: action.bids || [action.bid], entities: tgtEntities,
+        src: action.tid, tgt: otherTid, [action.tid]: action.bids || [action.bid], entities: tgtEntities, no
     };
     if (otherTid) {
         newHighlightGroup[otherTid] = bids;
@@ -389,7 +389,8 @@ function visphyReducer(state = initialState, action) {
                             bid: null
                         }
                     },
-                    highlight: addHighlightGroup(state, action)
+                    highlight: addHighlightGroup(state, action, null,
+                        action.tid === state.referenceTree.id? state.referenceTree.expanded[action.bid]: null)
                 };
             }
         case TYPE.TOGGLE_CHECKING_BRANCH:
@@ -451,7 +452,8 @@ function visphyReducer(state = initialState, action) {
 
                 newExpanded[action.bid] = getNewGroupID(newExpanded, false);
                 if (highlightIdx === -1) {
-                    newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid})
+                    newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid}, null,
+                        newExpanded[action.bid])
                 }
                 newActiveEB = action.bid;
             }
@@ -521,7 +523,8 @@ function visphyReducer(state = initialState, action) {
                 }
 
                 // In case the taxa group is previously highlighted but now it got changed
-                newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bids, targetEntities: entities, virtualBid}, highlightIdx);
+                newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bids, targetEntities: entities, virtualBid},
+                    highlightIdx, action.group);
             }
 
             return {
