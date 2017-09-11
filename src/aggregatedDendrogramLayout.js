@@ -723,13 +723,16 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
     }
 
+    console.log(tree.tid, expandedBidArray);
+
     blocks[rootBlockId] = {
         id: rootBlockId,
         n: 0,
+        entities: {},
         children: []
     };
 
-    let createNewBlock = (bid, parentBlockId, attributes={}, insertBefore=null) => {
+    let createNewBlock = (bid, parentBlockId, attributes={}) => {
         let p = blocks[parentBlockId];
         blocks[bid] = {
             id: bid,
@@ -745,16 +748,14 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             isNested: parentBlockId !== rootBlockId,
             ...attributes
         };
-        if (insertBefore === null) {
-            p.children.push(bid);
-        } else {
-            let idx = p.children.indexOf(insertBefore);
-            if (idx !== -1) {
-                p.children.splice(idx, 0, bid);
-            } else {
-                p.children.push(bid);
-            }
+
+        // Insert this block to the parent and keep the order of all children
+        // increasing order of tree.branches[bid]
+        let i = 0;
+        for (; i < p.children.length; i++) {
+            if (tree.branches[bid].order < tree.branches[p.children[i]].order) break;
         }
+        p.children.splice(i, 0, bid);
     };
 
     if (outgroupBranch === tree.branches[rootBranch].left) {
@@ -786,8 +787,8 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     // 'h-': horizontal lines; 'v-': vertical ones
 
     let getBranchIdFromBlockId = (blockId) => {
-        let p = blockId.indexOf('-');
-        return p === -1? blockId: blockId.substring(p + 1);
+        let parts = blockId.split('-');
+        return parts.length === 1? parts[0]: parts[1];
     };
 
     // Draw branches between an ancestor to all its direct children
@@ -808,17 +809,17 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
             let leftMostBid = 'h-' + upper;
             if (leftMostBid in branches) {
-                leftMostBid = 'h-' + upper + '-';       // FIXME: this might not work? careful if using it to extract a bid later!
+                leftMostBid = 'h-' + upper + '-';
             }
             if (xBranchId === upper) {
                 // A single branch to connect them
-                branches[leftMostBid] = {left: branchToAttach, right: x in blocks? x: 'v-' + x};
+                branches[leftMostBid] = {left: branchToAttach, right: x};
                 if (x in blocks) {
                     blocks[x].connectingBranch = leftMostBid;
                 }
             } else if (Math.abs(tree.branches[xBranchId].depth - tree.branches[upper].depth) > spec.skeletonLayout.showDepth) {
                 // Hide all stuff in the middle with a glyph
-                branches[leftMostBid] = {left: branchToAttach, right: x in blocks? x: 'v-' + x, collapsed: true};
+                branches[leftMostBid] = {left: branchToAttach, right: x, collapsed: true};
                 if (x in blocks) {
                     blocks[x].connectingBranch = leftMostBid;
                 }
@@ -831,6 +832,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
                 // Traverse from x up to upper
                 let up = (bid) => {
+                    // console.log(`up(${bid})`);
                     let b = tree.branches[bid];
                     let p = tree.branches[b.parent];
                     Object.assign(branches, {
@@ -839,15 +841,16 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                         ['h-' + p.right]: {left: 'v-' + b.parent, }
                     });
                     if (p.left === bid) {
+                        console.log('target is on the LEFT', p);
                         branches['h-' + p.left].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.right].right = p.right;
                         createNewBlock(p.right, parentBlockId, {collapsed: true});
                     } else {
+                        console.log('target is on the RIGHT', p);
                         branches['h-' + p.right].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.left].right = p.left;
-                        createNewBlock(p.left, parentBlockId, {collapsed: true}, p.right);
+                        createNewBlock(p.left, parentBlockId, {collapsed: true});
                         // This new collapsed block should go before its right siblings
-
                     }
                     if (b.parent !== upper) {
                         up(b.parent);
@@ -855,7 +858,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                         branches[leftMostBid].right = 'v-' + b.parent;
                     }
                 };
-                up(x);
+                up(xBranchId);
             }
             return leftMostBid;
         };
@@ -889,7 +892,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                     top: addBranchesBetween(l, x, lcaBranchId),       // branches from LCA's left to x
                     bottom: addBranchesBetween(r, y, lcaBranchId)     // branches from LCA's right to y
                 };
-                return lca;
+                return lcaBranchId;
             }
         };
         let dangle = mergeChildren(block.children);
@@ -915,39 +918,49 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     let traverseBlocksForHeight = (blockId) => {
         let b = blocks[blockId];
         if (b.children.length > 0) {
-            b.heightFixed = (b.children.length - 2) * verticalGap +
-                (blockId === rootBlockId? verticalGap: spec.skeletonLayout.firstNestedBlockVerticalGap + verticalGap);
-            b.heightLog = 0;
+            b.heightFixed = (b.children.length - 1) * verticalGap +
+                (blockId === rootBlockId? 0: spec.skeletonLayout.firstNestedBlockVerticalGap + verticalGap);
+            b.heightVar = 0;
             for (let c of b.children) {
                 traverseBlocksForHeight(c);
                 b.heightFixed += blocks[c].heightFixed;
-                b.heightLog += blocks[c].heightLog;
+                b.heightVar += blocks[c].heightVar;
             }
-            b.heightLog = Math.max(b.heightLog, Math.log2(b.n));
+            b.heightVar = Math.max(b.heightVar, b.n);
         } else {
             b.heightFixed = b.collapsed? spec.skeletonLayout.collapsedBlockHeight: spec.skeletonLayout.matchedBlockMinHeight;
-            b.heightLog = b.collapsed? 0: Math.log2(b.n);
+            b.heightVar = b.collapsed? 0: b.n;
         }
     };
     traverseBlocksForHeight(rootBlockId);
 
     // The coefficient for the log part in height
-    let logCoefficient = (height - blocks[rootBlockId].heightFixed) / blocks[rootBlockId].heightLog;
-    let fillHeights = (blockId, curY) => {
+    let coefficient = (height - blocks[rootBlockId].heightFixed) / blocks[rootBlockId].heightVar;
+    console.log('height coefficient = ', coefficient);
+    for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== rootBlockId && bid !== 'missing') {
+        let b = blocks[bid];
+        b.height = coefficient * b.heightVar + b.heightFixed;
+    }
+
+    let fillYPosition = (blockId, curY) => {
         let b = blocks[blockId];
         b.y = curY;
         if (b.children.length > 0) {
-            let deltaY = blockId === rootBlockId? 0: spec.skeletonLayout.firstNestedBlockVerticalGap;
+            let sumHeights = 0;
             for (let c of b.children) {
-                fillHeights(c, curY + deltaY);
+                sumHeights += blocks[c].height;
+            }
+            // If it is nested, center children to the nesting block
+            let deltaY = blockId === rootBlockId? 0:
+                Math.max((b.height - sumHeights - (b.children.length - 1) * verticalGap) / 2,
+                    spec.skeletonLayout.firstNestedBlockVerticalGap);
+            for (let c of b.children) {
+                fillYPosition(c, curY + deltaY);
                 deltaY += blocks[c].height + verticalGap;
             }
-            b.height = deltaY;
-        } else {
-            b.height = logCoefficient * b.heightLog + b.heightFixed;
         }
     };
-    fillHeights(rootBlockId, 0);
+    fillYPosition(rootBlockId, 0);
 
 
     let traverseBranchesForWidth = (branchId, curX, nestingLevel) => {
@@ -965,10 +978,11 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         } else if (branchId.startsWith('h-')) {
             if (b.right in blocks) {
                 // The right side of this branch connects to a block
+                let yCoord = blocks[b.right].y + blocks[b.right].height / 2;
                 Object.assign(b, {
                     x1: curX, x2: curX + bLen,
-                    y1: blocks[b.right].y + blocks[b.right].height / 2,
-                    y2: blocks[b.right].y + blocks[b.right].height / 2,
+                    y1: yCoord,
+                    y2: yCoord
                 });
                 blocks[b.right].x = curX + bLen;
                 let leftOverSpace = width - curX - bLen;
@@ -979,6 +993,9 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
                 if (b.rightBranch) {        // Nested block
                     traverseBranchesForWidth(b.rightBranch, curX + bLen, nestingLevel + 1);
+                    // Align the nested branch to the branch it is connecting to
+                    // branches[b.rightBranch].y1 = yCoord;
+                    // branches[b.rightBranch].y2 = yCoord;
                 }
             } else if (b.right.startsWith('v-')) {
                 traverseBranchesForWidth(b.right, curX + bLen, nestingLevel);
@@ -1002,7 +1019,6 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         branches[bid].bid = bid;
     }
 
-    console.log(tree.tid, expandedBidArray);
     console.log(blocks);
     console.log(branches);
     return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};

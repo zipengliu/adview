@@ -432,7 +432,7 @@ let fillLayouts = createSelector(
                     }
                 } else {
                     b.fill = highlightEntities.map((h, i) => ({
-                        proportion: b.isNested && b.no !== highlight.bids[i].no? 0:         // The nested block only shows its own color
+                        proportion: b.isNested && !!b.no && b.no !== highlight.bids[i].no? 0:         // The nested block only shows its own color
                             getIntersection(b.entities, h) / Object.keys(b.entities).length,
                         color: highlight.colorScheme[highlight.bids[i].color]
                     })).filter(a => a.proportion > 0);

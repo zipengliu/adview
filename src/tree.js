@@ -461,9 +461,6 @@ export let clusterTreesByBranch = (trees, ref, cb, bid) => {
             let corr = correspondingBranches[tid];
             if (corr.bid) {
                 taxaSetByTree[tid] = createMappingFromArray(trees[tid].branches[correspondingBranches[tid].bid].entities);
-                if (!corr.in) {
-                    taxaSetByTree[tid] = subtractMapping(createMappingFromArray(trees[tid].entities), taxaSetByTree[tid]);
-                }
             }
         }
     }

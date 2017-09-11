@@ -64,7 +64,7 @@ class MainView extends Component {
                             <ReferenceTreeContainer />
                         </div>
                         <div className="right-column">
-                            <div className="chapter-title">Tree Collection <small>(unrooted)</small></div>
+                            <div className="chapter-title">Tree Collection</div>
                             <GlobalToolkit/>
                             <div style={{flex: '1 1 auto', display: 'flex', flexFlow: 'row nowrap'}}>
                                 <div className="views-column" style={{flex: '1 1 auto', marginRight: '10px'}}>
