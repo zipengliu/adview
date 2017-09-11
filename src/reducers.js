@@ -23,7 +23,13 @@ let initialState = {
     isFetchFailed: false,
     inputGroupData: null,
     // bipartitions: {},
+
     datasets: [],
+    datasetRemoval: {
+        id: null,
+        showConfirmOption: false,
+    },
+
     stretchedMainView: false,
     toast: {
         msg: null,
@@ -47,6 +53,7 @@ let initialState = {
         labelUnitCharWidth: 4.5,            // an estimate of the width of a character in the label
         responsiveAreaSize: 7,              // height of a transparent box over a branch to trigger interaction
         unitBranchLength: 12,               // How long is a branch with normalized length 1
+        minBranchLength: 5,
         uniformBranchLength: 10,            // How long is each branch when we do not encode branch length
         membershipViewerGap: 16,            // How wide for one column of membership indication marks
     },
@@ -117,6 +124,10 @@ let initialState = {
         activeSetIndex: 0,
         layoutAlg: 'skeleton',
         clusterAlg: 'none',
+        cluster: {
+            checkForExact: true,
+            checkForSister: false,
+        },
         spec: {
             size: 120,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
@@ -150,7 +161,7 @@ let initialState = {
             // kernel: x => Math.pow(Math.E, -50*x*x)
             // kernel: x => x < 0? Math.pow(Math.E, -0.1*x*x): Math.pow(Math.E, -50*x*x)
             kernel: x => x < 0? Math.E: Math.pow(Math.E, -50*x*x)
-        }
+        },
     },
     attributeChartSpec: {
         width: 154,
@@ -1280,6 +1291,59 @@ function visphyReducer(state = initialState, action) {
                     msg: 'Error fetching dataset list: ' + action.error.toString()
                 }
             };
+        case TYPE.OPEN_DATASET_REMOVAL:
+            return {
+                ...state,
+                datasetRemoval: {
+                    ...state.datasetRemoval,
+                    id: action.inputGroupId,
+                    showConfirmOption: true
+                }
+            };
+        case TYPE.CONFIRM_DATASET_REMOVAL:
+            return {
+                ...state,
+                datasetRemoval: {
+                    ...state.datasetRemoval,
+                    showConfirmOption: false,       // Only when the user cancel the removal will this reducer be called
+                    id: null,
+                }
+            };
+        case TYPE.REMOVE_DATASET_REQUEST:
+            return {
+                ...state,
+                datasetRemoval: {
+                    ...state.datasetRemoval,
+                    showConfirmOption: false,
+                },
+                toast: {
+                    ...state.toast,
+                    msg: 'Deleting dataset from database...'
+                }
+            };
+        case TYPE.REMOVE_DATASET_SUCCESS:
+            return {
+                ...state,
+                datasets: state.datasets.filter(d => d.inputGroupId !== action.inputGroupId),
+                datasetRemoval: {
+                    ...state.datasetRemoval,
+                    id: null,
+                    showConfirmOption: false,
+                },
+                toast: {
+                    ...state.toast,
+                    msg: null
+                }
+            };
+        case TYPE.REMOVE_DATASET_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: action.error.toString()
+                }
+            };
+
         case TYPE.TOGGLE_TREE_LIST_COLLAPSE:
             return {
                 ...state,

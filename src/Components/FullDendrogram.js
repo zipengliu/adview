@@ -252,13 +252,14 @@ let getDendrogramSpecs = createSelector(
         let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
         let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
 
+        let getBranchLength = l => ignoreBranchLen? spec.uniformBranchLength: Math.max(l * spec.unitBranchLength, spec.minBranchLength);
         let getTreeWidth = function() {
             let topologyWidth = 0;
             let maxTopoAndLabelWidth = 0;
             let longestEntity = 0;
             let traverse = function(bid, cur, dep) {
                 let b = branches[bid];
-                cur += ignoreBranchLen? spec.uniformBranchLength: b.length * spec.unitBranchLength;
+                cur += getBranchLength(b.length);
                 topologyWidth = Math.max(cur, topologyWidth);
                 if ('left' in b) {
                     traverse(b.left, cur, dep + 1);
@@ -288,7 +289,7 @@ let getDendrogramSpecs = createSelector(
 
         let traverse = (bid, curX) => {
             let bLength = branches[bid].length;
-            let t = ignoreBranchLen? spec.uniformBranchLength: bLength * spec.unitBranchLength;
+            let t = getBranchLength(bLength);
             b[bid] = {x1: curX, x2: curX + t};
             curX += t;
             if ('left' in branches[bid]) {

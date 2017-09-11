@@ -220,21 +220,25 @@ let filterLayouts = createSelector(
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let clusterLayoutsByTopology = createSelector(
     [state => state.aggregatedDendrogram.clusterAlg,
+        state => state.aggregatedDendrogram.cluster,
         (_, layouts) => layouts],
-    (clusterAlg, layouts) => {
+    (clusterAlg, param, layouts) => {
         console.log('Clustering layouts by topology...');
         let isSuperCluster = clusterAlg === 'relaxed-topo';
         let numLayouts = Object.keys(layouts).length;
 
         let getHash;
-        if (clusterAlg === 'matched-block-topo') {      // TODO
+        if (clusterAlg === 'matched-block-topo') {
             getHash = (blocks, rootBlockId) => {
-                let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
+                let getBlockRep = b => b.no? (param.checkForExact? (b.no + (b.matched? '+': '-')): b.no) : '';
                 let traverse = (bid) => {
                     let b = blocks[bid];
                     if (b.children && b.children.length > 0) {
-                        return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
-                    } else {
+                        // If it has children, it must be a matched (expanded) block
+                        return '(' +
+                            b.children.filter(c => !!blocks[c].no).map(c => traverse(c)).join(',') +
+                            ')' + getBlockRep(b);
+                    } else if (b.no) {
                         return getBlockRep(b);
                     }
                 };
@@ -309,13 +313,17 @@ let clusterLayoutsByTopology = createSelector(
         for (let tid in layouts) if (layouts.hasOwnProperty(tid)) {
             let t = layouts[tid];
             let h = getHash(t.blocks, t.rootBlockId);
+            console.log(tid, h);
             if (!clusters.hasOwnProperty(h)) {
                 clusters[h] = createEmptyClusterFromTree(t);
             }
             clusters[h].num += 1;
             clusters[h].trees.push(tid);
-            addRepresent(clusters[h].blocks, clusters[h].rootBlockId, t.blocks, tid, t.rootBlockId);
+            // if (clusters[h].num === 1) {            // FIXME: workaround
+                addRepresent(clusters[h].blocks, clusters[h].rootBlockId, t.blocks, tid, t.rootBlockId);
+            // }
         }
+        console.log('clusters=', clusters);
         return clusters;
     }
 );

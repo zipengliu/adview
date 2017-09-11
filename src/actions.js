@@ -562,6 +562,44 @@ export function fetchDatasetsFailure(error) {
     return {type: TYPE.FETCH_DATASETS_FAILURE, error};
 }
 
+export function openDatasetRemoval(inputGroupId) {
+    return {type: TYPE.OPEN_DATASET_REMOVAL, inputGroupId};
+}
+
+export function confirmDatasetRemoval(toDelete) {
+    if (!toDelete) {
+        return {type: TYPE.CONFIRM_DATASET_REMOVAL, toDelete: false};
+    } else {
+        return (dispatch, getState) => {
+            let state = getState();
+            let id = state.datasetRemoval.id;
+            dispatch(removeDatasetRequest());
+
+            return fetch(baseUrl + '/dataset/' + id, {method: 'DELETE'}).then(response => {
+                if (response.status >= 400) {
+                    console.log("Bad response from server");
+                    dispatch(removeDatasetFailure(response.statusText))
+                }
+                dispatch(removeDatasetSuccess(id))
+            }).catch(error => {
+                dispatch(removeDatasetFailure(error));
+            })
+        }
+    }
+}
+
+function removeDatasetRequest() {
+    return {type: TYPE.REMOVE_DATASET_REQUEST};
+}
+
+function removeDatasetSuccess(inputGroupId) {
+    return {type: TYPE.REMOVE_DATASET_SUCCESS, inputGroupId};
+}
+
+function removeDatasetFailure(error) {
+    return {type: TYPE.REMOVE_DATASET_FAILURE, error};
+}
+
 
 export function toggleTreeListCollapse() {
     return {type: TYPE.TOGGLE_TREE_LIST_COLLAPSE};
