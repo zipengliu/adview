@@ -4,7 +4,7 @@
 
 import React, { Component } from 'react';
 import cn from 'classnames';
-import {scaleLog} from 'd3';
+import {scaleLinear} from 'd3';
 import {createArrayFromMapping} from '../utils';
 import './Dendrogram.css';
 
@@ -17,7 +17,7 @@ class AggregatedDendrogram extends Component {
         let {trees, blocks, branches, num, total, selectedCnt} = data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
-        let numScale = scaleLog().base(1.01).domain([1, total]).range([0, size]);
+        let numScale = scaleLinear().domain([0, total]).range([0, size]);
         let highlightTreeCnt = isClusterMode? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
             hoveredTrees.hasOwnProperty(this.props.data.tid);
 

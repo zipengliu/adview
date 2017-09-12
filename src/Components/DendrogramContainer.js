@@ -276,30 +276,35 @@ let clusterLayoutsByTopology = createSelector(
             };
         }
 
-        let addRepresent = (clusterBlocks, clusterRootBlockId, addingBlocks, addingTreeId, addingRootBlockId) => {
-            let traverse = (clusterBid, addingBid) => {
-                let b = clusterBlocks[clusterBid];
-                if (!addingBlocks.hasOwnProperty(addingBid)) {
-                    // A cluster might not share the same topology
-                    return;
-                }
-                b.represent[addingTreeId] = addingBid;
-                b.matched = b.matched && addingBlocks[addingBid].matched;
-                for (let e in addingBlocks[addingBid].entities) if (addingBlocks[addingBid].entities.hasOwnProperty(e)) {
-                    if (!b.entities.hasOwnProperty(e)) {
-                        b.entities[e] = 0;
-                    }
-                    b.entities[e] += 1;
-                }
+        let addTreeToCluster= (cluster, tree) => {
+            cluster.trees.push(tree.tid);
+            cluster.num += 1;
 
-                if (b.children) {
-                    for (let i = 0; i < b.children.length; i++) {
-                        traverse(b.children[i], addingBlocks[addingBid].children[i])
+            // Find the same matched block in cluster.blocks
+            let getClusterBlockByNo = (no) => {
+                for (let bid in cluster.blocks)
+                    if (cluster.blocks.hasOwnProperty(bid) && cluster.blocks[bid].no === no) {
+                        return cluster.blocks[bid];
+                    }
+                return null;
+            };
+
+            for (let treeBlockId in tree.blocks)
+                if (tree.blocks.hasOwnProperty(treeBlockId) && tree.blocks[treeBlockId].no) {
+                    // Must be a matched block otherwise it is not guaranteed to be the same block
+                    let tBlock = tree.blocks[treeBlockId];
+                    let cBlock = getClusterBlockByNo(tBlock.no);
+                    if (cBlock) {
+                        cBlock.represent[tree.tid] = treeBlockId;
+                        cBlock.matched = cBlock.matched && tBlock.matched;
+                        for (let eid in tBlock.entities) if (tBlock.entities.hasOwnProperty(eid)) {
+                            if (!cBlock.entities.hasOwnProperty(eid)) {
+                                cBlock.entities[eid] = 0;
+                            }
+                            cBlock.entities[eid] += 1;
+                        }
                     }
                 }
-            };
-            traverse(clusterRootBlockId, addingRootBlockId);
-            return clusterBlocks;
         };
 
         let createEmptyClusterFromTree = (t) => {
@@ -309,10 +314,9 @@ let clusterLayoutsByTopology = createSelector(
             let traverse = (bid) => {
                 // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
                 c.blocks[bid] = {
-                    ...c.blocks[bid],
+                    ...t.blocks[bid],
                     represent: {},
                     entities: {},
-                    matched: true,
                 };
                 if (t.blocks[bid].children) {
                     for (let i = 0; i < t.blocks[bid].children.length; i++) {
@@ -333,11 +337,7 @@ let clusterLayoutsByTopology = createSelector(
             if (!clusters.hasOwnProperty(h)) {
                 clusters[h] = createEmptyClusterFromTree(t);
             }
-            clusters[h].num += 1;
-            clusters[h].trees.push(tid);
-            // if (clusters[h].num === 1) {            // FIXME: workaround
-                addRepresent(clusters[h].blocks, clusters[h].rootBlockId, t.blocks, tid, t.rootBlockId);
-            // }
+            addTreeToCluster(clusters[h], t);
         }
         console.log('clusters=', clusters);
         return clusters;
