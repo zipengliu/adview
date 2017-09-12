@@ -138,14 +138,16 @@ export function changeOutgroupTaxaFile(t) {
     return {type: TYPE.CHANGE_OUTGROUP_TAXA_FILE, t};
 }
 
-export function uploadOutgroup() {
+export function uploadOutgroup(inputGroupId=null, outgroupTaxa=null, isUpdating=false) {
     return (dispatch, getState) => {
         dispatch(uploadOutgroupRequest());
 
         let state = getState();
         let data = new FormData();
-        data.append('inputGroupId', state.upload.inputGroupId);
-        data.append('outgroup', Object.keys(state.upload.outgroupTaxa).map(eid => state.upload.entities[eid]).join(','));
+        data.append('inputGroupId', inputGroupId !== null? inputGroupId: state.upload.inputGroupId);
+        data.append('outgroup', outgroupTaxa? outgroupTaxa:
+            Object.keys(state.upload.outgroupTaxa).map(eid => state.upload.entities[eid]).join(','));
+        data.append('isUpdating', isUpdating);
 
         return fetch(baseUrl + '/outgroup', {method: 'POST', body: data}).then((response) => {
             if (response.status >= 400) {
@@ -170,8 +172,8 @@ function uploadOutgroupSuccess(checkStatusUrl) {
     return {type: TYPE.UPLOAD_OUTGROUP_SUCCESS, checkStatusUrl};
 }
 
-function uploadOutgroupFailure() {
-    return {type: TYPE.UPLOAD_DATASET_FAILURE};
+function uploadOutgroupFailure(error) {
+    return {type: TYPE.UPLOAD_OUTGROUP_FAILURE, error};
 }
 
 export function checkUploadStatus(url) {
@@ -470,42 +472,42 @@ export function toggleExtendedMenu(bid, x, y) {
     return {type: TYPE.TOGGLE_EXTENDED_MENU, bid, x, y};
 }
 
-export function rerootReferenceTree(rid) {
-    return function (dispatch, getState) {
-        let state = getState();
-        dispatch(rerootRequest(rid));
-
-        return new Promise(() => {
-            console.log('Re-rooting to ', rid);
-
-            // The timeout here is to yield to update cycle of React so that it can display the toast message
-            setTimeout(() => {
-                // Do the heavy lifting of re-root
-                let {trees, referenceTree} = state.inputGroupData;
-                let newReferenceTree = referenceTree.clone(true);
-                console.log('new missing: ', newReferenceTree.missing);
-                newReferenceTree.reroot(rid, trees).getGSF(state.cb, Object.keys(state.inputGroupData.trees).length);
-                dispatch(rerootSuccess(newReferenceTree));
-            }, 0);
-        }).catch(err => {
-            console.error(err);
-            dispatch(rerootFailure(err.toString()));
-        });
-    }
-}
-
-// Re-rooting is a blocking procedure at frontend currently. Should move to backend and run async later
-export function rerootRequest(bid) {
-    return {type: TYPE.REROOT_REQUEST, bid};
-}
-
-export function rerootSuccess(data) {
-    return {type: TYPE.REROOT_SUCCESS, data};
-}
-
-export function rerootFailure(error) {
-    return {type: TYPE.REROOT_FAILURE, error};
-}
+// export function rerootReferenceTree(rid) {
+//     return function (dispatch, getState) {
+//         let state = getState();
+//         dispatch(rerootRequest(rid));
+//
+//         return new Promise(() => {
+//             console.log('Re-rooting to ', rid);
+//
+//             // The timeout here is to yield to update cycle of React so that it can display the toast message
+//             setTimeout(() => {
+//                 // Do the heavy lifting of re-root
+//                 let {trees, referenceTree} = state.inputGroupData;
+//                 let newReferenceTree = referenceTree.clone(true);
+//                 console.log('new missing: ', newReferenceTree.missing);
+//                 newReferenceTree.reroot(rid, trees).getGSF(state.cb, Object.keys(state.inputGroupData.trees).length);
+//                 dispatch(rerootSuccess(newReferenceTree));
+//             }, 0);
+//         }).catch(err => {
+//             console.error(err);
+//             dispatch(rerootFailure(err.toString()));
+//         });
+//     }
+// }
+//
+// // Re-rooting is a blocking procedure at frontend currently. Should move to backend and run async later
+// export function rerootRequest(bid) {
+//     return {type: TYPE.REROOT_REQUEST, bid};
+// }
+//
+// export function rerootSuccess(data) {
+//     return {type: TYPE.REROOT_SUCCESS, data};
+// }
+//
+// export function rerootFailure(error) {
+//     return {type: TYPE.REROOT_FAILURE, error};
+// }
 
 export function createUserSpecifiedTaxaGroup(bid) {
     return {type: TYPE.CREATE_USER_SPECIFIED_TAXA_GROUP, bid};

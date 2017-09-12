@@ -17,6 +17,7 @@ import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import CBAttributeExplorer from './CBAttributeExplorer';
 import TreeDistribution from './TreeDistribution';
 import GlobalToolkit from './GlobalToolkit';
+import {uploadProgressModal} from './Commons';
 // import BipartitionDistribution from './BipartitionDistribution';
 import {getWindowHeight} from '../utils';
 
@@ -27,7 +28,7 @@ class MainView extends Component {
         this.props.onRequestInputGroup(this.props.params.inputGroupId);
     }
     render() {
-        let {charts, taxaList, inputGroupData, toast} = this.props;
+        let {upload, charts, taxaList, inputGroupData, toast} = this.props;
         return (
             <div>
                 <div className={cn('toast', {show: toast.msg != null})}>
@@ -40,6 +41,9 @@ class MainView extends Component {
                         <Glyphicon glyph="remove"/>
                     </div>
                 </div>
+
+                {upload.uploadState !== null &&
+                uploadProgressModal(upload.uploadState, upload.progress, upload.error, upload.datasetUrl)}
 
 
                 {!this.props.isFetching && !this.props.isFetchFailed && inputGroupData &&
@@ -97,6 +101,7 @@ function mapStateToProps(state) {
         taxaList: state.taxaList,
         toast: state.toast,
         stretchedMainView: state.stretchedMainView,
+        upload: state.upload
     }
 }
 

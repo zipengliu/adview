@@ -9,7 +9,7 @@ import cn from 'classnames';
 import FullDendrogram from './FullDendrogram';
 import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import {compareWithReference, toggleUniversalBranchLength, toggleExtendedMenu, changeDistanceMetric,
-    selectBranchOnFullDendrogram, toggleHighlightMonophyly, rerootReferenceTree,
+    selectBranchOnFullDendrogram, toggleHighlightMonophyly, uploadOutgroup,
     createUserSpecifiedTaxaGroup, addToUserSpecifiedTaxaGroup, removeFromUserSpecifiedTaxaGroup,
     removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleReferenceTreeLegends} from '../actions';
 import {createMappingFromArray} from '../utils';
@@ -18,7 +18,8 @@ import {getVirtualBid} from '../tree';
 class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
-        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup, expandedBranches, colorScheme, showLegends} = props;
+        let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup,
+            expandedBranches, colorScheme, showLegends, inputGroupId, entityNames} = props;
         let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
         let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
         let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
@@ -152,8 +153,12 @@ class ReferenceTreeContainer extends Component {
                         </OverlayTrigger>
 
                         <OverlayTrigger rootClose placement="right" overlay={<Tooltip id="ext-menu-re-root">
-                            Re-root the reference tree to this branch</Tooltip>}>
-                            <MenuItem disabled={isExtLeaf} onSelect={() => {props.reroot(extendedMenu.bid)}}>Re-root reference tree</MenuItem>
+                            Re-root the reference tree and the tree collection to this branch by selecting it as the outgroup</Tooltip>}>
+                            <MenuItem disabled={extendedMenu.bid === tree.rootBranch}
+                                      onSelect={() => {props.reroot(inputGroupId,
+                                          tree.branches[extendedMenu.bid].entities.map(eid => entityNames[eid].name))}}>
+                                Select as outgroup (re-root all trees)
+                            </MenuItem>
                         </OverlayTrigger>
                     </ul>}
 
@@ -234,6 +239,8 @@ class ReferenceTreeContainer extends Component {
 }
 
 let mapStateToProps = state => ({
+    inputGroupId: state.inputGroupData.inputGroupId,
+    entityNames: state.inputGroupData.entities,
     tree: state.inputGroupData.referenceTree,
     isUserSpecified: state.referenceTree.isUserSpecified,
     comparingTree: state.pairwiseComparison.tid? state.inputGroupData.trees[state.pairwiseComparison.tid]: null,
@@ -264,7 +271,7 @@ let mapDispatchToProps = dispatch => ({
     toggleHighlightMonophyly: (tid, bid, addictive=false) => {
         dispatch(toggleHighlightMonophyly(tid, bid, addictive));
     },
-    reroot: bid => {dispatch(rerootReferenceTree(bid))},
+    reroot: (id, e) => {dispatch(uploadOutgroup(id, e, true))},
     createUSTG: bid => {dispatch(createUserSpecifiedTaxaGroup(bid))},
     addToUSTG: (bid, group) => {dispatch(addToUserSpecifiedTaxaGroup(bid, group))},
     removeFromUSTG: (bid, group) => {dispatch(removeFromUserSpecifiedTaxaGroup(bid, group))},

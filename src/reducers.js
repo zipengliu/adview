@@ -11,7 +11,7 @@ import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSu
 let initialState = {
     upload: {
         isProcessingEntities: false,
-        uploadState: null,          // one of SENDING, RECEIVED, PENDING, PROGRESS, SUCCESS, FAILURE
+        uploadState: null,          // one of SENDING, RECEIVED, PENDING, PROGRESS, SUCCESS, FAILURE or null
         checkStatusRetry: 2,       // the number of times to retry if a check status request fail.  This should be reset on each upload outgroup request
         progress: null,
         checkStatusUrl: null,
@@ -610,40 +610,40 @@ function visphyReducer(state = initialState, action) {
                     highlightEntities: action.e? [action.e]: []
                 }
             };
-        case TYPE.REROOT_REQUEST:
-            return {
-                ...state,
-                referenceTree: {
-                    ...state.referenceTree,
-                    extendedMenu: {
-                        bid: null
-                    }
-                },
-                toast: {
-                    ...state.toast,
-                    msg: 'Re-rooting...',
-                }
-            };
-        case TYPE.REROOT_SUCCESS:
-            return {
-                ...state,
-                inputGroupData: {
-                    ...state.inputGroupData,
-                    referenceTree: action.data
-                },
-                toast: {
-                    ...state.toast,
-                    msg: null
-                }
-            };
-        case TYPE.REROOT_FAILURE:
-            return {
-                ...state,
-                toast: {
-                    ...state.toast,
-                    msg: action.error
-                }
-            };
+        // case TYPE.REROOT_REQUEST:
+        //     return {
+        //         ...state,
+        //         referenceTree: {
+        //             ...state.referenceTree,
+        //             extendedMenu: {
+        //                 bid: null
+        //             }
+        //         },
+        //         toast: {
+        //             ...state.toast,
+        //             msg: 'Re-rooting...',
+        //         }
+        //     };
+        // case TYPE.REROOT_SUCCESS:
+        //     return {
+        //         ...state,
+        //         inputGroupData: {
+        //             ...state.inputGroupData,
+        //             referenceTree: action.data
+        //         },
+        //         toast: {
+        //             ...state.toast,
+        //             msg: null
+        //         }
+        //     };
+        // case TYPE.REROOT_FAILURE:
+        //     return {
+        //         ...state,
+        //         toast: {
+        //             ...state.toast,
+        //             msg: action.error
+        //         }
+        //     };
         case TYPE.CREATE_USER_SPECIFIED_TAXA_GROUP:
             let newGroupId = getNewGroupID(state.referenceTree.userSpecified, true);
             return {
@@ -1705,6 +1705,13 @@ function visphyReducer(state = initialState, action) {
                     ...state.upload,
                     uploadState: 'SENDING',
                     checkStatusRetry: 2,
+                },
+                referenceTree: {
+                    ...state.referenceTree,
+                    extendedMenu: {
+                        ...state.referenceTree.extendedMenu,
+                        bid: null,
+                    }
                 }
             };
         case TYPE.UPLOAD_OUTGROUP_SUCCESS:
@@ -1721,7 +1728,7 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 upload: {
                     uploadState: 'FAILURE',
-                    error: action.error,
+                    error: action.error.toString(),
                 }
             };
         case TYPE.CHECK_UPLOAD_STATUS_SUCCESS:

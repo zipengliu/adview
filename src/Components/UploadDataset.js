@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
-import cn from 'classnames';
-import {Form, FormGroup, ControlLabel, FormControl, HelpBlock, Col, Button, Radio, Checkbox, Glyphicon, ProgressBar} from 'react-bootstrap';
+import {Form, FormGroup, ControlLabel, FormControl, HelpBlock, Col, Button, Radio, Checkbox} from 'react-bootstrap';
 import {changeUploadDataset, uploadDataset, uploadOutgroup, selectOutgroupTaxa, changeOutgroupTaxaFile} from '../actions';
+import {uploadProgressModal} from './Commons';
 import './UploadDataset.css';
 
 class UploadDataset extends Component {
     render() {
         let {upload} = this.props;
-        let {entities, outgroupTaxa, progress, uploadState} = upload;
+        let {entities, outgroupTaxa, uploadState} = upload;
         let entArr;
         if (entities) {
             entArr = Object.keys(entities).sort((a ,b) => {
@@ -16,10 +16,6 @@ class UploadDataset extends Component {
                 if (entities[a] < entities[b]) return -1;
                 return 0;
             });
-        }
-        let onGoingStep = null;
-        if (progress && progress.progress) {
-            onGoingStep = progress.progress;
         }
         let outgroupTaxaArr;
         if (outgroupTaxa) {
@@ -168,44 +164,11 @@ class UploadDataset extends Component {
                     </div>
                     <Button bsStyle="primary" disabled={uploadState !== null} onClick={this.props.onUploadOutgroup}>Confirm</Button>
                 </div>
+
+                {uploadState !== null &&
+                uploadProgressModal(uploadState, upload.progress, upload.error, upload.datasetUrl)}
             </div>
             }
-
-            {uploadState === 'SENDING' && <div>
-                Sending data to server...
-            </div>}
-
-            {uploadState === 'SENT' && <div>Data received by server.  Waiting to start processing data...</div>}
-
-            {uploadState === 'PENDING' && <div>Data received by server.  Waiting to start processing data... (Server is probably busy now, please be patient.)</div>}
-
-            {(uploadState === 'PROGRESS' || uploadState === 'FAILURE') && <div>
-                <h3>Server is processing your dataset:</h3>
-                <ol className="upload-progress-steps">
-                    {progress.steps.map((s, i) =>
-                        <li key={i} className={cn({done: progress.current > i, doing: progress.current === i})}>
-                            {s}
-                            {progress.current > i && <Glyphicon glyph="ok-circle"/>}
-                            {progress.current === i && uploadState === 'FAILURE' && <Glyphicon glyph='remove-circle'/>}
-                            {progress.current === i && uploadState === 'PROGRESS' && !onGoingStep &&
-                                <span className="glyphicon glyphicon-repeat spin" />
-                            }
-                            {progress.current === i && uploadState === 'PROGRESS' && onGoingStep &&
-                                <ProgressBar bsStyle="success" now={onGoingStep.done / onGoingStep.total * 100}
-                                             label={`${onGoingStep.done} / ${onGoingStep.total}`} />
-                            }
-                        </li>)}
-                </ol>
-            </div>
-            }
-
-            {uploadState === 'SUCCESS' && <div>
-                <h4>Server successfully processed this dataset. <a href={upload.datasetUrl}>Click here</a> to explore!</h4>
-            </div>}
-
-            {uploadState === 'FAILURE' && <div>
-                Processing failed: {upload.error}
-            </div>}
         </div>)
     }
 }

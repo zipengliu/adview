@@ -295,68 +295,68 @@ export class Tree {
 
     // Re-rooting to rid
     // Must be the reference tree to call this function
-    reroot(rid, trees) {
-        let {branches, rootBranch} = this;
-
-        // Adjust the designated node to the left most position of the tree
-        let bid = rid;
-        while (bid !== rootBranch) {
-            let b = branches[bid];
-            let p = branches[b.parent];
-            if (p.right === bid) {
-                // Switch left and right child of p
-                p.right = p.left;
-                p.left = bid;
-                // branches[p.parent] = {
-                //     ...p,
-                //     right: p.left,
-                //     left: bid,
-                // };
-            }
-            bid = b.parent;
-        }
-
-        // Rotate the tree to make rid the new root
-        let changedBranches = [];
-        let traverseUp = bid => {
-            if (bid === rootBranch) return;
-            let b = branches[bid];
-            let p = branches[b.parent];
-
-            b.left = b.right;
-            b.right = b.parent !== rootBranch? b.parent: p.right;
-            changedBranches.push(bid);
-
-            traverseUp(b.parent);
-
-            if (b.parent !== rootBranch) {
-                p.parent = bid;
-            } else {
-                branches[p.right].parent = bid;
-            }
-        };
-
-        let old_parent = branches[rid].parent;
-        traverseUp(old_parent);
-
-        branches[rid].parent = 'b0';
-        branches[old_parent].parent = 'b0';
-        branches['b0'].left = rid;
-        branches['b0'].right = old_parent;
-
-        // Update data like entities
-        this.prepareBranches().ladderize();
-
-        // Re-calculate CB for those changed branches
-        for (let i = 0; i < changedBranches.length; i++) {
-            let bid = changedBranches[i];
-            this.getAllCB(bid, trees, false);
-            console.log(bid, Object.keys(branches[bid].entities));
-            console.log(branches[bid].cb);
-        }
-
-        return this;
-    }
+    // reroot(rid, trees) {
+    //     let {branches, rootBranch} = this;
+    //
+    //     // Adjust the designated node to the left most position of the tree
+    //     let bid = rid;
+    //     while (bid !== rootBranch) {
+    //         let b = branches[bid];
+    //         let p = branches[b.parent];
+    //         if (p.right === bid) {
+    //             // Switch left and right child of p
+    //             p.right = p.left;
+    //             p.left = bid;
+    //             // branches[p.parent] = {
+    //             //     ...p,
+    //             //     right: p.left,
+    //             //     left: bid,
+    //             // };
+    //         }
+    //         bid = b.parent;
+    //     }
+    //
+    //     // Rotate the tree to make rid the new root
+    //     let changedBranches = [];
+    //     let traverseUp = bid => {
+    //         if (bid === rootBranch) return;
+    //         let b = branches[bid];
+    //         let p = branches[b.parent];
+    //
+    //         b.left = b.right;
+    //         b.right = b.parent !== rootBranch? b.parent: p.right;
+    //         changedBranches.push(bid);
+    //
+    //         traverseUp(b.parent);
+    //
+    //         if (b.parent !== rootBranch) {
+    //             p.parent = bid;
+    //         } else {
+    //             branches[p.right].parent = bid;
+    //         }
+    //     };
+    //
+    //     let old_parent = branches[rid].parent;
+    //     traverseUp(old_parent);
+    //
+    //     branches[rid].parent = 'b0';
+    //     branches[old_parent].parent = 'b0';
+    //     branches['b0'].left = rid;
+    //     branches['b0'].right = old_parent;
+    //
+    //     // Update data like entities
+    //     this.prepareBranches().ladderize();
+    //
+    //     // Re-calculate CB for those changed branches
+    //     for (let i = 0; i < changedBranches.length; i++) {
+    //         let bid = changedBranches[i];
+    //         this.getAllCB(bid, trees, false);
+    //         console.log(bid, Object.keys(branches[bid].entities));
+    //         console.log(branches[bid].cb);
+    //     }
+    //
+    //     return this;
+    // }
 
     // Can only be invoked on a reference tree
     getAllCB(rbid, trees, inGroupOnly=false) {
