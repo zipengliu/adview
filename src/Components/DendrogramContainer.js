@@ -179,16 +179,32 @@ let getLayouts = createSelector(
         let layoutFunc = layoutAlgorithms[layoutAlg];
 
         let layouts = {};
+        // Order must be consistent to deal with double matching otherwise cluster algorithm (the getHash) might be compromised
+        let rBids = Object.keys(expanded).sort((x, y) => {
+            if (expanded[x] === expanded[y]) return 0;
+            if (expanded[x] < expanded[y]) return -1;
+            return 1;
+        });
         for (let tid in trees) if (trees.hasOwnProperty(tid)) {
             // Get corresponding branches in the tree
             let e = {};
-            for (let rBid in expanded) if (expanded.hasOwnProperty(rBid)) {
+            for (let rBid of rBids) {
                 let corr = referenceTree.branches[rBid][cb];
                 if (corr.hasOwnProperty(tid) && corr[tid].bid) {
-                    e[corr[tid].bid] = {
-                        ...corr[tid],
-                        no: expanded[rBid]
-                    };
+                    let corrBid = corr[tid].bid;
+                    if (e.hasOwnProperty(corrBid)) {
+                        // We have multiple reference branches matched to the same block
+                        e[corrBid].no += '&' + expanded[rBid];
+                        if (!e[corrBid].hasOwnProperty('jacs')) {
+                            e[corrBid].jacs = [e[corrBid].jac];
+                        }
+                        e[corrBid].jacs.push(corr[tid].jac);
+                    } else {
+                        e[corrBid] = {
+                            ...corr[tid],
+                            no: expanded[rBid]
+                        };
+                    }
                 }
             }
 
@@ -406,7 +422,7 @@ let fillLayouts = createSelector(
                 if (isClusterMode) {
                     b.fill = [];
                     for (let i = 0; i < highlightEntities.length; i++) {
-                        if (b.isNested && b.no !== highlight.bids[i].no) {      // The nested block only shows its own color
+                        if (b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1) {      // The nested block only shows its own color
                             continue
                         }
                         let h = highlightEntities[i];
@@ -432,7 +448,7 @@ let fillLayouts = createSelector(
                     }
                 } else {
                     b.fill = highlightEntities.map((h, i) => ({
-                        proportion: b.isNested && !!b.no && b.no !== highlight.bids[i].no? 0:         // The nested block only shows its own color
+                        proportion: b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1? 0:         // The nested block only shows its own color
                             getIntersection(b.entities, h) / Object.keys(b.entities).length,
                         color: highlight.colorScheme[highlight.bids[i].color]
                     })).filter(a => a.proportion > 0);

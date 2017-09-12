@@ -738,7 +738,10 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             id: bid,
             context: false,
             no: bid in expanded? expanded[bid].no: null,
-            matched: bid in expanded? expanded[bid].jac === 1.0: false,
+            matched: bid in expanded?
+                (expanded[bid].jacs? expanded[bid].jacs.reduce((a, b) =>(a + b), 0) / expanded[bid].jacs.length === 1.0:
+                    expanded[bid].jac === 1.0):
+                false,
             height: 1,
             width: 0,
             x: 0, y: 0,
