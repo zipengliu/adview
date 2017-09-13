@@ -227,7 +227,19 @@ export function guid() {
         s4() + '-' + s4() + s4() + s4();
 }
 
-export function isMonophyly(tree, entities) {
-    
+export function makeCompareFunc(d, field, isIncreasing=true) {
+    if (isIncreasing) {
+        return (a, b) => {
+            if (d[a][field] === d[b][field]) return 0;
+            if (d[a][field] < d[b][field]) return -1;
+            return 1;
+        };
+    } else {
+        return (a, b) => {
+            if (d[a][field] === d[b][field]) return 0;
+            if (d[a][field] < d[b][field]) return 1;
+            return -1;
+        };
+    }
 }
 

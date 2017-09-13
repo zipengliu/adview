@@ -1,5 +1,11 @@
-.dendrogram-container {
-    height: 100%;
+.cluster-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border: none;
+}
+.individual-container {
+    /*height: 100%;*/
     overflow-y: scroll;
     display: flex;
     flex-direction: row;

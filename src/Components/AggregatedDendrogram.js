@@ -10,28 +10,26 @@ import './Dendrogram.css';
 
 class AggregatedDendrogram extends Component {
     render() {
-        // console.log(this.props.data);
-        let {spec, clusterAlg, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
-        let isClusterMode = clusterAlg !== 'none';
+        let {spec, isCluster, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
         let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
         let {trees, blocks, branches, num, total, selectedCnt} = data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
         let numScale = scaleLinear().domain([0, total]).range([0, size]);
-        let highlightTreeCnt = isClusterMode? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
+        let highlightTreeCnt = isCluster? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
             hoveredTrees.hasOwnProperty(this.props.data.tid);
 
         let getCertainEntities = block =>
-            isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] === num): Object.keys(block.entities);
+            isCluster? Object.keys(block.entities).filter(e => block.entities[e] === num): Object.keys(block.entities);
         let getUncertainEntities = block =>
-            isClusterMode? Object.keys(block.entities).filter(e => block.entities[e] < num): [];
+            isCluster? Object.keys(block.entities).filter(e => block.entities[e] < num): [];
 
         // Debounce the hovering
         let timer = null;
         let onMouseEnterBlock = (b) => {
             timer = setTimeout(() => {
                 timer = null;
-                onToggleBlock(isClusterMode? trees: [data.tid], getCertainEntities(b), getUncertainEntities(b));
+                onToggleBlock(isCluster? trees: [data.tid], getCertainEntities(b), getUncertainEntities(b));
             }, 300);
         };
         let onMouseLeaveBlock = () => {
@@ -43,9 +41,9 @@ class AggregatedDendrogram extends Component {
         };
 
         let svgWidth = size + margin.left + margin.right;
-        let svgHeight = size + margin.top + margin.bottom + (isClusterMode? proportionBarHeight + proportionTopMargin: 0);
+        let svgHeight = size + margin.top + margin.bottom + (isCluster? proportionBarHeight + proportionTopMargin: 0);
 
-        let isHighlighted = (!isClusterMode && highlightTreeCnt) || (isClusterMode && highlightTreeCnt === num);
+        let isHighlighted = (!isCluster && highlightTreeCnt) || (isCluster && highlightTreeCnt === num);
 
         return (
             <svg width={svgWidth} height={svgHeight}>
@@ -55,7 +53,7 @@ class AggregatedDendrogram extends Component {
                 <rect className="highlight-tree-indicator" x="0" y="0" width={svgWidth} height={svgHeight}/>}
 
                 <g transform={`translate(${margin.left},${margin.top})`}>
-                    {isClusterMode &&
+                    {isCluster &&
                     <g className="proportion" >
                         <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
                         <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
@@ -67,7 +65,7 @@ class AggregatedDendrogram extends Component {
                         <text x="0" y="0" dx="4" dy="9">{num}</text>
                     </g>
                     }
-                    <g transform={`translate(0,${isClusterMode? proportionBarHeight + proportionTopMargin: 0})`}>
+                    <g transform={`translate(0,${isCluster? proportionBarHeight + proportionTopMargin: 0})`}>
                        <g className="blocks" >
                             {blockArr.filter(b => b.width > 0).map(b =>
                                 <g key={b.id}>
@@ -77,18 +75,14 @@ class AggregatedDendrogram extends Component {
                                           x={b.x} y={b.y} width={b.width} height={b.height}
                                     />
 
-                                    {!isClusterMode && b.fill &&
+                                    {!isCluster && b.fill &&
                                         b.fill.map((f, i) =>
                                             <rect key={i} className="highlight-block"
                                                   style={{fill: f.color}}
                                                   x={b.x} y={b.y + i * (b.height / b.fill.length)}
                                                   width={f.proportion * b.width} height={b.height / b.fill.length} />) }
 
-                                    {!isClusterMode && b.fill && b.isLeaf && false &&
-                                    <rect className="highlight-block" x={size - b.highlightWidth} y={b.y}
-                                          width={b.highlightWidth} height={b.height} />}
-
-                                    {isClusterMode && b.fill &&
+                                    {isCluster && b.fill &&
                                     b.fill.map((f, i) =>
                                         <g key={i}>
                                             {f.colorBins?
@@ -108,7 +102,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {clusterAlg !== 'relaxed-topo' && b.n > 1 && b.width > 12 && b.height > 12 &&
+                                    {b.n > 1 && b.width > 12 && b.height > 12 &&
                                     <g>
                                         {b.width > 24 &&
                                         <text className="label" x={b.x + b.width} y={b.y} dx="-2" dy="10" style={{textAnchor: 'end'}}>{b.n}</text>}

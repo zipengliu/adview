@@ -121,10 +121,12 @@ let initialState = {
     consensusTrees: null,
     hoveredTrees: {},
     aggregatedDendrogram: {
-        activeSetIndex: 0,
+        showCluster: true,
+        showIndividual: true,
+        activeSetIndex: 0,      // Show individual ADs of which sub-collection
         layoutAlg: 'skeleton',
-        clusterAlg: 'none',
-        cluster: {
+        // clusterAlg: 'none',
+        clusterParameter: {
             checkForExact: true,
             checkForSister: false,
         },
@@ -966,6 +968,14 @@ function visphyReducer(state = initialState, action) {
                     ...state.referenceTree,
                     highlightEntities: action.entities,
                     highlightUncertainEntities: action.uncertainEntities
+                }
+            };
+        case TYPE.TOGGLE_SHOW_AD:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    [action.category]: !state.aggregatedDendrogram[action.category]
                 }
             };
 

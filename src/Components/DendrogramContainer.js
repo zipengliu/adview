@@ -9,8 +9,9 @@ import {scaleLinear, hcl, extent} from 'd3';
 import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock, changeLayoutAlgorithm, changeClusterAlgorithm} from '../actions';
-import {createMappingFromArray, getIntersection} from '../utils';
+import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock, changeLayoutAlgorithm,
+    changeClusterAlgorithm, toggleShowAD} from '../actions';
+import {createMappingFromArray, getIntersection, makeCompareFunc} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
@@ -18,30 +19,34 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {spec, layoutAlg, clusterAlg, order, dendrograms, selectedTrees, rangeSelection, expandedBranches} = this.props;
-        let isClusterMode = clusterAlg !== 'none';
+        let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection, expandedBranches} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
-        let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4 + (isClusterMode? spec.proportionBarHeight + spec.proportionTopMargin: 0);
+        let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4;
 
-        let getDendroBox = t => {
-            t.selectedCnt = isClusterMode? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
+        let getDendroBox = (t, isCluster) => {
+            let w = boxWidth, h = boxHeight;
+            if (isCluster) {
+                // Vertical space for the population bar of each cluster
+                h += spec.proportionBarHeight + spec.proportionTopMargin;
+            }
+            t.selectedCnt = isCluster? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
                 selectedTrees.hasOwnProperty(t.tid);
-            let div = (
-                <div className={cn("agg-dendro-box", {selected: isClusterMode? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
+            return (
+                <div className={cn("agg-dendro-box", {selected: isCluster? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
                      key={t.tid}
-                     style={{width: boxWidth + 'px', height: boxHeight + 'px'}}
-                     onClick={(e) => {this.props.onSelectTrees(isClusterMode? t.trees: [t.tid], e.shiftKey)}}
+                     style={{width: w + 'px', height: h + 'px'}}
+                     onClick={(e) => {this.props.onSelectTrees(isCluster? t.trees: [t.tid], e.shiftKey)}}
                 >
-                    <AggregatedDendrogram data={t} spec={spec} clusterAlg={clusterAlg}
+                    <AggregatedDendrogram data={t} spec={spec} isCluster={isCluster}
                                           isReferenceTree={t.tid === this.props.referenceTid}
                                           isComparing={t.tid === this.props.comparingTid}
                                           hoveredTrees={this.props.hoveredTrees}
                                           onToggleBlock={this.props.onToggleBlock}
-                                          rangeSelection={rangeSelection} shadedGranularity={this.props.shadedHistogram.granularity} />
+                                          rangeSelection={rangeSelection}
+                                          shadedGranularity={this.props.shadedHistogram.granularity} />
                 </div>);
-            return div;
         };
 
         let getDisplayOrder = order => {
@@ -56,68 +61,76 @@ class DendrogramContainer extends Component {
                 </div>
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
-
                     <div>
-                        <span>Layout algorithm: </span>
-                        <DropdownButton bsSize="xsmall" title={layoutAlg} id="dropdown-layout"
-                                        onSelect={this.props.onChangeLayout}>
-                            <MenuItem eventKey="frond">frond</MenuItem>
-                            <MenuItem eventKey="container">container</MenuItem>
-                            <MenuItem eventKey="skeleton">skeleton</MenuItem>
-                            <MenuItem eventKey="remainder"><span style={{textDecoration: 'line-through'}}>remainder</span></MenuItem>
-                        </DropdownButton>
-
-                        <span style={{marginLeft: '5px'}}>Cluster by: </span>
-                        <DropdownButton bsSize="xsmall" title={clusterAlg} id="dropdown-cluster"
-                                        onSelect={this.props.onChangeCluster}>
-                            <MenuItem eventKey="none">none</MenuItem>
-                            <MenuItem eventKey="topo">topology of all blocks (w/ #taxa)</MenuItem>
-                            <MenuItem eventKey="relaxed-topo">topology of all blocks (w/o #taxa)</MenuItem>
-                            <MenuItem eventKey="matched-block-topo">topology of matched blocks (TODO)</MenuItem>
-                        </DropdownButton>
-
-                        <div style={{marginLeft: '5px', display: 'inline-block'}}>
-                            <span>Sort by the </span>
-                            {isClusterMode? <span>#trees of a cluster</span>:
-                                (expandedArr.length === 0? 'RF distance ':
-                                        <DropdownButton bsSize="xsmall" title={getDisplayOrder(order)} id="dropdown-sorting"
-                                        onSelect={this.props.onChangeSorting}>
-                                            <MenuItem eventKey='RF'>RF distance</MenuItem>
-                                            {expandedArr.map(bid =>
-                                                <MenuItem key={bid} eventKey={bid}>
-                                                    {getDisplayOrder(bid)}
-                                                </MenuItem>)}
-                                        </DropdownButton>
-                                )
-                            }
-                            {!isClusterMode && <span style={{marginLeft: '2px'}}> to the reference tree.</span>}
-                        </div>
-
+                        parameter setting goes here
                     </div>
 
-                    <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
-                        {this.props.sets.map((s, i) =>
-                            <Tab eventKey={i} key={i}
-                                 title={
-                                     <OverlayTrigger key={i} placement="top"
-                                                     overlay={<Tooltip id={`tab-${i}`}>
-                                                         {isClusterMode? `# Clusters: ${dendrograms.length}; ` :''}
-                                                         # Trees: {s.tids.length}</Tooltip>}>
-                                         <div>
-                                             {renderSubCollectionGlyph(s.glyph)}
-                                             <span>{s.title}</span>
-                                             {i === this.props.activeSetIndex &&
-                                             <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{dendrograms.length}</Badge>
-                                             }
-                                         </div>
-                                     </OverlayTrigger>
-                                 } >
-                            </Tab>
-                        )}
-                    </Tabs>
+                    <div>
+                        <div>
+                            <Glyphicon glyph={showCluster? 'triangle-bottom': 'triangle-right'}
+                                       onClick={this.props.onToggleShow.bind(null, 'showCluster')}
+                                       style={{marginRight: '5px', cursor: 'pointer'}}/>
+                            <span>Clusters</span>
+                            <Badge style={{margin: '0 5px', backgroundColor: 'black'}}>{clusters.length}</Badge>
+                            {showCluster &&
+                            <span>(caveat: trees in a cluster agree only on relations among named blocks (A, B, C, ...),
+                                but not necessarily on context blocks)</span>
+                            }
+                        </div>
+                        {showCluster &&
+                        <div className="cluster-container">
+                            {clusters.map(c => getDendroBox(c, true))}
+                        </div>
+                        }
+                    </div>
 
-                    <div className="dendrogram-container">
-                        {dendrograms.map(getDendroBox)}
+                    <div>
+                        <div>
+                            <Glyphicon glyph={showIndividual? 'triangle-bottom': 'triangle-right'}
+                                       onClick={this.props.onToggleShow.bind(null, 'showIndividual')}
+                                       style={{marginRight: '5px', cursor: 'pointer'}}/>
+                            <span>Individuals</span>
+                            {showIndividual &&
+                            <div style={{marginLeft: '5px', display: 'inline-block'}}>
+                                <span>(sort by the </span>
+                                {expandedArr.length === 0? 'RF distance ':
+                                    <DropdownButton bsSize="xsmall" title={getDisplayOrder(order)} id="dropdown-sorting"
+                                                    onSelect={this.props.onChangeSorting}>
+                                        <MenuItem eventKey='RF'>RF distance</MenuItem>
+                                        {expandedArr.map(bid =>
+                                            <MenuItem key={bid} eventKey={bid}>
+                                                {getDisplayOrder(bid)}
+                                            </MenuItem>)}
+                                    </DropdownButton>
+                                }
+                                <span style={{marginLeft: '2px'}}> to the reference tree)</span>
+                            </div>
+                            }
+                        </div>
+
+                        {showIndividual &&
+                        <div>
+                            <Tabs activeKey={this.props.activeSetIndex} onSelect={this.props.onSelectSet} id="set-tab">
+                                {this.props.sets.map((s, i) =>
+                                    <Tab eventKey={i} key={i}
+                                         title={
+                                             <OverlayTrigger key={i} placement="top"
+                                                             overlay={<Tooltip id={`tab-${i}`}># Trees: {s.tids.length}</Tooltip>}>
+                                                 <div>
+                                                     {renderSubCollectionGlyph(s.glyph)}
+                                                     <span>{s.title}</span>
+                                                     <Badge style={{marginLeft: '5px', backgroundColor: 'black'}}>{s.tids.length}</Badge>
+                                                 </div>
+                                             </OverlayTrigger>
+                                         } >
+                                    </Tab>
+                                )}
+                            </Tabs>
+                            <div className="individual-container">
+                                {individuals.map(x => getDendroBox(x, false))}
+                            </div>
+                        </div>
+                        }
                     </div>
                 </div>
 
@@ -174,8 +187,6 @@ let getLayouts = createSelector(
     state => state.aggregatedDendrogram.layoutAlg,
     state => state.aggregatedDendrogram.spec],
     (referenceTree, expanded, cb, trees, layoutAlg, spec) => {
-        console.log('getLayouts...');
-
         let layoutFunc = layoutAlgorithms[layoutAlg];
 
         let layouts = {};
@@ -221,7 +232,6 @@ let filterLayouts = createSelector(
     [(_, layouts) => layouts,
         state => state.sets[state.aggregatedDendrogram.activeSetIndex].tids],
     (layouts, tids) => {
-        console.log('Filtering layouts...');
         let filteredLayouts = {};
         for (let i = 0; i < tids.length; i++) {
             filteredLayouts[tids[i]] = layouts[tids[i]];
@@ -235,46 +245,26 @@ let filterLayouts = createSelector(
 // Return a dictionary of clusters, with each one {blockArr, branchArr, num}
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let clusterLayoutsByTopology = createSelector(
-    [state => state.aggregatedDendrogram.clusterAlg,
-        state => state.aggregatedDendrogram.cluster,
+    [state => state.aggregatedDendrogram.clusterParameter,
         (_, layouts) => layouts],
-    (clusterAlg, param, layouts) => {
-        console.log('Clustering layouts by topology...');
-        let isSuperCluster = clusterAlg === 'relaxed-topo';
+    (param, layouts) => {
         let numLayouts = Object.keys(layouts).length;
 
-        let getHash;
-        if (clusterAlg === 'matched-block-topo') {
-            getHash = (blocks, rootBlockId) => {
-                let getBlockRep = b => b.no? (param.checkForExact? (b.no + (b.matched? '+': '-')): b.no) : '';
-                let traverse = (bid) => {
-                    let b = blocks[bid];
-                    if (b.children && b.children.length > 0) {
-                        // If it has children, it must be a matched (expanded) block
-                        return '(' +
-                            b.children.filter(c => !!blocks[c].no).map(c => traverse(c)).join(',') +
-                            ')' + getBlockRep(b);
-                    } else if (b.no) {
-                        return getBlockRep(b);
-                    }
-                };
-                return traverse(rootBlockId);
+        let getHash = (blocks, rootBlockId) => {
+            let getBlockRep = b => b.no? (param.checkForExact? (b.no + (b.matched? '+': '-')): b.no) : '';
+            let traverse = (bid) => {
+                let b = blocks[bid];
+                if (b.children && b.children.length > 0) {
+                    // If it has children, it must be a matched (expanded) block
+                    return '(' +
+                        b.children.filter(c => !!blocks[c].no).map(c => traverse(c)).join(',') +
+                        ')' + getBlockRep(b);
+                } else if (b.no) {
+                    return getBlockRep(b);
+                }
             };
-        } else {
-            getHash = (blocks, rootBlockId) => {
-                // if b.n is 0, it means it is not gonna show up, it's different than those presented blocks
-                let getBlockRep = b => isSuperCluster? (b.n === 0? '0': 'x'): b.n.toString();
-                let traverse = (bid) => {
-                    let b = blocks[bid];
-                    if (b.children && b.children.length > 0) {
-                        return '(' + b.children.map(c => traverse(c)).join(',') + ')' + getBlockRep(b);
-                    } else {
-                        return getBlockRep(b);
-                    }
-                };
-                return traverse(rootBlockId);
-            };
-        }
+            return traverse(rootBlockId);
+        };
 
         let addTreeToCluster= (cluster, tree) => {
             cluster.trees.push(tree.tid);
@@ -315,6 +305,7 @@ let clusterLayoutsByTopology = createSelector(
                 // Each block has a distribution of similarity, a distribution of entities as a map of entity to frequency.
                 c.blocks[bid] = {
                     ...t.blocks[bid],
+                    fill: null,
                     represent: {},
                     entities: {},
                 };
@@ -333,48 +324,42 @@ let clusterLayoutsByTopology = createSelector(
         for (let tid in layouts) if (layouts.hasOwnProperty(tid)) {
             let t = layouts[tid];
             let h = getHash(t.blocks, t.rootBlockId);
-            console.log(tid, h);
             if (!clusters.hasOwnProperty(h)) {
                 clusters[h] = createEmptyClusterFromTree(t);
             }
             addTreeToCluster(clusters[h], t);
         }
-        console.log('clusters=', clusters);
-        return clusters;
+        
+        // Sort clusters by popularity
+        return Object.keys(clusters)
+            .sort(makeCompareFunc(clusters, 'num', false))
+            .map(h => clusters[h]);
     }
 );
 
 let sortLayouts = createSelector(
-    [state => state.aggregatedDendrogram.clusterAlg !== 'none',
-        state => state.aggregatedDendrogram.order,
+    [state => state.aggregatedDendrogram.order,
         (_, layouts) => layouts,
         state => state.inputGroupData.referenceTree,
         state => state.cb
     ],
-    (isCluster, order, layouts, referenceTree, cb) => {
-        console.log('Sorting layouts...', isCluster, order);
-
-        let res = [];
+    (order, layouts, referenceTree, cb) => {
+        let layoutsArray = [];
         for (let x in layouts) if (layouts.hasOwnProperty(x)) {
-            res.push(layouts[x]);
+            layoutsArray.push(layouts[x]);
         }
 
         let sortFunc;
-        if (isCluster) {
-            // Cluster AD is sort by the population of cluster
-            sortFunc = (t1, t2) => t2.num - t1.num;
+        if (order === 'RF') {
+            // Sort by RF distance to reference tree
+            sortFunc = (t1, t2) => referenceTree.rfDistance[t1.tid] - referenceTree.rfDistance[t2.tid];
         } else {
-            if (order === 'RF') {
-                // Sort by RF distance to reference tree
-                sortFunc = (t1, t2) => referenceTree.rfDistance[t1.tid] - referenceTree.rfDistance[t2.tid];
-            } else {
-                // Sort by a branch similarity to the reference tree
-                let corr = referenceTree.branches[order][cb];
-                sortFunc = (t1, t2) => (t2.tid in corr? corr[t2.tid].jac: 1.1) - (t1.tid in corr? corr[t1.tid].jac: 1.1)
-            }
+            // Sort by a branch similarity to the reference tree
+            let corr = referenceTree.branches[order][cb];
+            sortFunc = (t1, t2) => (t2.tid in corr? corr[t2.tid].jac: 1.1) - (t1.tid in corr? corr[t1.tid].jac: 1.1)
         }
 
-        return res.sort(sortFunc);
+        return layoutsArray.sort(sortFunc);
     }
 );
 
@@ -403,26 +388,32 @@ let getKDEBins = (n, values, kernel, color) => {
     return colorBins;
 };
 
-// Get the highlight portion of each block
-let fillLayouts = createSelector(
-    [(_, layouts) => layouts,
-        (_, layouts, layoutsMapping) => layoutsMapping,
+let fillCluster = createSelector(
+    [(_, clusterArr) => clusterArr,
+        (_, clusterArr, layoutsMapping) => layoutsMapping,
         state => state.highlight,
-        state => state.aggregatedDendrogram.clusterAlg !== 'none',
         state => state.aggregatedDendrogram.shadedHistogram],
-    (layouts, layoutsMapping, highlight, isClusterMode, shadedHistogramSpec) => {
-        let filledLayouts = layouts.slice();
+    (clusters, layoutsMapping, highlight, shadedHistogramSpec) => {
+        // Do not change the original otherwise breaking the memoization of previous function in the pipeline
+        // deep copy for the blocks esp.
+        let copyBlocks = blks => {
+            let newBlks = {};
+            for (let bid in blks) if (blks.hasOwnProperty(bid)) {
+                newBlks[bid] = {...blks[bid]};
+            }
+            return newBlks;
+        };
+        let filledClusters = clusters.map(c => ({...c, blocks: copyBlocks(c.blocks)}));
         let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
 
-        for (let k = 0; k < filledLayouts.length; k++) {
-            let t = filledLayouts[k];
-            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid) && !!t.blocks[bid].entities) {        // TODO doesn't work with cluster mode!
-                let b = t.blocks[bid];
-
-                if (isClusterMode) {
+        for (let cluster of filledClusters) {
+            for (let bid in cluster.blocks)
+                // only color the matched blocks in cluster
+                if (cluster.blocks.hasOwnProperty(bid) && cluster.blocks[bid].no) {
+                    let b = cluster.blocks[bid];
                     b.fill = [];
                     for (let i = 0; i < highlightEntities.length; i++) {
-                        if (b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1) {      // The nested block only shows its own color
+                        if (b.isNested && b.no.indexOf(highlight.bids[i].no) === -1) {      // The nested block only shows its own color
                             continue
                         }
                         let h = highlightEntities[i];
@@ -446,69 +437,52 @@ let fillLayouts = createSelector(
                             b.fill.push(newFill);
                         }
                     }
-                } else {
-                    b.fill = highlightEntities.map((h, i) => ({
-                        proportion: b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1? 0:         // The nested block only shows its own color
-                            getIntersection(b.entities, h) / Object.keys(b.entities).length,
-                        color: highlight.colorScheme[highlight.bids[i].color]
-                    })).filter(a => a.proportion > 0);
                 }
+        }
+        return filledClusters;
+    }
+);
+
+// Get the highlight portion of each block
+let fillIndividual = createSelector(
+    [(_, layouts) => layouts,
+        (_, layouts, layoutsMapping) => layoutsMapping,
+        state => state.highlight],
+    (layouts, layoutsMapping, highlight) => {
+        // Same reason to slice as in the fillCluster()
+        let copyBlocks = blks => {
+            let newBlks = {};
+            for (let bid in blks) if (blks.hasOwnProperty(bid)) {
+                newBlks[bid] = {...blks[bid]};
+            }
+            return newBlks;
+        };
+        let filledLayouts = layouts.map(l => ({...l, blocks: copyBlocks(l.blocks)}));
+        let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
+
+        for (let t of filledLayouts) {
+            for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid) && !!t.blocks[bid].entities) {
+                let b = t.blocks[bid];
+                b.fill = highlightEntities.map((h, i) => ({
+                    proportion: b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1? 0:         // The nested block only shows its own color
+                        getIntersection(b.entities, h) / Object.keys(b.entities).length,
+                    color: highlight.colorScheme[highlight.bids[i].color]
+                })).filter(a => a.proportion > 0);
             }
         }
         return filledLayouts;
     }
 );
 
-// let selectLayoutsByAttribute = createSelector(
-//     [state => state.inputGroupData.trees,
-//         state => state.inputGroupData.referenceTree,
-//         state => state.cbAttributeExplorer.activeSelectionId >= 0? state.cbAttributeExplorer.activeExpandedBid: null,
-//         state => state.cb,
-//         state => state.cbAttributeExplorer.activeSelectionId >= 0?
-//             state.cbAttributeExplorer.selection[state.cbAttributeExplorer.activeSelectionId]: null,
-//         (_, layouts) => layouts],
-//     (trees, referenceTree, bid, cb, selection, layouts) => {
-//         if (!bid || !selection) return layouts;
-//         let corr = referenceTree.branches[bid][cb];
-//         let res = [];
-//         for (let i = 0; i < layouts.length; i++) {
-//             let tid = layouts[i].tid;
-//             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
-//                 // Get the CB attribute value
-//                 let v;
-//                 if (selection.attribute === 'similarity') {
-//                     v = corr[tid].jac;
-//                 } else {
-//                     v = trees[tid].branches[corr[tid].bid][selection.attribute];
-//                 }
-//
-//                 // Check if in range selection
-//                 res.push({
-//                     ...layouts[i],
-//                     rangeSelected: selection.range[0] <= v && v <= selection.range[1],
-//                 });
-//             } else {
-//                 res.push(layouts[i]);
-//             }
-//         }
-//         return res;
-//     }
-// );
-
-
 let mapStateToProps = (state) => {
-    let isCluster = state.aggregatedDendrogram.clusterAlg !== 'none';
     let layouts = getLayouts(state);
+    let clusterLayouts = clusterLayoutsByTopology(state, layouts);
+
     let filteredLayouts = filterLayouts(state, layouts);
-    let layoutArray;
-    if (isCluster) {
-        let clusteredLayouts = clusterLayoutsByTopology(state, filteredLayouts);
-        layoutArray = sortLayouts(state, clusteredLayouts);
-    } else {
-        layoutArray = sortLayouts(state, filteredLayouts);
-    }
-    // let dendrograms = fillLayouts(state, selectLayoutsByAttribute(state, layoutArray), filteredLayouts);
-    let dendrograms = fillLayouts(state, layoutArray, filteredLayouts);
+    let layoutArray = sortLayouts(state, filteredLayouts);
+
+    let filledClusters = fillCluster(state, clusterLayouts, layouts);
+    let filledIndividuals = fillIndividual(state, layoutArray, layouts);
 
     return {
         ...state.aggregatedDendrogram,
@@ -516,7 +490,6 @@ let mapStateToProps = (state) => {
         isFetching: state.referenceTree.isFetching,
         fetchError: state.referenceTree.fetchError,
         sets: state.sets,
-        dendrograms,
         comparingTid: state.pairwiseComparison.tid,
         rangeSelection: state.cbAttributeExplorer.activeSelectionId === 0? {
             attrName: 'support',
@@ -525,6 +498,9 @@ let mapStateToProps = (state) => {
         selectedTrees: state.selectedTrees,
         hoveredTrees: state.hoveredTrees,
         expandedBranches: state.referenceTree.expanded,
+
+        clusters: filledClusters,
+        individuals: filledIndividuals,
     }
 };
 
@@ -532,8 +508,7 @@ let mapDispatchToProps = (dispatch) => ({
     onSelectTrees: (tids, isAdd) => {dispatch(toggleSelectTrees(tids, isAdd))},
     onSelectSet: i => {dispatch(selectSet(i))},
     onChangeSorting: (key) => {dispatch(changeSorting(key))},
-    onChangeLayout: (l) => {dispatch(changeLayoutAlgorithm(l))},
-    onChangeCluster: (c) => {dispatch(changeClusterAlgorithm(c))},
+    onToggleShow: (category) => {dispatch(toggleShowAD(category))},
     onToggleBlock: (tids, e, e1) => {dispatch(toggleHighlightADBlock(tids, e, e1))},
 });
 

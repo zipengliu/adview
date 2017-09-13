@@ -418,6 +418,10 @@ export function toggleHighlightEntities(entities, uncertainEntities=[]) {
     return {type: TYPE.TOGGLE_HIGHLIGHT_ENTITIES, entities, uncertainEntities};
 }
 
+export function toggleShowAD(category) {
+    return {type: TYPE.TOGGLE_SHOW_AD, category};
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}
