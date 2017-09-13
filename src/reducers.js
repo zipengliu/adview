@@ -131,7 +131,9 @@ let initialState = {
             checkForSister: false,
         },
         spec: {
-            size: 120,
+            width: 80,
+            height: 120,
+            sizeRange: [30, 300],
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 3,
             branchLen: 6,
@@ -139,14 +141,21 @@ let initialState = {
             leaveHighlightWidth: 16,
             proportionTopMargin: 4,
             proportionBarHeight: 10,
-            frondLeafGap: 5,
-            frondLeafAngle: Math.PI / 4,
-            frondBaseLength: 14,
-            nestMargin: 4,
             missingCompressRatio: .6,
-            verticalGapRatio: .12,
+            showLabels: true,
+
+            frondLayout: {
+                frondLeafGap: 5,
+                frondLeafAngle: Math.PI / 4,
+                frondBaseLength: 14,
+                nestMargin: 4,
+            },
+            containerLayout: {
+                verticalGapRatio: .12,
+            },
             skeletonLayout: {
                 showDepth: 2,           // Granularity
+                showDepthRange: [1, 5],
                 collapsedBlockHeight: 6,
                 collapsedBlockWidth: 20,
                 matchedBlockMinHeight: 12,
@@ -976,6 +985,31 @@ function visphyReducer(state = initialState, action) {
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
                     [action.category]: !state.aggregatedDendrogram[action.category]
+                }
+            };
+        case TYPE.CHANGE_AD_SIZE:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    spec: {
+                        ...state.aggregatedDendrogram.spec,
+                        [action.dimension]: action.value
+                    }
+                }
+            };
+        case TYPE.CHANGE_SKELETON_LAYOUT_PARAMETER:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    spec: {
+                        ...state.aggregatedDendrogram.spec,
+                        skeletonLayout: {
+                            ...state.aggregatedDendrogram.spec.skeletonLayout,
+                            [action.attr]: action.val
+                        }
+                    }
                 }
             };
 

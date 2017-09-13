@@ -11,11 +11,11 @@ import './Dendrogram.css';
 class AggregatedDendrogram extends Component {
     render() {
         let {spec, isCluster, shadedGranularity, onToggleBlock, hoveredTrees, isComparing, data} = this.props;
-        let {size, margin, proportionBarHeight, proportionTopMargin} = spec;
+        let {width, height, margin, proportionBarHeight, proportionTopMargin, showLabels} = spec;
         let {trees, blocks, branches, num, total, selectedCnt} = data;
         let blockArr = createArrayFromMapping(blocks);
         let branchArr = createArrayFromMapping(branches);
-        let numScale = scaleLinear().domain([0, total]).range([0, size]);
+        let numScale = scaleLinear().domain([0, total]).range([0, width]);
         let highlightTreeCnt = isCluster? trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length:
             hoveredTrees.hasOwnProperty(this.props.data.tid);
 
@@ -40,8 +40,8 @@ class AggregatedDendrogram extends Component {
             }
         };
 
-        let svgWidth = size + margin.left + margin.right;
-        let svgHeight = size + margin.top + margin.bottom + (isCluster? proportionBarHeight + proportionTopMargin: 0);
+        let svgWidth = width + margin.left + margin.right;
+        let svgHeight = height + margin.top + margin.bottom + (isCluster? proportionBarHeight + proportionTopMargin: 0);
 
         let isHighlighted = (!isCluster && highlightTreeCnt) || (isCluster && highlightTreeCnt === num);
 
@@ -55,7 +55,7 @@ class AggregatedDendrogram extends Component {
                 <g transform={`translate(${margin.left},${margin.top})`}>
                     {isCluster &&
                     <g className="proportion" >
-                        <rect x="0" y="0" width={size} height={proportionBarHeight} className="total"/>
+                        <rect x="0" y="0" width={width} height={proportionBarHeight} className="total"/>
                         <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
                         {highlightTreeCnt > 0 && highlightTreeCnt < num &&
                         <rect x="0" y="0" width={numScale(highlightTreeCnt)} height={proportionBarHeight} className="highlight" />}
@@ -102,7 +102,7 @@ class AggregatedDendrogram extends Component {
                                           onMouseLeave={onMouseLeaveBlock}
                                     />
 
-                                    {b.n > 1 && b.width > 12 && b.height > 12 &&
+                                    {showLabels && b.n > 1 && b.width > 12 && b.height > 12 &&
                                     <g>
                                         {b.width > 24 &&
                                         <text className="label" x={b.x + b.width} y={b.y} dx="-2" dy="10" style={{textAnchor: 'end'}}>{b.n}</text>}

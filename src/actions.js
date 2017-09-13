@@ -422,6 +422,14 @@ export function toggleShowAD(category) {
     return {type: TYPE.TOGGLE_SHOW_AD, category};
 }
 
+export function changeADSize(dimension, value, keepRatio=false) {
+    return {type: TYPE.CHANGE_AD_SIZE, dimension, value, keepRatio};
+}
+
+export function changeSkeletonLayoutParameter(attr, val) {
+    return {type: TYPE.CHANGE_SKELETON_LAYOUT_PARAMETER, attr, val};
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}

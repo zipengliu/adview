@@ -159,3 +159,14 @@ rect.highlight-tree-indicator {
 .partition-distribution div:last-child {
     border-right: 1px solid grey;
 }
+
+#ad-params .param-label {
+    vertical-align: middle;
+}
+
+#ad-params .slider {
+    vertical-align: middle;
+    display: inline-block;
+    width: 100px;
+    margin: 2px 10px 2px 5px;
+}

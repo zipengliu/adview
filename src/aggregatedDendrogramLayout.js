@@ -67,7 +67,7 @@ let getPivotBranch = (tree, expanded, lcaOnly=true) => {
 
 // Get the height of the missing block given the number of missing and present taxa
 let getMissingHeight = (missing, present, spec) => {
-    return missing / (missing +  present) * (spec.size - spec.verticalGap) * spec.missingCompressRatio;
+    return missing / (missing +  present) * (spec.height - spec.verticalGap) * spec.missingCompressRatio;
 };
 
 // Calculating the blocks of the aggregaated dendrogram
@@ -76,8 +76,7 @@ let getMissingHeight = (missing, present, spec) => {
 // and size specification (spec)
 // Return the dictionary of blocks and branches
 let calcRemainderLayout = (tree, expanded, spec) => {
-    let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, size} = spec;
-    let height = size, width = size;
+    let {branchLen, verticalGap, leaveHeight, leaveHighlightWidth, width, height} = spec;
 
     let blocks = {};
     let missingHeight = 0;
@@ -200,8 +199,8 @@ let calcFrondLayout = (tree, expanded, spec) => {
 
     let {pivot, distanceToLCA} = getPivotBranch(tree, expanded);
 
-    let {branchLen, verticalGap, size, frondLeafGap, frondLeafAngle, frondBaseLength, nestMargin} = spec;
-    let height = size, width = size;
+    let {branchLen, verticalGap, width, height} = spec;
+    let {frondLeafGap, frondLeafAngle, frondBaseLength, nestMargin} = spec.frondLayout;
 
     let blocks = {};
     let missingHeight = 0;
@@ -461,8 +460,7 @@ let calcFrondLayout = (tree, expanded, spec) => {
 let calcContainerLayout = (tree, expanded, spec) => {
     let {pivot} = getPivotBranch(tree, expanded, false);
     let {rootBranch, missing} = tree;
-    let {verticalGap, size, branchLen} = spec;
-    let width = size, height = size;
+    let {verticalGap, width, height, branchLen} = spec;
 
     let branches = {};
     let rootBlockId = 'root';
@@ -498,7 +496,7 @@ let calcContainerLayout = (tree, expanded, spec) => {
             let c = blocks[bid].children[i];
             h += blocks[c].height;
         }
-        return h + spec.verticalGapRatio * (blocks[bid].children.length + 1);
+        return h + spec.containerLayout.verticalGapRatio * (blocks[bid].children.length + 1);
     };
 
     let createNestedBlock = (bid, parentBlockId) => {
@@ -614,13 +612,13 @@ let calcContainerLayout = (tree, expanded, spec) => {
     // Calculate the absolute height of all blocks
     let unitHeight;
     let getAbsoluteHeight = (blockId) => {
-        let curY = spec.verticalGapRatio * unitHeight;
+        let curY = spec.containerLayout.verticalGapRatio * unitHeight;
         let b = blocks[blockId];
         for (let i = 0; i < b.children.length; i++) {
             let c = b.children[i];
             blocks[c].height *= unitHeight;
             blocks[c].y = b.y + curY;
-            curY += blocks[c].height + spec.verticalGapRatio * unitHeight;
+            curY += blocks[c].height + spec.containerLayout.verticalGapRatio * unitHeight;
             if (blocks[c].children.length) {
                 getAbsoluteHeight(c);
             }
@@ -677,8 +675,8 @@ let getMissingBlock = (tree, spec) => {
         isMissing: true,
         context: true,
         height: missingHeight,
-        width: spec.size,
-        x: 0, y: spec.size - missingHeight,
+        width: spec.width,
+        x: 0, y: spec.height - missingHeight,
         n: missing.length,          // the number of entities this block represents
         entities: createMappingFromArray(missing)
     };
@@ -686,8 +684,7 @@ let getMissingBlock = (tree, spec) => {
 
 let calcSkeletonLayout = (tree, expanded, spec) => {
     let {rootBranch, missing, outgroupBranch} = tree;
-    let {verticalGap, size, branchLen} = spec;
-    let width = size, height = size;
+    let {verticalGap, width, height, branchLen} = spec;
     let rootBlockId = 'root';
     let ingroupBranch;
     if (outgroupBranch) {

@@ -6,11 +6,11 @@ import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {scaleLinear, hcl, extent} from 'd3';
-import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, FormGroup, Radio, DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
+import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock, changeLayoutAlgorithm,
-    changeClusterAlgorithm, toggleShowAD} from '../actions';
+    changeClusterAlgorithm, toggleShowAD, changeADSize, changeSkeletonLayoutParameter} from '../actions';
 import {createMappingFromArray, getIntersection, makeCompareFunc} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
@@ -22,8 +22,8 @@ class DendrogramContainer extends Component {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection, expandedBranches} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
-        let boxWidth = spec.size + spec.margin.left + spec.margin.right + 4;
-        let boxHeight = spec.size + spec.margin.top + spec.margin.bottom + 4;
+        let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
+        let boxHeight = spec.height + spec.margin.top + spec.margin.bottom + 4;
 
         let getDendroBox = (t, isCluster) => {
             let w = boxWidth, h = boxHeight;
@@ -61,8 +61,28 @@ class DendrogramContainer extends Component {
                 </div>
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
-                    <div>
-                        parameter setting goes here
+                    <div id="ad-params">
+                        <span className="param-label">width: {spec.width}</span>
+                        <div className="slider">
+                                <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.width} step={10}
+                                       onChange={(e) => {this.props.onChangeSize('width', parseInt(e.target.value))}}/>
+                        </div>
+
+                        <span className="param-label">height: {spec.height}</span>
+                        <div className="slider">
+                            <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.height} step={10}
+                                   onChange={(e) => {this.props.onChangeSize('height', parseInt(e.target.value))}}/>
+                        </div>
+
+                        <span className="param-label">max #context levels: {spec.skeletonLayout.showDepth}</span>
+                        <div className="slider" style={{width: '50px'}}>
+                            <input type="range" min={spec.skeletonLayout.showDepthRange[0]} max={spec.skeletonLayout.showDepthRange[1]}
+                                   value={spec.skeletonLayout.showDepth} step={1}
+                                   onChange={(e) => {this.props.onChangeSkeletonParameter('showDepth', parseInt(e.target.value))}}/>
+                        </div>
+
+                        <span className="param-label">show labels: </span>
+                        <input type="checkbox" checked={spec.showLabels} onChange={this.props.onChangeSize.bind(null, 'showLabels', !spec.showLabels)} />
                     </div>
 
                     <div>
@@ -510,6 +530,8 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSorting: (key) => {dispatch(changeSorting(key))},
     onToggleShow: (category) => {dispatch(toggleShowAD(category))},
     onToggleBlock: (tids, e, e1) => {dispatch(toggleHighlightADBlock(tids, e, e1))},
+    onChangeSize: (dim, v) => {dispatch(changeADSize(dim, v))},
+    onChangeSkeletonParameter: (a, v) => {dispatch(changeSkeletonLayoutParameter(a, v))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);
