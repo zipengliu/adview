@@ -94,6 +94,9 @@ class DendrogramContainer extends Component {
 
                         <span className="param-label">show labels: </span>
                         <input type="checkbox" checked={spec.showLabels} onChange={this.props.onChangeSize.bind(null, 'showLabels', !spec.showLabels)} />
+
+                        <span className="param-label" style={{marginLeft: '10px'}}>show colors: </span>
+                        <input type="checkbox" checked={spec.showColors} onChange={this.props.onChangeSize.bind(null, 'showColors', !spec.showColors)} />
                     </div>
 
                     <div>
@@ -526,8 +529,11 @@ let mapStateToProps = (state) => {
     let filteredLayouts = filterLayouts(state, layouts);
     let layoutArray = sortLayouts(state, filteredLayouts);
 
-    let filledClusters = fillCluster(state, clusterLayouts, layouts);
-    let filledIndividuals = fillIndividual(state, layoutArray, layouts);
+    let filledClusters = clusterLayouts, filledIndividuals = layoutArray;
+    if (state.aggregatedDendrogram.spec.showColors) {
+        filledClusters = fillCluster(state, clusterLayouts, layouts);
+        filledIndividuals = fillIndividual(state, layoutArray, layouts);
+    }
 
     return {
         ...state.aggregatedDendrogram,

@@ -131,7 +131,7 @@ let initialState = {
             checkForSister: false,
         },
         spec: {
-            width: 40,
+            width: 80,
             height: 120,
             sizeRange: [30, 300],
             margin: {left: 6, top: 6, right: 6, bottom: 6},
@@ -143,6 +143,7 @@ let initialState = {
             proportionBarHeight: 10,
             missingCompressRatio: .6,
             showLabels: true,
+            showColors: true,
 
             frondLayout: {
                 frondLeafGap: 5,
