@@ -131,7 +131,7 @@ let initialState = {
             checkForSister: false,
         },
         spec: {
-            width: 80,
+            width: 40,
             height: 120,
             sizeRange: [30, 300],
             margin: {left: 6, top: 6, right: 6, bottom: 6},

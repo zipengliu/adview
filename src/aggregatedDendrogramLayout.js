@@ -682,6 +682,53 @@ let getMissingBlock = (tree, spec) => {
     };
 };
 
+
+let degenerateSpec = (spec, dimension='height') => {
+    // console.log('degenerate the specs...', spec);
+
+    let {skeletonLayout} = spec;
+    let newSpec = {...spec, skeletonLayout: {...spec.skeletonLayout}};
+
+    // First try to decrease the showDepth
+    if (skeletonLayout.showDepth > 1) {
+        // console.log('shrinking levels');
+        newSpec.skeletonLayout.showDepth -= 1;
+        return newSpec;
+    }
+
+    let tryYourBest = (fields) => {
+        let hope = false;
+        for (let f of fields) {
+            if (skeletonLayout[f] >= 4) {       // Limit is 2px
+                hope = true;
+                newSpec.skeletonLayout[f] /= 2;
+            }
+        }
+        if (hope) {
+            // console.log(newSpec);
+        }
+        return hope;
+    };
+
+    if (dimension === 'height') {
+        // Half all vertical specs
+        // console.log('shrinking height');
+        let verticalFields = ['collapsedBlockHeight', 'matchedBlockMinHeight', 'firstNestedBlockVerticalGap'];
+        if (tryYourBest(verticalFields)) return newSpec;
+    }
+
+    if (dimension === 'width') {
+        // console.log('shrinking width');
+        let horizontalFields = ['collapsedBlockWidth', 'nestingBlockExtraWidth', 'collapsedBranchLength'];
+        if (tryYourBest(horizontalFields)) return newSpec;
+    }
+
+    // console.warn('DESPERATE!!!!');
+    // Desperate
+    return null;
+};
+
+
 let calcSkeletonLayout = (tree, expanded, spec) => {
     let {rootBranch, missing, outgroupBranch} = tree;
     let {verticalGap, width, height, branchLen} = spec;
@@ -720,7 +767,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
     }
 
-    console.log(tree.tid, expandedBidArray);
+    // console.log(tree.tid, expandedBidArray, spec);
 
     blocks[rootBlockId] = {
         id: rootBlockId,
@@ -841,12 +888,12 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                         ['h-' + p.right]: {left: 'v-' + b.parent, }
                     });
                     if (p.left === bid) {
-                        console.log('target is on the LEFT', p);
+                        // console.log('target is on the LEFT', p);
                         branches['h-' + p.left].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.right].right = p.right;
                         createNewBlock(p.right, parentBlockId, {collapsed: true});
                     } else {
-                        console.log('target is on the RIGHT', p);
+                        // console.log('target is on the RIGHT', p);
                         branches['h-' + p.right].right = bid === x && x in blocks? x: 'v-' + bid;
                         branches['h-' + p.left].right = p.left;
                         createNewBlock(p.left, parentBlockId, {collapsed: true});
@@ -936,7 +983,17 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
     // The coefficient for the log part in height
     let coefficient = (height - blocks[rootBlockId].heightFixed) / blocks[rootBlockId].heightVar;
-    console.log('height coefficient = ', coefficient);
+    // console.log('height coefficient = ', coefficient);
+
+    if (coefficient < 0) {
+        let newSpec = degenerateSpec(spec);
+        if (newSpec) {
+            return calcSkeletonLayout(tree, expanded, newSpec);
+        } else {
+            console.warn('SCREWEED! YOU CANNOT FIT IN');
+            return {hopeless: true, dimension: 'height', tid: tree.tid, name: tree.name};
+        }
+    }
     for (let bid in blocks) if (blocks.hasOwnProperty(bid) && bid !== rootBlockId && bid !== 'missing') {
         let b = blocks[bid];
         b.height = coefficient * b.heightVar + b.heightFixed;
@@ -968,8 +1025,8 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         let b = branches[branchId];
         let bLen = b.collapsed? spec.skeletonLayout.collapsedBranchLength: branchLen;
         if (branchId.startsWith('v-')) {
-            traverseBranchesForWidth(b.top, curX, nestingLevel);
-            traverseBranchesForWidth(b.bottom, curX, nestingLevel);
+            if (!traverseBranchesForWidth(b.top, curX, nestingLevel)) return false;
+            if (!traverseBranchesForWidth(b.bottom, curX, nestingLevel)) return false;
             Object.assign(b, {
                 x1: curX, x2: curX,
                 y1: branches[b.top].y1,
@@ -991,14 +1048,18 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                     spec.skeletonLayout.collapsedBlockWidth: leftOverSpace,
                     leftOverSpace);
 
+                if (blocks[b.right].width < 2) {
+                    return false;
+                }
+
                 if (b.rightBranch) {        // Nested block
-                    traverseBranchesForWidth(b.rightBranch, curX + bLen, nestingLevel + 1);
+                    if (!traverseBranchesForWidth(b.rightBranch, curX + bLen, nestingLevel + 1)) return false;
                     // Align the nested branch to the branch it is connecting to
                     // branches[b.rightBranch].y1 = yCoord;
                     // branches[b.rightBranch].y2 = yCoord;
                 }
             } else if (b.right.startsWith('v-')) {
-                traverseBranchesForWidth(b.right, curX + bLen, nestingLevel);
+                if (!traverseBranchesForWidth(b.right, curX + bLen, nestingLevel)) return false;
                 Object.assign(b, {
                     x1: curX, x2: curX + bLen,
                     y1: (branches[b.right].y1 + branches[b.right].y2) / 2,
@@ -1010,17 +1071,26 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         } else {
             console.error('WHAAAAAT?', branchId, b);
         }
+        return true
     };
 
-    traverseBranchesForWidth('h-' + rootBranch, 0, 0);
+    if (!traverseBranchesForWidth('h-' + rootBranch, 0, 0)) {
+        let newSpec = degenerateSpec(spec, 'width');
+        if (newSpec) {
+            return calcSkeletonLayout(tree, expanded, newSpec);
+        } else {
+            console.warn('hopeless if fit it the horizontal space!');
+            return {hopeless: true, dimension: 'width', tid: tree.tid, name: tree.name};
+        }
+    }
 
     // Fill a bid to the branches in order to have the "key" attribute for react component
     for (let bid in branches) if (branches.hasOwnProperty(bid)) {
         branches[bid].bid = bid;
     }
 
-    console.log(blocks);
-    console.log(branches);
+    // console.log(blocks);
+    // console.log(branches);
     return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
 };
 

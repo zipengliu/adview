@@ -170,3 +170,13 @@ rect.highlight-tree-indicator {
     width: 100px;
     margin: 2px 10px 2px 5px;
 }
+
+#aggregated-dendrograms .glyphicon.glyphicon-exclamation-sign {
+    margin-left: 5px;
+    color: red;
+    font-size: 14px;
+}
+
+.individual-container .glyphicon.glyphicon-exclamation-sign {
+    margin: 5px;
+}

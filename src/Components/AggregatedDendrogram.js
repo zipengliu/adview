@@ -115,14 +115,21 @@ class AggregatedDendrogram extends Component {
                         <g className="branches">
                             {branchArr.map(b =>
                                 b.collapsed?
-                                    <g key={b.bid}>
-                                        <line className="branch collapsed"
-                                              x1={b.x1} y1={b.y1} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y2} />
-                                        <line className="branch collapsed"
-                                              x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1} x2={b.x2} y2={b.y2} />
-                                        <line className="branch" x1={(b.x1 + b.x2) / 2 - 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y1 + 4} />
-                                        <line className="branch" x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 + 2} y2={b.y1 + 4} />
-                                    </g>:
+                                    (b.x2 - b.x1 > 22?
+                                            <g key={b.bid}>
+                                                <line className="branch collapsed"
+                                                      x1={b.x1} y1={b.y1} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y2} />
+                                                <line className="branch collapsed"
+                                                      x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1} x2={b.x2} y2={b.y2} />
+                                                <line className="branch" x1={(b.x1 + b.x2) / 2 - 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 - 2} y2={b.y1 + 4} />
+                                                <line className="branch" x1={(b.x1 + b.x2) / 2 + 2} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 + 2} y2={b.y1 + 4} />
+                                            </g>:
+                                            <g key={b.bid}>
+                                                <line className="branch collapsed"
+                                                      x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />
+                                                <line className="branch" x1={(b.x1 + b.x2) / 2 + 1} y1={b.y1 - 4} x2={(b.x1 + b.x2) / 2 - 1} y2={b.y1 + 4} />
+                                            </g>
+                                    ):
                                     <line className='branch' key={b.bid}
                                           x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} />)}
                         </g>

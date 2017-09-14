@@ -19,7 +19,8 @@ import './Dendrogram.css';
 
 class DendrogramContainer extends Component {
     render() {
-        let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection, expandedBranches} = this.props;
+        let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
+            expandedBranches, hopelessWidth, hopelessHeight} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
@@ -39,13 +40,16 @@ class DendrogramContainer extends Component {
                      style={{width: w + 'px', height: h + 'px'}}
                      onClick={(e) => {this.props.onSelectTrees(isCluster? t.trees: [t.tid], e.shiftKey)}}
                 >
-                    <AggregatedDendrogram data={t} spec={spec} isCluster={isCluster}
-                                          isReferenceTree={t.tid === this.props.referenceTid}
-                                          isComparing={t.tid === this.props.comparingTid}
-                                          hoveredTrees={this.props.hoveredTrees}
-                                          onToggleBlock={this.props.onToggleBlock}
-                                          rangeSelection={rangeSelection}
-                                          shadedGranularity={this.props.shadedHistogram.granularity} />
+                    {t.hopeless?
+                        <Glyphicon glyph="exclamation-sign"/> :
+                        <AggregatedDendrogram data={t} spec={spec} isCluster={isCluster}
+                                              isReferenceTree={t.tid === this.props.referenceTid}
+                                              isComparing={t.tid === this.props.comparingTid}
+                                              hoveredTrees={this.props.hoveredTrees}
+                                              onToggleBlock={this.props.onToggleBlock}
+                                              rangeSelection={rangeSelection}
+                                              shadedGranularity={this.props.shadedHistogram.granularity}/>
+                    }
                 </div>);
         };
 
@@ -62,19 +66,26 @@ class DendrogramContainer extends Component {
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
                     <div id="ad-params">
-                        <span className="param-label">width: {spec.width}</span>
+                        <span className="param-label">width: {spec.width}
+                            {hopelessWidth && <Glyphicon glyph="exclamation-sign"/>}
+                        </span>
                         <div className="slider">
                                 <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.width} step={10}
                                        onChange={(e) => {this.props.onChangeSize('width', parseInt(e.target.value))}}/>
                         </div>
 
-                        <span className="param-label">height: {spec.height}</span>
+                        <span className="param-label">height: {spec.height}
+                            {hopelessHeight && <Glyphicon glyph="exclamation-sign"/>}
+                        </span>
                         <div className="slider">
                             <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.height} step={10}
                                    onChange={(e) => {this.props.onChangeSize('height', parseInt(e.target.value))}}/>
                         </div>
 
-                        <span className="param-label">max #context levels: {spec.skeletonLayout.showDepth}</span>
+                        <span className="param-label">max #context levels: {spec.skeletonLayout.showDepth}
+                            {((hopelessHeight || hopelessWidth) && spec.skeletonLayout.showDepth > 1) &&
+                            <Glyphicon glyph="exclamation-sign"/>}
+                        </span>
                         <div className="slider" style={{width: '50px'}}>
                             <input type="range" min={spec.skeletonLayout.showDepthRange[0]} max={spec.skeletonLayout.showDepthRange[1]}
                                    value={spec.skeletonLayout.showDepth} step={1}
@@ -341,7 +352,7 @@ let clusterLayoutsByTopology = createSelector(
 
         // Hash the layouts
         let clusters = {};
-        for (let tid in layouts) if (layouts.hasOwnProperty(tid)) {
+        for (let tid in layouts) if (layouts.hasOwnProperty(tid) && !layouts[tid].hopeless) {
             let t = layouts[tid];
             let h = getHash(t.blocks, t.rootBlockId);
             if (!clusters.hasOwnProperty(h)) {
@@ -477,10 +488,10 @@ let fillIndividual = createSelector(
             }
             return newBlks;
         };
-        let filledLayouts = layouts.map(l => ({...l, blocks: copyBlocks(l.blocks)}));
+        let filledLayouts = layouts.map(l => l.hopeless? l: ({...l, blocks: copyBlocks(l.blocks)}));
         let highlightEntities = highlight.bids.map(h => createMappingFromArray(h.entities));
 
-        for (let t of filledLayouts) {
+        for (let t of filledLayouts) if (!t.hopeless) {
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid) && !!t.blocks[bid].entities) {
                 let b = t.blocks[bid];
                 b.fill = highlightEntities.map((h, i) => ({
@@ -495,7 +506,21 @@ let fillIndividual = createSelector(
 );
 
 let mapStateToProps = (state) => {
-    let layouts = getLayouts(state);
+    let layouts = getLayouts(state);            // this is a mapping from tid to layout
+
+    // Check if there is any hopeless layout
+    let hopelessWidth = false, hopelessHeight = false;
+    for (let tid in layouts) {
+        if (layouts.hasOwnProperty(tid) && layouts[tid].hopeless) {
+            if (layouts[tid].dimension === 'width') {
+                hopelessWidth = true
+            } else {
+                hopelessHeight = true
+            }
+            if (hopelessWidth && hopelessHeight) break;
+        }
+    }
+
     let clusterLayouts = clusterLayoutsByTopology(state, layouts);
 
     let filteredLayouts = filterLayouts(state, layouts);
@@ -521,6 +546,8 @@ let mapStateToProps = (state) => {
 
         clusters: filledClusters,
         individuals: filledIndividuals,
+        hopelessWidth,
+        hopelessHeight
     }
 };
 
