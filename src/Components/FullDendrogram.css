@@ -88,8 +88,11 @@ rect.reference-tree-indicator {
 
 .reference-tree-extended-menu {
     position: fixed;
-    z-index: 200;
+    z-index: 2000;
     display: block;
+}
+.reference-tree-extended-menu.menu-move-up {
+    transform: translate(5%, -105%);
 }
 
 .reference-tree-name {

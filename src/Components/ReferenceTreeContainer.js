@@ -98,7 +98,7 @@ class ReferenceTreeContainer extends Component {
                     </div>
 
                     {extendedMenu.bid &&
-                    <ul className="dropdown-menu open reference-tree-extended-menu"
+                    <ul className={cn("dropdown-menu open reference-tree-extended-menu", {'menu-move-up': extendedMenu.moveUp})}
                         style={{left: extendedMenu.x + 'px', top: extendedMenu.y + 'px'}}>
 
                         <MenuItem header>Branch exploration</MenuItem>

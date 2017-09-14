@@ -4,7 +4,7 @@
 
 import * as TYPE from './actionTypes';
 import BitSet from 'bitset.js';
-import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray} from './utils';
+import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray, getWindowHeight} from './utils';
 // import BipartitionList from './bipartitions';
 import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
 
@@ -1616,6 +1616,7 @@ function visphyReducer(state = initialState, action) {
                         bid: action.bid,
                         x: action.x,
                         y: action.y + 10,
+                        moveUp: action.y + 350 > getWindowHeight()
                     }
                 }
             };

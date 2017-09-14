@@ -43,14 +43,15 @@ class GlobalToolkit extends Component {
                                     <Glyphicon glyph="refresh" /><span className="glyph-text">reset</span>
                                 </Button>
                             </OverlayTrigger>
-                            <DropdownButton bsSize="xsmall" disabled={!selectedTrees.length} id="selected-trees-dropdown" title={`selected trees (${selectedTrees.length})`}>
+                            <DropdownButton bsSize="xsmall" disabled={!selectedTrees.length} pullRight
+                                            id="selected-trees-dropdown" title={`selected trees (${selectedTrees.length})`}>
                                 <MenuItem onSelect={() => {this.props.onClearSelectedTrees()}}>clear selection</MenuItem>
                                 <MenuItem onSelect={() => {this.props.onReverseSelection()}}>reverse selection</MenuItem>
                                 <MenuItem onSelect={() => {this.props.onDownload()}}>export as tree file (newick)</MenuItem>
                             </DropdownButton>
                         </ButtonGroup>
 
-                        <DropdownButton bsSize="xsmall" title="sub-collection" id="sub-collection-dropdown" >
+                        <DropdownButton bsSize="xsmall" title="sub-collection" id="sub-collection-dropdown" pullRight>
                             <MenuItem disabled={!selectedTrees.length} onSelect={() => {this.props.onCreateNewSet()}}>create</MenuItem>
                             <li className={cn('dropdown-submenu', {disabled: !selectedTrees.length || this.props.sets.length === 0})}>
                                 <a href="#">add to</a>
@@ -68,7 +69,7 @@ class GlobalToolkit extends Component {
                             <MenuItem disabled={this.props.activeSetIndex === 0} onSelect={() => {this.props.onRemoveSet(this.props.activeSetIndex)}}>delete</MenuItem>
                         </DropdownButton>
 
-                        <DropdownButton bsSize="xsmall" title="more" id="more-dropdown" style={{marginLeft: '10px'}}>
+                        <DropdownButton bsSize="xsmall" title="more" id="more-dropdown" style={{marginLeft: '10px'}} pullRight>
                             <MenuItem onClick={this.props.onToggleMainView}>{stretchedMainView? 'restrain to single page frame': 'expand to full web page (for screenshot)'}</MenuItem>
                         </DropdownButton>
                     </div>
