@@ -428,6 +428,20 @@ export class Tree {
 
         return ancestors[pointers[0]][0];
     }
+
+    isAncestor(a, c) {
+        let {branches, ancestors, maxDepthLog2} = this;
+        let i = maxDepthLog2;
+        while (c !== a && branches[c].depth > branches[a].depth && i >= 0) {
+            if (ancestors[c].length > i && ancestors[c][i] !== -1 &&
+                branches[a].depth <= branches[ancestors[c][i]].depth) {
+                c = ancestors[c][i];
+            }
+            i -= 1;
+            if (c === a) return true;
+        }
+        return false;
+    }
 }
 
 

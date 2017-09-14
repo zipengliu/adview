@@ -348,6 +348,7 @@ let addHighlightGroup = (state, action, updateGroupIdx=null, no=null) => {
             bids: state.highlight.bids.map((v, i) => i === updateGroupIdx? newHighlightGroup: v)
         }
     } else if (state.highlight.bids.length < state.highlight.limit) {
+        // Add a new highlight group
         nextColor = getNextColor(state.highlight.colors);
         newHighlightGroup.color = nextColor;
         return {
@@ -356,6 +357,7 @@ let addHighlightGroup = (state, action, updateGroupIdx=null, no=null) => {
             colors: state.highlight.colors.map((c, i) => i === nextColor? true: c)
         }
     } else {
+        // Out of color limit
         nextColor = state.highlight.bids[0].color;
         newHighlightGroup.color = nextColor;
         return {

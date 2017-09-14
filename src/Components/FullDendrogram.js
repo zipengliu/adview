@@ -46,21 +46,40 @@ class FullDendrogram extends Component {
             //     }
             // }
 
-            let highlightBoxes = [];
-            for (let i = 0; i < highlight.bids.length; i++) {
-                let h = highlight.bids[i];
-                if (h.hasOwnProperty(tree.tid)) {
-                    let c = highlight.colorScheme[h.color];
-                    for (let j = 0; j < h[tree.tid].length; j++) {
-                        let bid = h[tree.tid][j];
-                        highlightBoxes.push(
-                            <rect className={cn('highlight-box', {'highlight-src': h.src === tree.tid, 'highlight-tgt': h.tgt === tree.tid})}
-                                  key={tree.tid + bid + j}
-                                  {...hoverBoxes[bid]}
-                                  style={{fill: c, stroke: isComparing && h.src === tree.tid? c: 'none'}} />)
+            // Check if anything has nesting relationship
+            let nestingStatus = {};
+            for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
+                for (let bid of h[tree.tid]) {
+                    nestingStatus[bid] = false;
+                }
+            }
+            for (let bid1 in nestingStatus) if (nestingStatus.hasOwnProperty(bid1)) {
+                for (let bid2 in nestingStatus) if (nestingStatus.hasOwnProperty(bid2) && bid1 !== bid2) {
+                    if (tree.branches[bid1].depth < tree.branches[bid2].depth) {
+                        if (tree.isAncestor(bid1, bid2)) {
+                            nestingStatus[bid1] = true;
+                        }
+                    } else {
+                        if (tree.isAncestor(bid2, bid1)) {
+                            nestingStatus[bid2] = true;
+                        }
                     }
                 }
             }
+
+            let highlightBoxes = [];
+            for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
+                let c = highlight.colorScheme[h.color];
+                for (let j = 0; j < h[tree.tid].length; j++) {
+                    let bid = h[tree.tid][j];
+                    highlightBoxes.push(
+                        <rect className={cn('highlight-box', {'nesting': nestingStatus[bid]})}
+                              key={tree.tid + bid + j}
+                              {...hoverBoxes[bid]}
+                              style={{fill: c, stroke: c}} />)
+                }
+            }
+
 
             let names = textSpecs.map((d, i) =>
                 <text key={i} className="entity-name"

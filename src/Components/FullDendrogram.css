@@ -30,15 +30,13 @@
 }
 
 .highlight-box {
-    /*fill: steelblue;*/
-}
-.highlight-box.highlight-src {
-    stroke-width: 2px;
+    stroke-width: 0;
     fill-opacity: .3;
+    stroke-opacity: .3;
 }
-.highlight-box.highlight-tgt {
-    stroke: none;
-    fill-opacity: .2;
+.highlight-box.nesting{
+    stroke-width: 10px;
+    fill: none  !important;
 }
 
 circle.metric-branch-indicator {
