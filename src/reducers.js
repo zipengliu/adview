@@ -1015,6 +1015,17 @@ function visphyReducer(state = initialState, action) {
                     }
                 }
             };
+        case TYPE.CHANGE_CLUSTER_PARAMETER:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    clusterParameter: {
+                        ...state.aggregatedDendrogram.clusterParameter,
+                        [action.attr]: action.val
+                    }
+                }
+            };
 
 
         case TYPE.TOGGLE_INSPECTOR:

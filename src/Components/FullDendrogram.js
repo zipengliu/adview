@@ -47,38 +47,38 @@ class FullDendrogram extends Component {
             // }
 
             // Check if anything has nesting relationship
-            let nestingStatus = {};
+            // let nestingStatus = {};
+            // for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
+            //     for (let bid of h[tree.tid]) {
+            //         nestingStatus[bid] = false;
+            //     }
+            // }
+            // for (let bid1 in nestingStatus) if (nestingStatus.hasOwnProperty(bid1)) {
+            //     for (let bid2 in nestingStatus) if (nestingStatus.hasOwnProperty(bid2) && bid1 !== bid2) {
+            //         if (tree.branches[bid1].depth < tree.branches[bid2].depth) {
+            //             if (tree.isAncestor(bid1, bid2)) {
+            //                 nestingStatus[bid1] = true;
+            //             }
+            //         } else {
+            //             if (tree.isAncestor(bid2, bid1)) {
+            //                 nestingStatus[bid2] = true;
+            //             }
+            //         }
+            //     }
+            // }
+
+            let order = [];
             for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
+                let c = highlight.colorScheme[h.color];
                 for (let bid of h[tree.tid]) {
-                    nestingStatus[bid] = false;
-                }
-            }
-            for (let bid1 in nestingStatus) if (nestingStatus.hasOwnProperty(bid1)) {
-                for (let bid2 in nestingStatus) if (nestingStatus.hasOwnProperty(bid2) && bid1 !== bid2) {
-                    if (tree.branches[bid1].depth < tree.branches[bid2].depth) {
-                        if (tree.isAncestor(bid1, bid2)) {
-                            nestingStatus[bid1] = true;
-                        }
-                    } else {
-                        if (tree.isAncestor(bid2, bid1)) {
-                            nestingStatus[bid2] = true;
-                        }
-                    }
+                    order.push({bid, color: c});
                 }
             }
 
-            let highlightBoxes = [];
-            for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
-                let c = highlight.colorScheme[h.color];
-                for (let j = 0; j < h[tree.tid].length; j++) {
-                    let bid = h[tree.tid][j];
-                    highlightBoxes.push(
-                        <rect className={cn('highlight-box', {'nesting': nestingStatus[bid]})}
-                              key={tree.tid + bid + j}
-                              {...hoverBoxes[bid]}
-                              style={{fill: c, stroke: c}} />)
-                }
-            }
+            let highlightBoxes =
+                order.sort((o1, o2) => (hoverBoxes[o2.bid].height - hoverBoxes[o1.bid].height))
+                    .map((o, i) => <rect className="highlight-box" key={i}
+                                      {...hoverBoxes[o.bid]} style={{fill: o.color}} />);
 
 
             let names = textSpecs.map((d, i) =>

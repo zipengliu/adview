@@ -9,8 +9,8 @@ import {scaleLinear, hcl, extent} from 'd3';
 import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
-import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock, changeLayoutAlgorithm,
-    changeClusterAlgorithm, toggleShowAD, changeADSize, changeSkeletonLayoutParameter} from '../actions';
+import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock,
+    toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter} from '../actions';
 import {createMappingFromArray, getIntersection, makeCompareFunc} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
@@ -20,7 +20,7 @@ import './Dendrogram.css';
 class DendrogramContainer extends Component {
     render() {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
-            expandedBranches, hopelessWidth, hopelessHeight} = this.props;
+            expandedBranches, hopelessWidth, hopelessHeight, clusterParameter} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
@@ -106,6 +106,11 @@ class DendrogramContainer extends Component {
                                        style={{marginRight: '5px', cursor: 'pointer'}}/>
                             <span>Clusters</span>
                             <Badge style={{margin: '0 5px', backgroundColor: 'black'}}>{clusters.length}</Badge>
+                            <span className="param-label" style={{marginLeft: '5px', marginRight: '2px'}}>differentiate inexact match:</span>
+                            <input type="checkbox" checked={clusterParameter.checkForExact}
+                                   onChange={this.props.onChangeClusterParam.bind(null, 'checkForExact', !clusterParameter.checkForExact)}
+                                   style={{marginRight: '5px'}} />
+
                             {showCluster &&
                             <span>(caveat: trees in a cluster agree only on relations among named blocks (A, B, C, ...),
                                 but not necessarily on context blocks)</span>
@@ -285,13 +290,15 @@ let clusterLayoutsByTopology = createSelector(
         let numLayouts = Object.keys(layouts).length;
 
         let getHash = (blocks, rootBlockId) => {
+            let childrenSortFunc = makeCompareFunc(blocks, 'no');
             let getBlockRep = b => b.no? (param.checkForExact? (b.no + (b.matched? '+': '-')): b.no) : '';
             let traverse = (bid) => {
                 let b = blocks[bid];
                 if (b.children && b.children.length > 0) {
                     // If it has children, it must be a matched (expanded) block
                     return '(' +
-                        b.children.filter(c => !!blocks[c].no).map(c => traverse(c)).join(',') +
+                        b.children.filter(c => !!blocks[c].no).sort(childrenSortFunc)
+                            .map(c => traverse(c)).join(',') +
                         ')' + getBlockRep(b);
                 } else if (b.no) {
                     return getBlockRep(b);
@@ -565,6 +572,7 @@ let mapDispatchToProps = (dispatch) => ({
     onToggleBlock: (tids, e, e1) => {dispatch(toggleHighlightADBlock(tids, e, e1))},
     onChangeSize: (dim, v) => {dispatch(changeADSize(dim, v))},
     onChangeSkeletonParameter: (a, v) => {dispatch(changeSkeletonLayoutParameter(a, v))},
+    onChangeClusterParam: (a, v) => {dispatch(changeClusterParameter(a, v))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

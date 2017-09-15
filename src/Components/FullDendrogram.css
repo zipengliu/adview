@@ -31,13 +31,12 @@
 
 .highlight-box {
     stroke-width: 0;
-    fill-opacity: .3;
-    stroke-opacity: .3;
+    fill-opacity: .9;
 }
-.highlight-box.nesting{
-    stroke-width: 10px;
-    fill: none  !important;
-}
+/*.highlight-box.nesting{*/
+    /*stroke-width: 10px;*/
+    /*fill: none  !important;*/
+/*}*/
 
 circle.metric-branch-indicator {
     fill: grey;

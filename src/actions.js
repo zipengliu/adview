@@ -430,6 +430,10 @@ export function changeSkeletonLayoutParameter(attr, val) {
     return {type: TYPE.CHANGE_SKELETON_LAYOUT_PARAMETER, attr, val};
 }
 
+export function changeClusterParameter(attr, val) {
+    return {type: TYPE.CHANGE_CLUSTER_PARAMETER, attr, val};
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}
