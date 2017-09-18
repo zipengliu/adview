@@ -3,12 +3,29 @@
  */
 
 import 'whatwg-fetch';
+import {browserHistory} from 'react-router';
 import * as TYPE from './actionTypes';
 import {getCoordinates} from './utils';
-import {reroot} from './tree';
+// import {reroot} from './tree';
 
 // Fetch data actions
 const baseUrl = process.env.NODE_ENV === 'production'? 'http://visphy.cs.ubc.ca/api': 'http://localhost:33333';
+
+
+// Check response
+function checkResponse(dispatch, failureAction) {
+    return (response) => {
+        if (response.status === 401 || response.status === 403) {
+            browserHistory.push('/login');
+        } else if (response.status >= 400) {
+            response.text().then(t => {
+                dispatch(failureAction(response.statusText + (t? (': ' + t): '')))
+            })
+        } else {
+            return response;
+        }
+    };
+}
 
 // Trigger the UI change
 function requestInputGroup(id) {
@@ -22,18 +39,16 @@ function requestInputGroup(id) {
 export function fetchInputGroup(id) {
     return function (dispatch) {
         dispatch(requestInputGroup(id));
-        return fetch(baseUrl + '/dataset/' + id).then(function(response) {
-            if (response.status >= 400) {
-                console.log("Bad response from server");
-                dispatch(fetchInputGroupFailure(response.statusText))
-            }
-            return response.json();
-        }).then(function (data) {
-            console.log('Get data succeeded!');
-            dispatch(fetchInputGroupSuccess(data));
-        }).catch(function(error) {
-            dispatch(fetchInputGroupFailure(error));
-        });
+        return fetch(baseUrl + '/dataset?inputGroupId=' + id, {credentials: 'include'})
+            .then(checkResponse(dispatch, fetchInputGroupFailure))
+            .then(function(response) {
+                return response.json();
+            }).then(function (data) {
+                console.log('Get data succeeded!');
+                dispatch(fetchInputGroupSuccess(data));
+            }).catch(function(error) {
+                dispatch(fetchInputGroupFailure(error));
+            });
 
     }
 }
@@ -58,18 +73,16 @@ export function makeConsensus(inputGroupId, tids) {
         let requestBody = new FormData();
         requestBody.append('inputGroupId', inputGroupId);
         requestBody.append('trees', tids.join(','));
-        return fetch(baseUrl + '/consensus', {method: 'POST', body: requestBody}).then(function (response) {
-            if (response.status >= 400) {
-                console.log("Bad response from server");
-                dispatch(makeConsensusFailure(response.statusText))
-            }
-            return response.json();
-        }).then(function (data) {
-            console.log('Get consensus tree succeeded!');
-            dispatch(makeConsensusSuccess(data));
-        }).catch(function (error) {
-            dispatch(makeConsensusFailure(error));
-        })
+        return fetch(baseUrl + '/consensus', {method: 'POST', body: requestBody, credentials: 'include'})
+            .then(checkResponse(dispatch, makeConsensusFailure))
+            .then(function (response) {
+                return response.json();
+            }).then(function (data) {
+                console.log('Get consensus tree succeeded!');
+                dispatch(makeConsensusSuccess(data));
+            }).catch(function (error) {
+                dispatch(makeConsensusFailure(error.toString()));
+            })
     }
 }
 
@@ -103,17 +116,15 @@ export function uploadDataset() {
         console.log('submitting dataset:');
         console.log(data);
 
-        return fetch(baseUrl + '/dataset', {method: 'POST', body: data}).then((response) => {
-            if (response.status >= 400) {
-                console.log("Bad response from server");
-                dispatch(uploadDatasetFailure(response.statusText))
-            }
-            return response.json();
-        }).then(function (data) {
-            console.log('uploadind dataset succeeded!');
-            dispatch(uploadDatasetSuccess(data));
-        }).catch(function (error) {
-            dispatch(uploadDatasetFailure(error));
+        return fetch(baseUrl + '/dataset', {method: 'POST', body: data, credentials: 'include'})
+            .then(checkResponse(dispatch, uploadDatasetFailure))
+            .then((response) => {
+                return response.json();
+            }).then(function (data) {
+                console.log('uploadind dataset succeeded!');
+                dispatch(uploadDatasetSuccess(data));
+            }).catch(function (error) {
+                dispatch(uploadDatasetFailure(error.toString()));
         })
     }
 }
@@ -149,18 +160,16 @@ export function uploadOutgroup(inputGroupId=null, outgroupTaxa=null, isUpdating=
             Object.keys(state.upload.outgroupTaxa).map(eid => state.upload.entities[eid]).join(','));
         data.append('isUpdating', isUpdating);
 
-        return fetch(baseUrl + '/outgroup', {method: 'POST', body: data}).then((response) => {
-            if (response.status >= 400) {
-                console.log("Bad response from server");
-                dispatch(uploadOutgroupFailure(response.statusText))
-            }
-            return response.json();
-        }).then(data => {
-            dispatch(uploadOutgroupSuccess(data));
-            dispatch(checkUploadStatus(baseUrl + '/upload_status/' + data.taskId));
-        }).catch(error => {
-            dispatch(uploadOutgroupFailure(error))
-        })
+        return fetch(baseUrl + '/outgroup', {method: 'POST', body: data, credentials: 'include'})
+            .then(checkResponse(dispatch, uploadOutgroupFailure))
+            .then((response) => {
+                return response.json();
+            }).then(data => {
+                dispatch(uploadOutgroupSuccess(data));
+                dispatch(checkUploadStatus(baseUrl + '/upload_status/' + data.taskId));
+            }).catch(error => {
+                dispatch(uploadOutgroupFailure(error))
+            })
     }
 }
 
@@ -552,18 +561,16 @@ export function toggleReferenceTreeLegends() {
 export function fetchDatasets() {
     return function (dispatch) {
         dispatch(requestDatasets());
-        return fetch(baseUrl + '/datasets').then(function(response) {
-            if (response.status >= 400) {
-                console.log("Bad response from server");
-                dispatch(fetchDatasetsFailure(response.statusText))
-            }
-            return response.json();
-        }).then(function (data) {
-            console.log('Get data succeeded!');
-            dispatch(fetchDatasetsSuccess(data));
-        }).catch(function(error) {
-            dispatch(fetchDatasetsFailure(error));
-        });
+        return fetch(baseUrl + '/datasets', {credentials: 'include'})
+            .then(checkResponse(dispatch, fetchDatasetsFailure))
+            .then(function(response) {
+                return response.json();
+            }).then(function (data) {
+                console.log('Get data succeeded!');
+                dispatch(fetchDatasetsSuccess(data));
+            }).catch(function(error) {
+                dispatch(fetchDatasetsFailure(error));
+            });
 
     }
 }
@@ -593,7 +600,7 @@ export function confirmDatasetRemoval(toDelete) {
             let id = state.datasetRemoval.id;
             dispatch(removeDatasetRequest());
 
-            return fetch(baseUrl + '/dataset/' + id, {method: 'DELETE'}).then(response => {
+            return fetch(baseUrl + '/dataset?inputGroupId=' + id, {method: 'DELETE', credentials: 'include'}).then(response => {
                 if (response.status >= 400) {
                     console.log("Bad response from server");
                     dispatch(removeDatasetFailure(response.statusText))
@@ -704,7 +711,7 @@ export function downloadSelectedTrees() {
         let request = new FormData();
         request.append('inputGroupId', state.inputGroupData.inputGroupId);
         request.append('tids', Object.keys(state.selectedTrees).join(','));
-        return fetch(baseUrl + '/tree_newick', {method: 'POST', body: request}).then(response => {
+        return fetch(baseUrl + '/tree_newick', {method: 'POST', body: request, credentials: 'include'}).then(response => {
             if (response.status >= 400) {
                 console.log("Bad response from server");
                 dispatch(fetchInputGroupFailure(response.statusText))
@@ -733,4 +740,69 @@ function downloadSelectedTreesFailure(error) {
 
 export function finishDownloadSelectedTrees() {
     return {type: TYPE.FINISH_DOWNLOAD_SELECTED_TREES};
+}
+
+
+
+export function changeLoginForm(attr, val) {
+    return {type: TYPE.CHANGE_LOGIN_FORM, attr, val};
+}
+
+export function login(form) {
+    return (dispatch) => {
+        let requestBody = new FormData();
+        requestBody.append('username', form.username);
+        requestBody.append('password', form.password);
+
+        dispatch(loginRequest());
+        return fetch(baseUrl + '/login', {method: 'POST', body: requestBody, credentials: 'include'})
+            .then(checkResponse(dispatch, loginFailure))
+            .then(() => {
+                dispatch(loginSuccess());
+            }).catch(error => {
+                dispatch(loginFailure(error.toString()));
+            })
+
+    };
+}
+
+function loginRequest() {
+    return {type: TYPE.LOGIN_REQUEST};
+}
+
+function loginSuccess() {
+    return {type: TYPE.LOGIN_SUCCESS};
+}
+
+function loginFailure(error) {
+    return {type: TYPE.LOGIN_FAILURE, error};
+}
+
+export function logout() {
+    return dispatch => {
+        dispatch(logoutRequest());
+
+        return fetch(baseUrl + '/logout', {credentials: 'include'})
+            .then(checkResponse(dispatch, logoutFailure))
+            .then(() => {
+                dispatch(logoutSuccess());
+                setTimeout(() => {
+                    browserHistory.push('/login');
+                }, 1000);
+            }).catch(error => {
+                dispatch(logoutFailure(error.toString()));
+            })
+    }
+}
+
+function logoutRequest() {
+    return {type: TYPE.LOGOUT_REQUEST};
+}
+
+function logoutSuccess() {
+    return {type: TYPE.LOGOUT_SUCCESS};
+}
+
+function logoutFailure(error) {
+    return {type: TYPE.LOGOUT_FAILURE, error};
 }

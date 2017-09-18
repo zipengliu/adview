@@ -21,6 +21,7 @@
     right: 5px;
     bottom: 5px;
     font-size: 12px;
+    text-align: right;
 }
 
 .dataset-item .del-btn {

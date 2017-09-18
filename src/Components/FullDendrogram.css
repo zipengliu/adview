@@ -31,7 +31,7 @@
 
 .highlight-box {
     stroke-width: 0;
-    fill-opacity: .9;
+    /*fill-opacity: .9;*/
 }
 /*.highlight-box.nesting{*/
     /*stroke-width: 10px;*/

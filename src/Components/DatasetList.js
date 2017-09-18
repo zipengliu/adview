@@ -35,7 +35,10 @@ class DatasetList extends Component {
                             <p>Reference tree: {d.referenceTreeFileName}<br/>
                             # trees: {d.numTrees}<br/>
                             # taxa: {d.numTaxa}</p>
-                            <div className="timestamp">{(new Date(d.timeCreated)).toLocaleString()}</div>
+                            <div className="timestamp">
+                                {d.isPublic? 'public dataset': 'private dataset'}<br/>
+                                {(new Date(d.timeCreated)).toLocaleString()}
+                            </div>
 
                             <div className="del-btn" onClick={this.props.onOpenRemoval.bind(null, d.inputGroupId)}>
                                 <Glyphicon glyph="trash" />

@@ -43,6 +43,17 @@ class UploadDataset extends Component {
                         </Col>
                     </FormGroup>
 
+                    <FormGroup style={{marginBottom: '30px'}}>
+                        <Col componentClass={ControlLabel} sm={labelCol}></Col>
+                        <Col sm={formCol}>
+                            <Radio inline name="isPublic" value="Y" onChange={handleChange}>Public</Radio>
+                            <Radio inline name="isPublic" value="N" checked onChange={handleChange}>Private</Radio>
+                        </Col>
+                        <Col sm={formCol} smOffset={labelCol}><HelpBlock>
+                            All users can see public datasets, while only you can see your own private datasets.
+                        </HelpBlock></Col>
+                    </FormGroup>
+
                     <FormGroup style={{marginBottom: '0'}}>
                         <Col componentClass={ControlLabel} sm={labelCol}>Reference Tree</Col>
                         <Col sm={formCol}>

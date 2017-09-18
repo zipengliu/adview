@@ -9,6 +9,15 @@ import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, merge
 import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
 
 let initialState = {
+    user: {
+        isAuthenticated: false,
+        form: {
+            username: '',
+            password: '',
+        },
+        loginRequest: false,
+        loginError: null
+    },
     upload: {
         isProcessingEntities: false,
         uploadState: null,          // one of SENDING, RECEIVED, PENDING, PROGRESS, SUCCESS, FAILURE or null
@@ -16,7 +25,9 @@ let initialState = {
         progress: null,
         checkStatusUrl: null,
         datasetUrl: null,
-        rawData: {},
+        rawData: {
+            isPubilc: 'N'
+        },
         outgroupTaxa: {}
     },
     isFetching: false,
@@ -96,7 +107,8 @@ let initialState = {
     },
     highlight: {
         // colorScheme: scaleOrdinal(schemeCategory10),
-        colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6"],
+        // colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6"],
+        colorScheme: ["#6699FF", "#ffb31a", "#2AB032", "#F75E91", "#1AB3E0"],
         limit: 5,
         currentColor: 0,
         bids: [],
@@ -1272,6 +1284,10 @@ function visphyReducer(state = initialState, action) {
                 .findMissing(action.data.entities);
 
             return Object.assign({}, state, {
+                user: {
+                    ...state.user,
+                    isAuthenticated: true
+                },
                 isFetching: false,
                 inputGroupData: {
                     ...action.data,
@@ -1335,6 +1351,10 @@ function visphyReducer(state = initialState, action) {
         case TYPE.FETCH_DATASETS_SUCCESS:
             return {
                 ...state,
+                user: {
+                    ...state.user,
+                    isAuthenticated: true
+                },
                 datasets: action.data,
                 toast: {
                     ...state.toast,
@@ -1934,6 +1954,74 @@ function visphyReducer(state = initialState, action) {
                     msg: null,
                     downloadingTreeUrl: null
                 },
+            };
+
+        case TYPE.CHANGE_LOGIN_FORM:
+            return {
+                ...state,
+                user: {
+                    ...state.user,
+                    form: {
+                        ...state.user.form,
+                        [action.attr]: [action.val]
+                    }
+                }
+            };
+        case TYPE.LOGIN_REQUEST:
+            return {
+                ...state,
+                user: {
+                    ...state.user,
+                    loginRequest: true
+                }
+            };
+        case TYPE.LOGIN_SUCCESS:
+            return {
+                ...state,
+                user: {
+                    ...state.user,
+                    isAuthenticated: true,
+                    loginRequest: false,
+                    loginError: null
+                }
+            };
+        case TYPE.LOGIN_FAILURE:
+            return {
+                ...state,
+                user: {
+                    ...state.user,
+                    isAuthenticated: false,
+                    loginRequest: false,
+                    loginError: action.error
+                }
+            };
+        case TYPE.LOGOUT_REQUEST:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: 'Logging out...'
+                }
+            };
+        case TYPE.LOGOUT_FAILURE:
+            return {
+                ...state,
+                toast: {
+                    ...state.toast,
+                    msg: action.error
+                }
+            };
+        case TYPE.LOGOUT_SUCCESS:
+            return {
+                ...state,
+                user: {
+                    ...state.user,
+                    isAuthenticated: false
+                },
+                toast: {
+                    ...state.toast,
+                    msg: null
+                }
             };
 
         default:

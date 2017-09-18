@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import {Navbar, Nav, NavItem} from 'react-bootstrap';
+import {logout} from '../actions';
 import './App.css';
 
-function Navigation({title}) {
+function Navigation({title, isAuthenticated, onLogout}) {
     return (
         <Navbar inverse id="App-header">
             <Navbar.Header>
@@ -19,14 +20,21 @@ function Navigation({title}) {
             </Nav>
             <Nav pullRight>
                 {title && <NavItem eventKey={1}>Dataset: {title}</NavItem>}
+                {isAuthenticated && <NavItem onClick={onLogout}>Logout</NavItem>}
             </Nav>
         </Navbar>
     )
 }
 let mapStateToProps = state => ({
-    title: state.inputGroupData? state.inputGroupData.title : null
+    title: state.inputGroupData? state.inputGroupData.title : null,
+    isAuthenticated: state.user.isAuthenticated,
 });
-let ConnectedNavbar = connect(mapStateToProps)(Navigation);
+
+let mapDispatchToProps = dispatch => ({
+    onLogout: () => {dispatch(logout())},
+});
+
+let ConnectedNavbar = connect(mapStateToProps, mapDispatchToProps)(Navigation);
 
 class App extends Component {
     render() {

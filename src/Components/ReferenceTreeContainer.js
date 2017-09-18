@@ -227,7 +227,7 @@ class ReferenceTreeContainer extends Component {
                         </div>
                         <div className="legend-item">
                             {colorScheme.map((c, i) =>
-                                <div className="mark" key={i} style={{width: '10px', height: '10px', background: c, opacity: .5}}></div>
+                                <div className="mark" key={i} style={{width: '10px', height: '10px', background: c}}></div>
                             )}
                             <span>highlight 1-5</span>
                         </div>

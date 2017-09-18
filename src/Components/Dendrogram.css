@@ -52,7 +52,7 @@
     stroke: none;
 }
 .highlight-block {
-    fill-opacity: .9;
+    /*fill-opacity: .3;*/
 }
 .highlight-block.fuzzy {
     fill: none;
