@@ -251,7 +251,7 @@ let getLayouts = createSelector(
             if (expanded[x] < expanded[y]) return -1;
             return 1;
         });
-        for (let tid in trees) if (trees.hasOwnProperty(tid)) {
+        for (let tid in trees) if (trees.hasOwnProperty(tid) && tid.indexOf('consensus') === -1) {
             // Get corresponding branches in the tree
             let e = {};
             for (let rBid of rBids) {
@@ -470,7 +470,8 @@ let fillCluster = createSelector(
                     let b = cluster.blocks[bid];
                     b.fill = [];
                     for (let i = 0; i < highlightEntities.length; i++) {
-                        if (b.isNested && b.no.indexOf(highlight.bids[i].no) === -1) {      // The nested block only shows its own color
+                        // The block only shows its own color
+                        if (b.no.indexOf(highlight.bids[i].no) === -1) {
                             continue
                         }
                         let h = highlightEntities[i];
@@ -521,7 +522,7 @@ let fillIndividual = createSelector(
             for (let bid in t.blocks) if (t.blocks.hasOwnProperty(bid) && !!t.blocks[bid].entities) {
                 let b = t.blocks[bid];
                 b.fill = highlightEntities.map((h, i) => ({
-                    proportion: b.isNested && !!b.no && b.no.indexOf(highlight.bids[i].no) === -1? 0:         // The nested block only shows its own color
+                    proportion: !!b.no && b.no.indexOf(highlight.bids[i].no) === -1? 0:         // The nested block only shows its own color
                         getIntersection(b.entities, h) / Object.keys(b.entities).length,
                     color: highlight.colorScheme[highlight.bids[i].color]
                 })).filter(a => a.proportion > 0);

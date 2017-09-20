@@ -135,6 +135,8 @@ let initialState = {
         selectingArea: null,
     },
     selectedTrees: {},
+    // A bitmap of which trees are being used to make the consensus, used for determining if this set of trees
+    // gets modified (and notify the user if yes)
     consensusTrees: null,
     hoveredTrees: {},
     aggregatedDendrogram: {
