@@ -4,6 +4,7 @@
 
 import {scaleLog} from 'd3';
 import {createMappingFromArray, subtractMapping, isMonophyly} from './utils';
+import {fetchInputGroup} from "./actions";
 
 // Get the "pivot" branch for rendering an AD
 // If there is branch matched to outgroup, use the lowest one
@@ -733,26 +734,15 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     let {rootBranch, missing, outgroupBranch} = tree;
     let {verticalGap, width, height, branchLen} = spec;
     let rootBlockId = 'root';
-    let ingroupBranch;
-    if (outgroupBranch) {
-        ingroupBranch = tree.branches[rootBranch].right;
-    }
+    let ingroupBranch = outgroupBranch? tree.branches[rootBranch].right: rootBranch;
 
     let expandedBidArray = Object.keys(expanded);
-    let pivot = null;
-    if (expandedBidArray.length >= 2) {
-        pivot = tree.getLCAforMultiple(expandedBidArray);
-    } else if (expandedBidArray.length === 1) {
-        pivot = expandedBidArray[0];
-    }
-
-
     let blocks = {}, branches = {};
     if (missing.length > 0) {
         blocks.missing = getMissingBlock(tree, spec);
         height -= blocks.missing.height + verticalGap;
     }
-    if (pivot === null) {
+    if (expandedBidArray.length === 0) {
         // There is no expanded branch
         blocks[rootBlockId] = {
             id: rootBlockId,
@@ -808,9 +798,6 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
     if (outgroupBranch === tree.branches[rootBranch].left) {
         // Show the outgroup block
         createNewBlock(outgroupBranch, rootBlockId, {isOutgroup: true, collapsed: true});
-    } else {
-        // There is no outgroup block
-        // TODO
     }
 
     // Get all the expanded blocks
@@ -826,9 +813,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             dfs(b.right, newParent);
         }
     };
-    if (outgroupBranch) {
-        dfs(ingroupBranch, rootBlockId);
-    }
+    dfs(ingroupBranch, rootBlockId);
 
     // Connect the blocks with branches
     // 'h-': horizontal lines; 'v-': vertical ones
@@ -916,6 +901,13 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
                 return children[0];
             } else {
                 let lca = tree.getLCAforMultiple(children);
+                if (!lca) {
+                    console.error(tree);
+                    console.error(expandedBidArray);
+                    console.error(lca);
+                    console.error(children);
+                    console.error(blocks);
+                }
                 let l = tree.branches[lca].left, r = tree.branches[lca].right;
                 let x, y;
                 if (children.length === 2) {
@@ -956,9 +948,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
         return attachingBranch;
     };
-    if (outgroupBranch) {
-        connectBlocks(rootBranch, 'root', null);
-    }
+    connectBlocks(rootBranch, rootBlockId, null);
 
     // Determine the height of the blocks: top-down approach
     // Calculate the fixed parts of height of each block first
@@ -1021,7 +1011,6 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
 
     let traverseBranchesForWidth = (branchId, curX, nestingLevel) => {
-        // console.log(`traverseBranchesForWidth(${branchId}, ${curX})`);
         let b = branches[branchId];
         let bLen = b.collapsed? spec.skeletonLayout.collapsedBranchLength: branchLen;
         if (branchId.startsWith('v-')) {
@@ -1074,7 +1063,7 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
         return true
     };
 
-    if (!traverseBranchesForWidth('h-' + rootBranch, 0, 0)) {
+    if (branches.hasOwnProperty('h-' + rootBranch) && !traverseBranchesForWidth('h-' + rootBranch, 0, 0)) {
         let newSpec = degenerateSpec(spec, 'width');
         if (newSpec) {
             return calcSkeletonLayout(tree, expanded, newSpec);

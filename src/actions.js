@@ -109,9 +109,9 @@ export function uploadDataset() {
         dispatch(uploadDatasetRequest());
         let data = new FormData();
         let state = getState();
-        for (let name in state.upload.rawData) if (state.upload.rawData.hasOwnProperty(name)) {
-            console.log(name, state.upload.rawData[name]);
-            data.append(name, state.upload.rawData[name]);
+        for (let name in state.upload.formData) if (state.upload.formData.hasOwnProperty(name)) {
+            console.log(name, state.upload.formData[name]);
+            data.append(name, state.upload.formData[name]);
         }
         console.log('submitting dataset:');
         console.log(data);
@@ -204,6 +204,9 @@ export function checkUploadStatus(url) {
                 }, 2000);
             }
             dispatch(checkUploadStatusSuccess(status));     // reducer to act according to different state
+            // setTimeout(() => {
+            //     browserHistory.push(status.url)
+            // }, 2000);
         }).catch(error => {
             dispatch(checkUploadStatusFailure(error));
             if (retry > 0) {

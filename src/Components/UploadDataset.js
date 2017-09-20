@@ -8,7 +8,7 @@ import './UploadDataset.css';
 class UploadDataset extends Component {
     render() {
         let {upload} = this.props;
-        let {entities, outgroupTaxa, uploadState} = upload;
+        let {entities, outgroupTaxa, uploadState, formData} = upload;
         let entArr;
         if (entities) {
             entArr = Object.keys(entities).sort((a ,b) => {
@@ -33,21 +33,21 @@ class UploadDataset extends Component {
                     <FormGroup>
                         <Col componentClass={ControlLabel} sm={labelCol}>Title</Col>
                         <Col sm={formCol}>
-                            <FormControl type="text" name="title" onChange={handleChange}/>
+                            <FormControl type="text" name="title" value={formData.title} onChange={handleChange}/>
                         </Col>
                     </FormGroup>
                     <FormGroup>
                         <Col componentClass={ControlLabel} sm={labelCol}>Description</Col>
                         <Col sm={formCol}>
-                            <FormControl type="text" name="description" onChange={handleChange} />
+                            <FormControl type="text" name="description" value={formData.description} onChange={handleChange} />
                         </Col>
                     </FormGroup>
 
                     <FormGroup style={{marginBottom: '30px'}}>
                         <Col componentClass={ControlLabel} sm={labelCol}></Col>
                         <Col sm={formCol}>
-                            <Radio inline name="isPublic" value="Y" onChange={handleChange}>Public</Radio>
-                            <Radio inline name="isPublic" value="N" checked onChange={handleChange}>Private</Radio>
+                            <Radio inline name="isPublic" value="Y" checked={formData.isPublic === 'Y'} onChange={handleChange}>Public</Radio>
+                            <Radio inline name="isPublic" value="N" checked={formData.isPublic === 'N'} onChange={handleChange}>Private</Radio>
                         </Col>
                         <Col sm={formCol} smOffset={labelCol}><HelpBlock>
                             All users can see public datasets, while only you can see your own private datasets.
@@ -65,8 +65,10 @@ class UploadDataset extends Component {
                     <FormGroup style={{marginBottom: '30px'}}>
                         <Col componentClass={ControlLabel} sm={labelCol}>Reference Rooting</Col>
                         <Col sm={formCol}>
-                            <Radio inline name="isReferenceRooted" value="Y" onChange={handleChange}>rooted</Radio>
-                            <Radio inline name="isReferenceRooted" value="N" onChange={handleChange}>unrooted</Radio>
+                            <Radio inline name="isReferenceRooted" value="Y" checked={formData.isReferenceRooted === 'Y'}
+                                   onChange={handleChange}>rooted</Radio>
+                            <Radio inline name="isReferenceRooted" value="N" checked={formData.isReferenceRooted === 'N'}
+                                   onChange={handleChange}>unrooted</Radio>
                         </Col>
                         <Col sm={formCol} smOffset={labelCol}><HelpBlock>
                             We will automatically reroot the trees based on the outgroup you provide
@@ -87,8 +89,10 @@ class UploadDataset extends Component {
                     <FormGroup>
                         <Col componentClass={ControlLabel} sm={labelCol}>Tree Collection Rooting</Col>
                         <Col sm={formCol}>
-                            <Radio inline name="isTCRooted" value="Y" onChange={handleChange}>rooted</Radio>
-                            <Radio inline name="isTCRooted" value="N" onChange={handleChange}>unrooted</Radio>
+                            <Radio inline name="isTCRooted" value="Y" checked={formData.isTCRooted === 'Y'}
+                                   onChange={handleChange}>rooted</Radio>
+                            <Radio inline name="isTCRooted" value="N" checked={formData.isTCRooted === 'N'}
+                                   onChange={handleChange}>unrooted</Radio>
                         </Col>
                         <Col sm={formCol} smOffset={labelCol}><HelpBlock>
                             Same as above.
@@ -108,9 +112,12 @@ class UploadDataset extends Component {
                     <FormGroup>
                         <Col componentClass={ControlLabel} sm={labelCol}>Support Values</Col>
                         <Col sm={formCol}>
-                            <Radio inline name="supportValues" value="NA" onChange={handleChange}>NA</Radio>
-                            <Radio inline name="supportValues" value="1" onChange={handleChange}>range [0, 1]</Radio>
-                            <Radio inline name="supportValues" value="100" onChange={handleChange}>range [0, 100]</Radio>
+                            <Radio inline name="supportValues" value="NA" checked={formData.supportValues === 'NA'}
+                                   onChange={handleChange}>NA</Radio>
+                            <Radio inline name="supportValues" value="1" checked={formData.supportValues === '1'}
+                                   onChange={handleChange}>range [0, 1]</Radio>
+                            <Radio inline name="supportValues" value="100" checked={formData.supportValues === '100'}
+                                   onChange={handleChange}>range [0, 100]</Radio>
                         </Col>
                     </FormGroup>
 

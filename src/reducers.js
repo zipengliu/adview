@@ -25,8 +25,13 @@ let initialState = {
         progress: null,
         checkStatusUrl: null,
         datasetUrl: null,
-        rawData: {
-            isPubilc: 'N'
+        formData: {
+            title: '',
+            description: '',
+            isPublic: 'N',
+            isReferenceRooted: 'N',
+            isTCRooted: 'N',
+            supportValues: 'NA'
         },
         outgroupTaxa: {}
     },
@@ -144,7 +149,7 @@ let initialState = {
         },
         spec: {
             width: 80,
-            height: 120,
+            height: 80,
             sizeRange: [30, 300],
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 3,
@@ -1717,8 +1722,8 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 upload: {
                     ...state.upload,
-                    rawData: {
-                        ...state.upload.rawData,
+                    formData: {
+                        ...state.upload.formData,
                         [action.name]: action.value
                     },
                 }
