@@ -39,7 +39,7 @@ class UploadDataset extends Component {
                     <FormGroup>
                         <Col componentClass={ControlLabel} sm={labelCol}>Description</Col>
                         <Col sm={formCol}>
-                            <FormControl type="text" name="description" value={formData.description} onChange={handleChange} />
+                            <FormControl componentClass="textarea" rows="5" name="description" value={formData.description} onChange={handleChange} />
                         </Col>
                     </FormGroup>
 

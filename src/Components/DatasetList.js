@@ -31,11 +31,13 @@ class DatasetList extends Component {
                     {datasets.map((d, i) =>
                         <div className="dataset-item" key={i}>
                             <h3><a href={`/dataset/${d.inputGroupId}`}>{d.title}</a></h3>
-                            <p>{d.description}</p>
-                            <p>Reference tree: {d.referenceTreeFileName}<br/>
-                            # trees: {d.numTrees}<br/>
-                            # taxa: {d.numTaxa}</p>
+                            <div className="description">{d.description}</div>
+
                             <div className="timestamp">
+                                <p>
+                                    {/*Reference tree: {d.referenceTreeFileName}<br/>*/}
+                                    # trees: {d.numTrees}<br/>
+                                    # taxa: {d.numTaxa}</p>
                                 {d.isPublic? 'public dataset': 'private dataset'}<br/>
                                 {(new Date(d.timeCreated)).toLocaleString()}
                             </div>

@@ -32,3 +32,9 @@
     color: grey;
     cursor: pointer;
 }
+
+.dataset-item .description {
+    overflow: scroll;
+    max-height: 120px;
+    white-space: pre-line;
+}
