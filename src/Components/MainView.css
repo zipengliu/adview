@@ -194,9 +194,22 @@
     flex-flow: row wrap;
 }
 .hidden-legend {
-    height: 20px;
+    height: 12px;
     overflow: hidden;
 }
+.hidden-legend .legend {
+    display: none;
+}
+.panel-footer {
+    position: relative;
+}
+.panel-footer .toggle-legend-btn {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    cusor: pointer;
+}
+
 .legend .legend-item {
     flex: 0 0 auto;
     margin: 0 5px;
@@ -204,6 +217,9 @@
 .legend .legend-section-title {
     flex: 0 0 55px;
     text-align: left;
+}
+#aggregated-dendrograms .legend .legend-section-title {
+    flex: 0 0 35px;
 }
 
 .legend .legend-item .mark {

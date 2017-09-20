@@ -147,6 +147,7 @@ let initialState = {
             checkForExact: true,
             checkForSister: false,
         },
+        showLegends: true,
         spec: {
             width: 80,
             height: 80,
@@ -588,12 +589,12 @@ function visphyReducer(state = initialState, action) {
                     data: newDistData
                 }
             };
-        case TYPE.TOGGLE_REFERENCE_TREE_LEGENDS:
+        case TYPE.TOGGLE_LEGENDS:
             return {
                 ...state,
-                referenceTree: {
-                    ...state.referenceTree,
-                    showLegends: !state.referenceTree.showLegends
+                [action.view]: {
+                    ...state[action.view],
+                    showLegends: !state[action.view].showLegends
                 }
             };
 

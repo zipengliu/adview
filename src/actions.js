@@ -557,8 +557,8 @@ export function expandUserSpecifiedTxaGroup(group, collapse=false) {
     return {type: TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP, group, collapse};
 }
 
-export function toggleReferenceTreeLegends() {
-    return {type: TYPE.TOGGLE_REFERENCE_TREE_LEGENDS};
+export function toggleLegends(view) {
+    return {type: TYPE.TOGGLE_LEGENDS, view};
 }
 
 export function fetchDatasets() {

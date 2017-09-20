@@ -66,6 +66,7 @@ export class Tree {
     }
 
     // Preprocess and get the ancestor data for the LCA online algorithm
+    // The function goes wrong if tree is not fully resolved (bifurcated)
     getAncestors() {
         let {branches, rootBranch} = this;
         let ans = {};

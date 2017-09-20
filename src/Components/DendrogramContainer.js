@@ -10,7 +10,7 @@ import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, DropdownButton, MenuItem, Gly
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock,
-    toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter} from '../actions';
+    toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter, toggleLegends} from '../actions';
 import {createMappingFromArray, getIntersection, makeCompareFunc} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
@@ -20,7 +20,7 @@ import './Dendrogram.css';
 class DendrogramContainer extends Component {
     render() {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
-            expandedBranches, hopelessWidth, hopelessHeight, clusterParameter} = this.props;
+            expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
@@ -173,9 +173,12 @@ class DendrogramContainer extends Component {
                     </div>
                 </div>
 
-                <div className="panel-footer">
+                <div className={cn("panel-footer", {'hidden-legend': !showLegends})}>
+                    <div className="toggle-legend-btn">
+                        <Glyphicon glyph={showLegends? "triangle-bottom": 'triangle-top'} onClick={this.props.onToggleLegends} />
+                    </div>
                     <div className="legend">
-                        <div className="legend-section-title" style={{flexBasis: '30px'}}>Block: </div>
+                        <div className="legend-section-title">Block: </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '8px', width: '14px', border: '1px solid grey'}}></div>
                             <span>context</span>
@@ -195,7 +198,7 @@ class DendrogramContainer extends Component {
                     </div>
 
                     <div className="legend">
-                        <div className="legend-section-title" style={{flexBasis: '30px'}}>Tree: </div>
+                        <div className="legend-section-title">Tree: </div>
                         <div className="legend-item">
                             <div className="mark"><Glyphicon glyph="eye-open"/></div>
                             <span>pairwise target</span>
@@ -207,6 +210,19 @@ class DendrogramContainer extends Component {
                         <div className="legend-item">
                             <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', backgroundColor: '#b82e2e', opacity: '.6'}}></div>
                             <span>hovered</span>
+                        </div>
+                    </div>
+
+                    <div className="legend">
+                        <div className="legend-section-title">Branch: </div>
+                        <div className="legend-item">
+                            <div className="mark">
+                               <svg height="14" width="20">
+                                   <line x1="0" y1="7" x2="20" y2="7" className="branch collapsed"/>
+                                   <line x1="11" y1="3" x2="9" y2="11" className="branch" />
+                               </svg>
+                            </div>
+                            <span>with hidden taxa</span>
                         </div>
                     </div>
                 </div>
@@ -573,6 +589,7 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSize: (dim, v) => {dispatch(changeADSize(dim, v))},
     onChangeSkeletonParameter: (a, v) => {dispatch(changeSkeletonLayoutParameter(a, v))},
     onChangeClusterParam: (a, v) => {dispatch(changeClusterParameter(a, v))},
+    onToggleLegends: () => {dispatch(toggleLegends('aggregatedDendrogram'))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

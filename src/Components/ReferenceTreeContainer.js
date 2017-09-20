@@ -11,7 +11,7 @@ import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import {compareWithReference, toggleUniversalBranchLength, toggleExtendedMenu, changeDistanceMetric,
     selectBranchOnFullDendrogram, toggleHighlightMonophyly, uploadOutgroup,
     createUserSpecifiedTaxaGroup, addToUserSpecifiedTaxaGroup, removeFromUserSpecifiedTaxaGroup,
-    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleReferenceTreeLegends} from '../actions';
+    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleLegends} from '../actions';
 import {createMappingFromArray} from '../utils';
 import {getVirtualBid} from '../tree';
 
@@ -172,8 +172,8 @@ class ReferenceTreeContainer extends Component {
                     </div>
                     }
                 </div>
-                <div className={cn("panel-footer", {'hidden-legend': !showLegends})} style={{position: 'relative'}}>
-                    <div style={{position: 'absolute', right: '5px', top: '2px', cursor: 'pointer'}}>
+                <div className={cn("panel-footer", {'hidden-legend': !showLegends})}>
+                    <div className="toggle-legend-btn">
                         <Glyphicon glyph={showLegends? "triangle-bottom": 'triangle-top'} onClick={this.props.toggleLegends} />
                     </div>
                     <div className="legend">
@@ -277,7 +277,7 @@ let mapDispatchToProps = dispatch => ({
     removeFromUSTG: (bid, group) => {dispatch(removeFromUserSpecifiedTaxaGroup(bid, group))},
     removeUSTG: group => {dispatch(removeUserSpecifiedTaxaGroup(group))},
     expandUSTG: (group, collapse=false) => {dispatch(expandUserSpecifiedTxaGroup(group, collapse))},
-    toggleLegends: () => {dispatch(toggleReferenceTreeLegends())},
+    toggleLegends: () => {dispatch(toggleLegends('referenceTree'))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

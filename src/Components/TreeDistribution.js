@@ -171,7 +171,7 @@ class TreeDistribution extends Component {
                         </div>
                         <div className="legend-item">
                             <span>selected (</span>
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px', border: '1px solid black'}}></div>
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px', border: '2px solid black'}}></div>
                             <span>)</span>
                         </div>
                     </div>
