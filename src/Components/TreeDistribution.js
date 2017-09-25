@@ -13,7 +13,7 @@ import {toggleSubsetDistribution, toggleSelectTrees, toggleTreeDistributionColla
 
 class TreeDistribution extends Component {
     render() {
-        let {expandedBranches, sets, treeDistribution, membershipViewer, banMembershipViewer} = this.props;
+        let {expandedBranches, sets, treeDistribution, membershipViewer, banMembershipViewer, selectedTreeColor} = this.props;
         let {showSubsets, tooltipMsg, collapsed, data, extendedMenu} = treeDistribution;
         let numTrees = sets[0].tids.length;
         let expandedArr = Object.keys(expandedBranches);
@@ -59,9 +59,11 @@ class TreeDistribution extends Component {
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
+                        let isAllSelected = d.selectCnt === b.length;
                         return (
-                            <div key={i} style={{ borderRight: i !== d.bins.length - 1? '1px solid #ccc': 'none', position: 'absolute',
-                             top: 0, height: '100%', left: leftPos + '%', width: x(b.length) + '%'}}
+                            <div key={i} style={{ borderRight: i !== d.bins.length - 1?
+                                (d.selectCnt[i] === b.length? '1px solid ' + selectedTreeColor: '1px solid #ccc'): 'none',
+                                position: 'absolute', top: 0, height: '100%', left: leftPos + '%', width: x(b.length) + '%'}}
                                  onMouseEnter={this.props.onHighlightSegment.bind(null, b, banMembershipViewer? []: d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
                                  onMouseLeave={this.props.onHighlightSegment.bind(null, [], [], null)}
@@ -80,11 +82,11 @@ class TreeDistribution extends Component {
                                 </div>}
                                 {d.selectCnt && d.selectCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    backgroundColor: this.props.selectedTreeColor, opacity: .6,
+                                    backgroundColor: selectedTreeColor, opacity: .6,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
                                 {d.highlightCnt && d.highlightCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    border: '3px solid #000', zIndex: 50,
+                                    border: '1px solid #000', zIndex: 50,
                                     width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
                                 {numbering.hasOwnProperty(i) &&
                                 <div style={{position: 'absolute', top: '2px', right: '2px', width: '14px', height: '14px',
@@ -167,13 +169,13 @@ class TreeDistribution extends Component {
                         <div className="legend-item">
                             <span>selected (</span>
                             <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '12px',
-                                background: this.props.selectedTreeColor, opacity: '.6'}} />
+                                background: selectedTreeColor, opacity: '.6'}} />
                             <span>)</span>
                         </div>
                         <div className="legend-item">
                             <span>hovered (</span>
                             <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px',
-                                border: '2px solid black'}} />
+                                border: '1px solid black'}} />
                             <span>)</span>
                         </div>
                     </div>
