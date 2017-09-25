@@ -181,22 +181,18 @@ class ReferenceTreeContainer extends Component {
                             Branch:
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '5px', width: '12px', background: 'purple'}}></div>
+                            <div className="mark" style={{height: '5px', width: '12px', background: this.props.rangeSelectionColor}} />
                             <span>in attribute range</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '7px', width: '12px', background: 'black'}}></div>
+                            <div className="mark" style={{height: '7px', width: '12px', background: 'black'}} />
                             <span>hovered</span>
                         </div>
                         <div className="legend-item">
                             <div className="mark" style={{height: '1px', width: '20px', background: 'black', border: 'none', position: 'relative', verticalAlign: 'middle'}}>
-                                <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'grey', position: 'absolute', left: '6px', top: '-3px'}}></div>
+                                <div style={{width: '8px', height: '8px', borderRadius: '50%', background: 'grey', position: 'absolute', left: '6px', top: '-3px'}} />
                             </div>
                             <span>for tree similarity</span>
-                        </div>
-                        <div className="legend-item">
-                            <div className="mark" style={{height: '5px', width: '12px', background: 'red'}}></div>
-                            <span>matched</span>
                         </div>
                     </div>
                     <div className="legend">
@@ -204,11 +200,11 @@ class ReferenceTreeContainer extends Component {
                             Taxon:
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'black'}}></div>
+                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'black'}} />
                             <span>taxon hovered</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'none', border: '1px solid black'}}></div>
+                            <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: 'none', border: '1px solid black'}} />
                             <span>uncertain taxon hovered</span>
                         </div>
                         <div className="legend-item">
@@ -255,6 +251,7 @@ let mapStateToProps = state => ({
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,
     showLegends: state.referenceTree.showLegends,
+    rangeSelectionColor: state.branchRangeSelectionColor,
 
     consensusURL: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1?
         state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL: null,

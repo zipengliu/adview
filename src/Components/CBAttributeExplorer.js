@@ -17,12 +17,14 @@ import './AttributeExplorer.css';
 
 class CBAttributeExplorer extends Component {
     render() {
-        let {expanded, data, attributes, activeSelectionId, activeExpandedBid, activeSetId, sets, collapsed, activeTreeCBInfo} = this.props;
+        let {expanded, data, attributes, activeSelectionId, activeExpandedBid, activeSetId, sets, collapsed,
+            activeTreeCBInfo, selectionColor} = this.props;
         let shownAsHistogram = true;
 
         let renderChart = (data, foregroundData=null, att, id) => shownAsHistogram?
             (<Histogram foregroundBins={foregroundData} backgroundBins={data} attributeName={att}
                         selectionId={id}
+                        selectionColor={selectionColor}
                         selection={id === activeSelectionId? this.props.selection[id]: null}
                         toggleMoveHandle={this.props.toggleMoveHandle}
                         moveControlHandle={this.props.moveControlHandle}
@@ -74,7 +76,7 @@ class CBAttributeExplorer extends Component {
                                 </thead>
                                 <tbody>
                                 {activeTreeCBInfo.map((v, i) => <tr key={i}>
-                                    <td style={{color: 'red'}}>{v.no}</td>
+                                    <td>{v.no}</td>
                                     <td><Glyphicon glyph={v.isExact? 'ok': 'remove'} /></td>
                                     <td>{v.similarity.toFixed(1)}</td>
                                     {v.support >= 0 && <td>{v.support.toFixed(1)}</td>}
@@ -207,6 +209,7 @@ let mapStateToProps = state => {
         ...state.cbAttributeExplorer,
         expanded: state.referenceTree.expanded,
         spec: state.attributeChartSpec,
+        selectionColor: state.selectedTreeColor,
         data,
         activeTreeCBInfo,
         activeTreeName,

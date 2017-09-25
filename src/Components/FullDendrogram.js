@@ -105,7 +105,7 @@ class FullDendrogram extends Component {
             }
 
             return (
-               <g>
+               <g className={cn({'reference-tree-g': tree.tid === referenceTree.id, 'comparing-tree-g': tree.tid !== referenceTree.id})}>
                    {tree.tid !== referenceTree.id && false &&
                    <use xlinkHref="#comparing-tree-indicator-in-full" x={dendrogram.treeBoundingBox.width - 10} y="5"
                         width="16" height="16"/>
@@ -206,15 +206,23 @@ class FullDendrogram extends Component {
                    }
 
                    {tree.tid === referenceTree.id && branchSpecs.filter(d => userSpecified.hasOwnProperty(d.bid)).map((d, i) =>
-                       <text key={i} className={`${expandedBranches.hasOwnProperty(getVirtualBid(userSpecified[d.bid]))? 'expanded-branch': 'user-specified-group'}-marker`}
-                             x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy={branches[d.bid].isLeaf? -1: -3}>
+                       <text key={i} className="clade-name"
+                             x={d.x1} y={d.y1} dy="4">
                            {userSpecified[d.bid]}
                        </text>
                    )}
                    {branchSpecs.filter(d => expandedBranches.hasOwnProperty(d.bid)).map((d, i) =>
-                       <text key={i} className="expanded-branch-marker" x={(d.x1 + d.x2) / 2 - 4} y={d.y1} dy="-4">
-                           {expandedBranches[d.bid]}
-                       </text>
+                       <g key={i}>
+                           <text className="clade-name" x={d.x1} y={d.y1} dy="4">
+                               {expandedBranches[d.bid]}
+                           </text>
+                           {tree.tid === referenceTree.id &&
+                           <text className="named-clade-taxa-num"
+                                 x={hoverBoxes[d.bid].x + hoverBoxes[d.bid].width} y={hoverBoxes[d.bid].y} dx="-4" dy="12">
+                               {branches[d.bid].entities.length}
+                           </text>
+                           }
+                       </g>
                    )}
                </g>
             )

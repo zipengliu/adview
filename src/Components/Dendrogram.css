@@ -24,7 +24,7 @@
     margin: 3px;
     position: relative;
 }
-.agg-dendro-box.selected {
+.agg-dendro-box.hovered {
     border: 2px solid #000;
 }
 
@@ -107,13 +107,12 @@
     fill-opacity: .5;
 }
 
-.proportion .highlight {
+.proportion .selected {
     stroke: none;
-    fill: #b82e2e;
-    /*fill-opacity: .5;*/
+    /*fill-opacity: .6;*/
 }
 
-.proportion .selected{
+.proportion .hovered {
     stroke: #000;
     stroke-width: 2px;
     fill: none;
@@ -128,16 +127,7 @@
 }
 
 
-rect.range-selected-cb-indicator {
-    fill: #984ea3;
-    fill-opacity: .15;
-}
-.agg-dendro-box rect.range-selected-cb-indicator {
-    fill-opacity: .4;
-}
-
-rect.highlight-tree-indicator {
-    fill: #b82e2e;
+rect.selected-tree-indicator {
     fill-opacity: .6;
 }
 

@@ -27,12 +27,12 @@
 
 
 .attribute-chart .slider .control {
-    fill: purple;
+    /*fill: #e377c2;*/
     cursor: col-resize;
 }
 
 .attribute-chart .slider .selected-area {
-    fill: purple;
+    /*fill: #e377c2;*/
     fill-opacity: .3;
 }
 

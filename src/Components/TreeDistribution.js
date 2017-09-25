@@ -78,14 +78,14 @@ class TreeDistribution extends Component {
                                 <div style={{fontSize: '16px', position: 'relative', top: '50%', left: '2px', transform: 'translateY(-50%)'}}>
                                     <Glyphicon glyph="registration-mark" />
                                 </div>}
-                                {d.highlightCnt && d.highlightCnt[i] > 0 &&
-                                <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    backgroundColor: '#b82e2e', opacity: '.6',
-                                    width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
                                 {d.selectCnt && d.selectCnt[i] > 0 &&
                                 <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
-                                    border: '3px solid #000', zIndex: 50,
+                                    backgroundColor: this.props.selectedTreeColor, opacity: .6,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
+                                {d.highlightCnt && d.highlightCnt[i] > 0 &&
+                                <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
+                                    border: '3px solid #000', zIndex: 50,
+                                    width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
                                 {numbering.hasOwnProperty(i) &&
                                 <div style={{position: 'absolute', top: '2px', right: '2px', width: '14px', height: '14px',
                                     background: 'black', color: 'white', borderRadius: '50%', textAlign: 'center', verticalAlign: 'middle'}}>
@@ -134,7 +134,7 @@ class TreeDistribution extends Component {
                                     {sets[i].title} {expandedArr.length > 1 && <br/>}
                                     <Badge style={{backgroundColor: sets[i].color}}>{sets[i].tids.length}</Badge>
                                 </td>}
-                                <td style={{color: '#e41a1c', fontWeight: 'bold', textAlign: 'center'}}>{expandedBranches[bid]}</td>
+                                <td style={{fontWeight: 'bold', textAlign: 'center'}}>{expandedBranches[bid]}</td>
                                 <td style={{height: '100%', padding: 0}}>
                                     {renderBars(s[bid], bid, i)}
                                 </td>
@@ -165,13 +165,15 @@ class TreeDistribution extends Component {
                             <span>)</span>
                         </div>
                         <div className="legend-item">
-                            <span>hovered (</span>
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '12px', background: '#b82e2e', opacity: '.6'}}></div>
+                            <span>selected (</span>
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '12px',
+                                background: this.props.selectedTreeColor, opacity: '.6'}} />
                             <span>)</span>
                         </div>
                         <div className="legend-item">
-                            <span>selected (</span>
-                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px', border: '2px solid black'}}></div>
+                            <span>hovered (</span>
+                            <div style={{display: 'inline-block', margin: '0 2px', height: '10px', width: '10px',
+                                border: '2px solid black'}} />
                             <span>)</span>
                         </div>
                     </div>
@@ -198,7 +200,8 @@ let mapStateToProps = state => ({
     sets: state.sets,
     treeDistribution: state.treeDistribution,
     membershipViewer: state.referenceTree.membershipViewer,
-    banMembershipViewer: state.inputGroupData.hasMissingTaxa && state.cb === 'cb2'
+    banMembershipViewer: state.inputGroupData.hasMissingTaxa && state.cb === 'cb2',
+    selectedTreeColor: state.selectedTreeColor,
 });
 
 let mapDispatchToProps = dispatch => ({

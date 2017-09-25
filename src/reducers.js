@@ -113,12 +113,16 @@ let initialState = {
     highlight: {
         // colorScheme: scaleOrdinal(schemeCategory10),
         // colorScheme: ["#3366cc", "#ff9900", "#109618", "#dd4477", "#0099c6"],
-        colorScheme: ["#6699FF", "#ffb31a", "#2AB032", "#F75E91", "#1AB3E0"],
+        // colorScheme: ["#6699FF", "#ffb31a", "#2AB032", "#F75E91", "#1AB3E0"],
+        // We de-saturated the first 5 colors from d3 category10() to get these colors
+        colorScheme: ["#6BAAD6", "#FFA04C", "#52A052", "#D66B6C", "#A284BD"],
         limit: 5,
         currentColor: 0,
         bids: [],
         colors: (new Array(5)).fill(false),
     },
+    selectedTreeColor: "#8a6c66",
+    branchRangeSelectionColor: "#e377c2",
     pairwiseComparison: {
         tid: null,
     },

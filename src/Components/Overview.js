@@ -55,12 +55,12 @@ let Overview = props => (
                     <span>ref.</span>
                 </div>
                 <div className="legend-item">
-                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', border: '1px solid black', background: 'grey'}}></div>
-                    <span>selected</span>
+                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', border: '1px solid black', background: 'grey'}} />
+                    <span>hovered</span>
                 </div>
                 <div className="legend-item">
-                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: '#b82e2e'}}></div>
-                    <span>hovered</span>
+                    <div className="mark" style={{width: '8px', height: '8px', borderRadius: '50%', background: props.selectedTreeColor}} />
+                    <span>selected</span>
                 </div>
             </div>
         </div>
@@ -72,7 +72,8 @@ let Overview = props => (
 let mapStateToProps = state => ({
     metricMode: state.overview.metricMode,
     metricBranch: state.overview.metricBranch,
-    collapsed: state.overview.collapsed
+    collapsed: state.overview.collapsed,
+    selectedTreeColor: state.selectedTreeColor,
 });
 let mapDispatchToProps = dispatch => ({
     onChangeMetricMode: (mode, bid) => {dispatch(changeDistanceMetric(mode, bid))},

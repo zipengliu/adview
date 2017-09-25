@@ -4,16 +4,16 @@
 }
 .branch-line.range-selected {
     stroke-width: 5px;
-    stroke: #984ea3;
+    stroke: #e377c2;
 }
 .branch-line.checking {
     stroke-width: 8px;
     stroke: black !important;
 }
-.branch-line.expanded {
-    stroke-width: 3;
-    stroke: #e41a1c;
-}
+/*.branch-line.expanded {*/
+    /*stroke-width: 3;*/
+    /*stroke: #e41a1c;*/
+/*}*/
 
 .entity-name {
     font-size: 8px;
@@ -141,14 +141,21 @@ rect.reference-tree-indicator {
     border-left-color: #fff;
 }
 
-.user-specified-group-marker {
-    font-size: 10px;
-    fill: grey;
-}
-.expanded-branch-marker {
+.clade-name {
     font-size: 12px;
-    fill: #e41a1c;
+    fill: black;
     font-weight: bold;
+}
+.named-clade-taxa-num {
+    font-size: 10px;
+    text-anchor: end;
+}
+
+.reference-tree-g .clade-name {
+    text-anchor: end;
+}
+.comparing-tree-g .clade-name {
+    text-anchor: start;
 }
 
 .taxa-membership-markers>.taxa-membership-highlight-marker {

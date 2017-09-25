@@ -15,7 +15,7 @@ import Histogram from './HistogramSlider';
 
 class ReferenceTreeAttributeExplorer extends Component {
     render() {
-        let {charts, data, spec} = this.props;
+        let {charts, data, spec, selectionColor} = this.props;
         let panel = (
             <div id="reference-tree-attribute-explorer" className="panel panel-default"
                  style={{display: charts.show? 'block': 'none', position: charts.float? 'fixed': 'relative'}}>
@@ -44,6 +44,7 @@ class ReferenceTreeAttributeExplorer extends Component {
                                                moveControlHandle={this.props.moveControlHandle}
                                                changeSelectionRange={this.props.onChangeSelectionRange}
                                                spec={spec}
+                                               selectionColor={selectionColor}
                                     />
                                 </div>
                                 <Button bsSize="xsmall" style={{}}
@@ -97,7 +98,8 @@ let getReferenceTreeHistograms = createSelector(
 let mapStateToProps = state => ({
     charts: state.referenceTree.charts,
     data: getReferenceTreeHistograms(state),
-    spec: state.attributeChartSpec
+    spec: state.attributeChartSpec,
+    selectionColor: state.branchRangeSelectionColor,
 });
 
 let mapDispatchToProps = dispatch => ({

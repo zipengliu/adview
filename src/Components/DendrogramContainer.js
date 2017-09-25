@@ -20,7 +20,8 @@ import './Dendrogram.css';
 class DendrogramContainer extends Component {
     render() {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
-            expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends} = this.props;
+            expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends, hoveredTrees,
+            selectedTreeColor} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
@@ -28,14 +29,16 @@ class DendrogramContainer extends Component {
 
         let getDendroBox = (t, isCluster) => {
             let w = boxWidth, h = boxHeight;
+            let hoveredTreeCnt = hoveredTrees.hasOwnProperty(t.tid);
             if (isCluster) {
                 // Vertical space for the population bar of each cluster
                 h += spec.proportionBarHeight + spec.proportionTopMargin;
+                hoveredTreeCnt = t.trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length;
             }
             t.selectedCnt = isCluster? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
                 selectedTrees.hasOwnProperty(t.tid);
             return (
-                <div className={cn("agg-dendro-box", {selected: isCluster? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)})}
+                <div className={cn("agg-dendro-box", {hovered: isCluster? hoveredTreeCnt === t.num: hoveredTreeCnt})}
                      key={t.tid}
                      style={{width: w + 'px', height: h + 'px'}}
                      onClick={(e) => {this.props.onSelectTrees(isCluster? t.trees: [t.tid], e.shiftKey)}}
@@ -43,9 +46,11 @@ class DendrogramContainer extends Component {
                     {t.hopeless?
                         <Glyphicon glyph="exclamation-sign"/> :
                         <AggregatedDendrogram data={t} spec={spec} isCluster={isCluster}
+                                              isSelected={isCluster? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)}
+                                              selectedTreeColor={selectedTreeColor}
                                               isReferenceTree={t.tid === this.props.referenceTid}
                                               isComparing={t.tid === this.props.comparingTid}
-                                              hoveredTrees={this.props.hoveredTrees}
+                                              hoveredTreeCnt={hoveredTreeCnt}
                                               onToggleBlock={this.props.onToggleBlock}
                                               rangeSelection={rangeSelection}
                                               shadedGranularity={this.props.shadedHistogram.granularity}/>
@@ -180,19 +185,19 @@ class DendrogramContainer extends Component {
                     <div className="legend">
                         <div className="legend-section-title">Block: </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '8px', width: '14px', border: '1px solid grey'}}></div>
+                            <div className="mark" style={{height: '8px', width: '14px', border: '1px solid grey'}} />
                             <span>context</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '10px', width: '14px', border: '2px solid black'}}></div>
+                            <div className="mark" style={{height: '10px', width: '14px', border: '2px solid black'}} />
                             <span>exact matched (taxa membership)</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '10px', width: '18px', border: '2px dotted black'}}></div>
+                            <div className="mark" style={{height: '10px', width: '18px', border: '2px dotted black'}} />
                             <span>inexact matched</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '12px', width: '16px', border: '2px dotted #888', borderRadius: '5px'}}></div>
+                            <div className="mark" style={{height: '12px', width: '16px', border: '2px dotted #888', borderRadius: '5px'}} />
                             <span>missing taxa</span>
                         </div>
                     </div>
@@ -204,12 +209,12 @@ class DendrogramContainer extends Component {
                             <span>pairwise target</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', border: '2px solid black'}}></div>
-                            <span>(bounding box) selected</span>
+                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', border: '2px solid black'}} />
+                            <span>(bounding box) hovered</span>
                         </div>
                         <div className="legend-item">
-                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', backgroundColor: '#b82e2e', opacity: '.6'}}></div>
-                            <span>hovered</span>
+                            <div className="mark" style={{height: '12px', width: '12px', marginTop: '2px', backgroundColor: selectedTreeColor, opacity: '.6'}} />
+                            <span>selected</span>
                         </div>
                     </div>
 
@@ -573,6 +578,7 @@ let mapStateToProps = (state) => {
         selectedTrees: state.selectedTrees,
         hoveredTrees: state.hoveredTrees,
         expandedBranches: state.referenceTree.expanded,
+        selectedTreeColor: state.selectedTreeColor,
 
         clusters: filledClusters,
         individuals: filledIndividuals,

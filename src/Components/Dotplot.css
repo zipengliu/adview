@@ -1,23 +1,18 @@
 .dot {
-    fill:black;
+    fill: grey;
+    fill-opacity: .8;
 }
 
-.dot.selected {
+.dot.hovered {
     stroke: #000;
-    /*stroke-dasharray: 1,1;*/
     stroke-width: 2px;
 }
-.dot.highlight {
-    fill: #b82e2e !important;
+.dot.selected {
+    /*fill: #8a6c66 !important;*/
+    fill-opacity: 1;
 }
 
 .selecting-box {
     fill: steelblue;
     fill-opacity: .3;
 }
-
-/*.dot.reference-tree-indicator {*/
-    /*fill: #aaa !important;*/
-    /*stroke: #aaa;*/
-    /*stroke-width: 4px;*/
-/*}*/

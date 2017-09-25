@@ -20,7 +20,7 @@ let isDotWithinBox = (dot, box) => {
 class Dotplot extends Component {
     render() {
         let s = this.props.containerWidth;
-        let {coordinates, selectionArea, glyphs, selectedTrees, hoveredTrees, isSelecting} = this.props;
+        let {coordinates, selectionArea, glyphs, selectedTrees, hoveredTrees, isSelecting, selectedTreeColor} = this.props;
         let rect = {};
         if (isSelecting) {
             let {x1, x2, y1, y2} = selectionArea;
@@ -60,10 +60,10 @@ class Dotplot extends Component {
                 <use xlinkHref="#reference-tree-glyph" key={d.tid} x={scale(d.x) - refGlyphSize / 2} y={scale(d.y) - refGlyphSize / 2}
                      width={refGlyphSize} height={refGlyphSize} style={{stroke: 'black'}} /> :
                 <use xlinkHref={`#sub-col-glyph-${glyphs[d.tid]}`}
-                     className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid), highlight:  hoveredTrees.hasOwnProperty(d.tid)})}
+                     className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid), hovered:  hoveredTrees.hasOwnProperty(d.tid)})}
                      key={d.tid} x={scale(d.x) - dotSize[glyphs[d.tid]] / 2} y={scale(d.y) - dotSize[glyphs[d.tid]] / 2}
                      width={dotSize[glyphs[d.tid]]} height={dotSize[glyphs[d.tid]]}
-                     style={{fill: 'grey', fillOpacity: '.8'}}
+                     style={{fill: selectedTrees.hasOwnProperty(d.tid)? selectedTreeColor: 'grey'}}
                 />)}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
 
@@ -112,6 +112,7 @@ let mapStateToProps = state => ({
     rid: state.referenceTree.id,
     selectedTrees: state.selectedTrees,
     hoveredTrees: state.hoveredTrees,
+    selectedTreeColor: state.selectedTreeColor,
 });
 
 let mapDispatchToProps = dispatch => ({

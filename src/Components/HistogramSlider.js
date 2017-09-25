@@ -7,7 +7,8 @@ import {scaleLinear, scaleLog, max as d3Max, format} from 'd3';
 import {OverlayTrigger, Tooltip} from 'react-bootstrap';
 
 let HistogramSlider = props => {
-    let {foregroundBins, backgroundBins, spec, attributeName, selection, changeSelectionRange, selectionId} = props;
+    let {foregroundBins, backgroundBins, spec, attributeName, selection, changeSelectionRange, selectionId,
+        selectionColor} = props;
     let hasData = !!foregroundBins || !!backgroundBins;
     let effectiveWidth = spec.width - spec.margin.left - spec.margin.right;
     // The x domain is always [0, 1]
@@ -84,10 +85,14 @@ let HistogramSlider = props => {
                     {selection &&
                     <g transform="translate(0,2)">
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[0]}, 0)`}
+                              style={{fill: selectionColor}}
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[1]}, 0)`}
+                              style={{fill: selectionColor}}
+                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'right'): null}/>
                         <rect className="selected-area" x={controlPos[0]} y={-spec.chartHeight - 3}
+                              style={{fill: selectionColor}}
                               width={controlPos[1] - controlPos[0]} height={spec.chartHeight + 6} />
                         <use xlinkHref="#slider-handle-left" x={controlPos[0] - 5} y={-spec.chartHeight + 10} width={5} height={30}
                              className="control"
