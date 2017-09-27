@@ -503,6 +503,11 @@ function visphyReducer(state = initialState, action) {
                 if (highlightIdx === -1) {
                     newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bid: action.bid}, null,
                         newExpanded[action.bid])
+                } else {
+                    newHighlights = {
+                        ...state.highlight,
+                        bids: state.highlight.bids.map((h, i) => (i === highlightIdx? {...h, no: newExpanded[action.bid]}: h))
+                    };
                 }
                 newActiveEB = action.bid;
             }
@@ -1547,7 +1552,7 @@ function visphyReducer(state = initialState, action) {
                 }
             }
             // If select a different tree for pairwise comparison
-            if (action.tids.length === 1 && state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
+            if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
                 && (!action.isAdd || (action.isAdd && !Object.keys(state.selectedTrees).length))) {
                 // Update data for pairwise comparison and highlights
                 newColors = state.highlight.colors.slice();

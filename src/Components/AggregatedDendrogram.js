@@ -53,11 +53,11 @@ class AggregatedDendrogram extends Component {
                     <g className="proportion" >
                         <rect x="0" y="0" width={width} height={proportionBarHeight} className="total"/>
                         <rect x="0" y="0" width={numScale(num)} height={proportionBarHeight} className="num" />
-                        {hoveredTreeCnt > 0 && hoveredTreeCnt < num &&
-                        <rect x="0" y="0" width={numScale(hoveredTreeCnt)} height={proportionBarHeight} className="hovered" />}
                         {selectedCnt > 0 && selectedCnt < num &&
                         <rect x="0" y="0" width={numScale(selectedCnt)} height={proportionBarHeight} className="selected"
                               style={{fill: selectedTreeColor}} />}
+                        {hoveredTreeCnt > 0 && hoveredTreeCnt < num &&
+                        <rect x="0" y="0" width={numScale(hoveredTreeCnt)} height={proportionBarHeight} className="hovered" />}
 
                         <text x="0" y="0" dx="4" dy="9">{num}</text>
                     </g>
