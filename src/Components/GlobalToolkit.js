@@ -7,7 +7,7 @@ import {connect} from 'react-redux';
 import cn from 'classnames';
 import BitSet from 'bitset.js';
 import {ButtonGroup, Button, DropdownButton, Glyphicon, OverlayTrigger, Tooltip, MenuItem, Badge} from 'react-bootstrap';
-import {clearAll, clearSelectedTrees, popCreateNewSetWindow, addToSet,
+import {reset, clearSelectedTrees, popCreateNewSetWindow, addToSet,
     removeFromSet, removeSet, compareWithReference, makeConsensus, reverseSelection,
     downloadSelectedTrees, toggleStretchedMainView} from '../actions';
 import {renderSubCollectionGlyph} from './Commons';
@@ -91,7 +91,7 @@ let mapStateToProps = state => ({
 });
 
 let mapDispatchToProps = dispatch => ({
-    onClearAll: () => {dispatch(clearAll())},
+    onClearAll: () => {dispatch(reset())},
     onClearSelectedTrees: () => {dispatch(clearSelectedTrees())},
 
     onCreateNewSet: () => {dispatch(popCreateNewSetWindow())},

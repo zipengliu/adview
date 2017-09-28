@@ -6,7 +6,8 @@ import * as TYPE from './actionTypes';
 import BitSet from 'bitset.js';
 import {getCoordinates, createMappingFromArray, guid, mergeArrayToMapping, mergeMappingToArray, getWindowHeight} from './utils';
 // import BipartitionList from './bipartitions';
-import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution} from './tree';
+import {Tree, getVirtualBid, clusterTreesByBranch, getHighlightProportion, getSubsetDistribution,
+    updateDistriutionHighlightCnt} from './tree';
 
 let initialState = {
     user: {
@@ -609,9 +610,9 @@ function visphyReducer(state = initialState, action) {
                 }
             };
 
-        case TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT:
+        case TYPE.RESET:
             return Object.assign({}, state, {
-                referenceTree: {
+                referenceTree: {                    // Clear all named clades
                     ...state.referenceTree,
                     expanded: {},
                     userSpecified: {},
@@ -620,27 +621,31 @@ function visphyReducer(state = initialState, action) {
                         ...state.referenceTree.charts,
                         activeSelectionId: null
                     },
-                    membershipViewer: []
+                    highilghtEntities: [],
+                    highlightUncertainEntities: [],
+                    membershipViewer: []            // Clear membership inspection
                 },
-                highlight: {
+                pairwiseComparison: {               // End pairwise comparison
+                    tid: null
+                },
+                sets: state.sets.slice(0, 1),       // Remove all sub-collections
+                highlight: {                        // Clear highlight colors
                     ...state.highlight,
                     bids: [],
                     colors: (new Array(state.highlight.limit)).fill(false)
                 },
-                cbAttributeExplorer: {
+                cbAttributeExplorer: {              // Clear CBAE selection
                     ...state.cbAttributeExplorer,
                     activeExpandedBid: null,
                     activeSelectionId: null
                 },
-                selectedTrees: {},
+                selectedTrees: {},                  // Clear selected trees
+                hoveredTrees: {},                   //   and hovered trees
                 aggregatedDendrogram: {
                     ...state.aggregatedDendrogram,
-                    treeOrder: {
-                        ...state.aggregatedDendrogram.treeOrder,
-                        static: true
-                    }
+                    order: 'RF',                    // order back to rf distance
                 },
-                treeDistribution: {
+                treeDistribution: {                 // Clear tree distribution
                     ...state.treeDistribution,
                     data: [{}]
                 }
@@ -1197,6 +1202,10 @@ function visphyReducer(state = initialState, action) {
                     }
                 };
                 newState.selectedTrees = getTreesBySelection(newState);
+                newState.treeDistribution = {
+                    ...state.treeDistribution,
+                    data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'selectCnt', newState.selectedTrees)
+                };
 
                 return newState;
             }
@@ -1226,6 +1235,10 @@ function visphyReducer(state = initialState, action) {
                     // If previously there are selected trees by the cb-ae, we need to clear it out
                     newState.selectedTrees = {};
                 }
+                newState.treeDistribution = {
+                    ...state.treeDistribution,
+                    data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'selectCnt', newState.selectedTrees)
+                };
                 return newState;
             }
         case TYPE.CHANGE_SELECTION_RANGE:
@@ -1253,6 +1266,10 @@ function visphyReducer(state = initialState, action) {
                     }
                 };
                 newState.selectedTrees = getTreesBySelection(newState);
+                newState.treeDistribution = {
+                    ...state.treeDistribution,
+                    data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'selectCnt', newState.selectedTrees)
+                };
                 return newState;
             }
         case TYPE.CHANGE_ACTIVE_EXPANDED_BRANCH:
@@ -1519,38 +1536,16 @@ function visphyReducer(state = initialState, action) {
             };
         case TYPE.TOGGLE_HIGHLIGHT_TREES:
             newHoveredTrees = action.tids && action.tids.length? createMappingFromArray(action.tids): {};
-            newDistData = [];
-            for (let i = 0; i < state.treeDistribution.data.length; i++) {
-                let d = state.treeDistribution.data[i];
-                newDistData.push({});
-                for (let bid in d) if (d.hasOwnProperty(bid)) {
-                    newDistData[i][bid] = {
-                        ...d[bid],
-                        highlightCnt: getHighlightProportion(d[bid], newHoveredTrees)
-                    }
-                }
-            }
             return {
                 ...state,
                 hoveredTrees: newHoveredTrees,
                 treeDistribution: {
                     ...state.treeDistribution,
-                    data: newDistData
+                    data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'highlightCnt', newHoveredTrees)
                 }
             };
         case TYPE.TOGGLE_SELECT_TREES:
             newSelectedTrees = action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids);
-            newDistData = [];
-            for (let i = 0; i < state.treeDistribution.data.length; i++) {
-                let d = state.treeDistribution.data[i];
-                newDistData.push({});
-                for (let bid in d) if (d.hasOwnProperty(bid)) {
-                    newDistData[i][bid] = {
-                        ...d[bid],
-                        selectCnt: getHighlightProportion(d[bid], newSelectedTrees)
-                    }
-                }
-            }
             // If select a different tree for pairwise comparison
             if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
                 && (!action.isAdd || (action.isAdd && !Object.keys(state.selectedTrees).length))) {
@@ -1582,7 +1577,7 @@ function visphyReducer(state = initialState, action) {
                     },
                     treeDistribution: {
                         ...state.treeDistribution,
-                        data: newDistData
+                        data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'selectCnt', newSelectedTrees)
                     }
                 }
             }
@@ -1593,7 +1588,7 @@ function visphyReducer(state = initialState, action) {
                 selectedTrees: newSelectedTrees,
                 treeDistribution: {
                     ...state.treeDistribution,
-                    data: newDistData
+                    data: updateDistriutionHighlightCnt(state.treeDistribution.data, 'selectCnt', newSelectedTrees)
                 }
             };
         case TYPE.TOGGLE_TREE_DISTRIBUTION_COLLAPSE:

@@ -56,15 +56,19 @@ class Dotplot extends Component {
                     onMouseDown={this.props.onDragStart.bind(null, s)}
                     onMouseMove={this.props.onDrag.bind(null, this.props.isSelecting)}
                     onMouseUp={() => {this.props.onDragEnd(getDotsWithinBox(coordinates, selectionArea))}}>
-            {coordinates.map(d => d.tid === this.props.rid?
-                <use xlinkHref="#reference-tree-glyph" key={d.tid} x={scale(d.x) - refGlyphSize / 2} y={scale(d.y) - refGlyphSize / 2}
-                     width={refGlyphSize} height={refGlyphSize} style={{stroke: 'black'}} /> :
-                <use xlinkHref={`#sub-col-glyph-${glyphs[d.tid]}`}
-                     className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid), hovered:  hoveredTrees.hasOwnProperty(d.tid)})}
-                     key={d.tid} x={scale(d.x) - dotSize[glyphs[d.tid]] / 2} y={scale(d.y) - dotSize[glyphs[d.tid]] / 2}
-                     width={dotSize[glyphs[d.tid]]} height={dotSize[glyphs[d.tid]]}
-                     style={{fill: selectedTrees.hasOwnProperty(d.tid)? selectedTreeColor: 'grey'}}
-                />)}
+            {coordinates.map(d => {
+                let c = selectedTrees.hasOwnProperty(d.tid)? selectedTreeColor: 'grey';
+                let size = selectedTrees.hasOwnProperty(d.tid)? dotSize[glyphs[d.tid]] * 1.5: dotSize[glyphs[d.tid]];
+                return d.tid === this.props.rid?
+                    <use xlinkHref="#reference-tree-glyph" key={d.tid} x={scale(d.x) - refGlyphSize / 2} y={scale(d.y) - refGlyphSize / 2}
+                         width={refGlyphSize} height={refGlyphSize} style={{stroke: 'black'}} /> :
+                    <use xlinkHref={`#sub-col-glyph-${glyphs[d.tid]}`}
+                         className={cn('dot', {selected: selectedTrees.hasOwnProperty(d.tid), hovered:  hoveredTrees.hasOwnProperty(d.tid)})}
+                         key={d.tid} x={scale(d.x) - dotSize[glyphs[d.tid]] / 2} y={scale(d.y) - dotSize[glyphs[d.tid]] / 2}
+                         width={size} height={size}
+                         style={{fill: c}}
+                    />;
+            })}
             {isSelecting && rect.width && rect.height && <rect {...rect} className="selecting-box"></rect>}
 
             <defs>

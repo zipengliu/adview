@@ -532,6 +532,21 @@ export let getHighlightProportion = (distribution, tids) => {
     return highlightCnt;
 };
 
+export let updateDistriutionHighlightCnt = (distribution, cntField, highlightTrees) => {
+    let newDistData = [];
+    for (let i = 0; i < distribution.length; i++) {
+        let d = distribution[i];
+        newDistData.push({});
+        for (let bid in d) if (d.hasOwnProperty(bid)) {
+            newDistData[i][bid] = {
+                ...d[bid],
+                [cntField]: getHighlightProportion(d[bid], highlightTrees)
+            }
+        }
+    }
+    return newDistData;
+};
+
 export let getSubsetDistribution = (fullDistribution, sets, targetBid=null, setIndex=null) => {
     let filter = (fd, bid, set) => {
         // Init the bins for subset[i] and bipartition j

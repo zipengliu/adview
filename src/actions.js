@@ -255,8 +255,8 @@ export function selectBranchOnFullDendrogram(bid) {
     }
 }
 
-export function clearAll() {
-    return {type: TYPE.CLEAR_ALL_SELECTION_AND_HIGHLIGHT}
+export function reset() {
+    return {type: TYPE.RESET}
 }
 
 export function fetchTreeRequest(tid) {
@@ -478,10 +478,6 @@ export function toggleMoveHandle(handle, isRef) {
 }
 export function moveControlHandle(value, isRef) {
     return {type: TYPE.MOVE_CONTROL_HANDLE, value, isRef}
-}
-
-export function toggleHistogramOrCDF(isHistogram) {
-    return {type: TYPE.TOGGLE_HISTOGRAM_OR_CDF, isHistogram};
 }
 
 export function changeActiveRangeSelection(id, isRef) {
