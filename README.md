@@ -1,7 +1,8 @@
 VisPhy: Visual Comparison of Phylogenetic Trees
 ====
 
-Documentation Authors: [Zipeng Liu](http://www.cs.ubc.ca/~zipeng/), [Tamara Munzner](http://www.cs.ubc.ca/~tmm/)
+Documentation Author: [Zipeng Liu](http://www.cs.ubc.ca/~zipeng/)
+Website: [vipshy.cs.ubc.ca](http://visphy.cs.ubc.ca)
 
 ## 1 Overview
 
@@ -33,8 +34,9 @@ performance, but there is no hard limit.  Dataset larger than this can still be 
 
 ## 2 A Short Walk-through
 
-![visphy-introduction](assets/images/overview.png)
 Figure 1
+
+![visphy-introduction](assets/images/overview.png)
 
 We demonstrate VisPhy with a sampled dataset from [the 1KP pilot study](https://gigascience.biomedcentral.com/articles/10.1186/2047-217X-3-17).
 We compare a species trees inferred using [ASTRAL](https://github.com/smirarab/ASTRAL) with 100 sampled gene trees.
@@ -50,10 +52,10 @@ We show different aspects of the tree collection \[TC\] on the right.
 The aggregated dendrograms (AD) in the view \[TC-AD\] tells the relationships among A, B and C 
 with a much simpler and smaller yet meaningful form of dendrogram.  
 We find the closest monophyly to A, B and C in each tree (called matches), which is displayed as a block in the AD,
-and elude everything else except some nearby clades as their context information.
+and elide everything else except some nearby clades as their context information.
 As it still requires quite a lot cognitive effort to browse and compare dozens or hundreds of ADs in \[TC-AD-2\],
 we cluster all ADs according to the relationships among their named clades.
-In \[TC-AD-1\], it clearly shows that there are basiclly three different kinds of relationships:
+In \[TC-AD-1\], it clearly shows that there are basically three different kinds of relationships:
 `(A,(B,C))`, `(C,(A)B)` and `(B,C)` (all taxa in A is missing from that gene tree), 
 while almost all trees are of the first kind.
 Within each cluster, the "backbone" connections among A, B and C are the same, but the groupings of other taxa outside
@@ -65,12 +67,13 @@ with partial segments.  A segment represents a subset of trees that share the sa
 the same topology), and the first segment with a circled "R" mark represents the subset that agrees with the reference
 tree.  Long tail is often observed because of different missing taxa across gene trees.
 
-![visphy-pairwise-comparison](assets/images/hover-select.png)
 Figure 2
+
+![visphy-pairwise-comparison](assets/images/hover-select.png)
 
 To check which set of taxa a segment agrees on, you can use the "taxa membership inspection" (alt+click a segment to bring
 out a menu), as shown in Fig. 2 (a).  An aligned column of dots in the reference tree points out the taxa group shared 
-by a numbered segment.  We are inspecting three segments in Fig.2, which is convinient way to compare alternative 
+by a numbered segment.  We are inspecting three segments in Fig.2, which is convenient way to compare alternative 
 taxa group to the reference.
 
 If you hover a segment, you can see where are these trees distributed by other named clades and also their ADs with 
@@ -82,8 +85,9 @@ Along with the cluster AD and sub-collection management (introduced later in 4.5
 various criteria.
 
 
-![visphy-pairwise-comparison](assets/images/pairwise-comparison.png)
 Figure 3
+
+![visphy-pairwise-comparison](assets/images/pairwise-comparison.png)
 
 It is always necessary to see a specific tree in details on demand.  Once you select a target tree, you can pairwise
 compare it with the reference tree with a taxon-to-taxon "butterfly" view, as illustrated in Fig. 3.  Taxa in named
@@ -138,8 +142,9 @@ to find interesting branches for investigation.  For example, in Fig. 4, we high
 \[0, 0.7\] in pink.  Hovering on a branch displays a tooltip showing every attributes 
 of that branch at the upper right corner.
 
-![branch-menu](assets/images/reference-tree.png)
 Figure 4
+
+![branch-menu](assets/images/reference-tree.png)
 
 In the reference dendrogram, you can hit `alt+click` on a branch to bring up a menu (see Fig. 4):
 
@@ -163,36 +168,41 @@ In the reference dendrogram, you can hit `alt+click` on a branch to bring up a m
   - redo corresponding branch calculation
 
 We have a limit of 5 highlight colors: blue, orange, green, red, purple, in order to maintain obvious perceptual 
-difference in both the reference tree and the ADs.  
-We reuse these colors in a circular way once there are too many clades to highlight, which is not recommended.
+difference in both the reference tree and the ADs.  We reuse these colors in a circular way once there are too many 
+clades to highlight, which is not recommended.
 
 
 ### 4.2 Tree Distribution
 
-![tree-distribution](assets/images/tree-distribution.png)
 Figure 5
 
-Tree distribution shows how trees distributed according to reference branches of interest (named branches).  
-Once a reference branch is being matched, 
-the taxa members under the matching branch in the tree collection are examined and put into bins (segments).  
-Within a segment, trees share the same set of taxa under their corresponding branches, and different across segments.  
-First segment with the circled “R” mark represents the segment which shares the same taxa group with the reference tree, 
+![tree-distribution](assets/images/tree-distribution.png)
+
+Tree distribution shows how trees distributed according to reference branches of interest (named branches). Once a reference branch is being matched, 
+the taxa members under the matching branch in the tree collection are examined and put into bins (segments).  Within a 
+segment, trees share the same set of taxa under their corresponding branches, and different across segments.  First segment with the circled “R” mark represents the segment which shares the same taxa group with the reference tree, 
 and following that, conflicting trees sorted by popularity.
 
 You can hover or select on the segment to highlight where the trees in other segmentation, 
-which is a useful tool to check interaction effect across different branches.  
-For example, in Fig. 5 top, all trees in the second segment of A (the most 
+which is a useful tool to check interaction effect across different branches.  For example, in Fig. 5 top, all trees in 
+the second segment of A (the most 
 popular conflicting trees for A) also disagree with B (not a single tree fall in the first segment of B), which might 
 suggest interesting interaction between branch A and B.
+In Fig. 5 middle, some segments are partially browned due to the selection of the first segment of B, and some are
+partially highlighted by black border due to the hovered segment pointed by the mouse.
+In Fig. 5 bottom, there are more than 400 gene trees in the dataset, where you can clearly see the typical long tail
+effect for tree distribution.
+
+Figure 6
 
 ![tree-distribution](assets/images/inspect-membership.png)
-Figure 6
 
 We put trees into bins and we also tell you why they are binned together: their corresponding branches share the same 
 set of taxa under them.  What taxa is in this set?  You can either hover on a segment, which gives you circle markers 
 next to the taxa labels in the reference tree, or alt+click a segment and select "inspect taxa membership" to persist
-these markers even when you move away your mouse (Fig. 6).  
-Persisting the taxa membership markers can help with comparing multiple segments (different sets of taxa).
+these markers even when you move away your mouse (Fig. 6).  Persisting the taxa membership markers can help with 
+comparing multiple segments (different sets of taxa).  If you persist the markers, labels in the reference tree are 
+aligned to the right side for a cleaner view of markers (Fig. 6 top is unaligned, while bottom is aligned).
 
 Usually the tree distribution is used together with the aggregated dendrograms and pariwise comparison to understand
 why certain trees do not agree with the reference.
@@ -217,19 +227,22 @@ TODO: show figures for each of these cases
 
 #### 4.4.1 Tree Similarity
 
+Figure 7
+
 ![tree-similarity](assets/images/tree-sim.png)
 
-The dot plot in the tree similarity shows an overview of trees in the dataset.  Each dot represent a tree, 
-and the distance between dots represent the distance of trees, be it global RF distance or local Jaccard Index similarity measure.  
+The dot plot in the tree similarity shows an overview of trees in the dataset.  Each dot represents a tree, 
+and the distance between dots represents the distance of trees, which you can pick between 
+global RF distance or local Jaccard Index similarity measure (you have to select a branch using alt+click on a specific reference branch).  
 The absolute coordinate of a dot does not matter, but the relative distance does.  Similar dots (with shorter tree distance) 
 tend to stick together or nearby, while different ones stay away.  The 2D coordinates is dimensionally reduced from the 
-distance matrix of trees using [t-SNE](https://lvdmaaten.github.io/tsne/), 
+distance matrix of trees using [t-SNE](https://lvdmaaten.github.io/tsne/) (a non-linear dimension reduction technique), 
 and hence might not capture difference between any pair of trees.  Besides, given 
 the limited screen space, this view is subject to visual clutter if the number of dots exceeds 200.
 
 #### Corresponding Branch Attribute
 
-![corresponding-branch-attributes](assets/images/corr-attr.png)
+![corresponding-branch-attributes](assets/images/cbae.png)
 
 There are branch attributes such as support values associated to the the matching branches, which are also important to check.  
 You can see details of these values for an individual tree by hovering on the AD or the distribution of them in 
@@ -241,17 +254,40 @@ You can change the scope of trees or the reference branch from the menu.
 
 #### 4.4.2 Tree List
 
+A list of tree names.  Selected trees and hovered trees are shown with the same visual effect as other views 
+(brown background and black border).
 
 #### 4.4.3 Taxa List 
 
+A list of taxa names sorted in alphabetical order.  Hovering on a taxon name will trigger the corresponding marker
+in the reference tree, telling you where is that taxon.
 
 ### 4.5 Tree Selection
 
+TODO
 
 ### 4.6 How to export figures
 
+You might want to select the "expand the full web page" inside the "more" button on the top so that
+the web page scrolls as a whole instead of scrolls within their own views.  Then you can use any snapshot / screenshot
+tool for your operating system or browser to do a full page screenshot.
+
+If you are using Chrome, you can use an extension called "Full Page Screen Capture" (it has Pacman animation!).
+
+You cannot export a vector graph now, nor arrange the view layout as you like.  We are working on that and hopefully
+we can get better in exporting publication friendly figures.
 
 ## 5 How to upload your own data
+
+There is a page to upload your own dataset (on the top navigation bar).
+
+A typical dataset consists of:
+
+* A newick file for the reference tree
+* A newick file for the tree collection, with one tree per line
+* A file for names of trees in the tree collection with the same order in the newick file (optional)
+* Outgroup taxa if trees are unrooted (you will be able to specify after submitting the three files above)
+
 
 
 

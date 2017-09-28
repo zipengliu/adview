@@ -11,10 +11,10 @@ import thunkMiddleware from 'redux-thunk';
 import './index.css';
 
 import App from './Components/App';
-import About from './Components/About';
+// import About from './Components/About';
 import DatasetList from './Components/DatasetList';
 import MainView from './Components/MainView';
-import UserManual from './Components/UserManual';
+// import UserManual from './Components/UserManual';
 import UploadDataset from './Components/UploadDataset';
 import UserLogin from './Components/UserLogin';
 
@@ -37,8 +37,8 @@ let root = (
                     <Route path="upload" component={UploadDataset}/>
                 {/*</Route>*/}
 
-                <Route path="about" component={About} />
-                <Route path="user-manual" component={UserManual}/>
+                {/*<Route path="about" component={About} />*/}
+                {/*<Route path="user-manual" component={UserManual}/>*/}
                 <Route path="login" component={UserLogin}/>
             </Route>
         </Router>

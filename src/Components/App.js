@@ -15,8 +15,8 @@ function Navigation({title, isAuthenticated, onLogout}) {
             <Nav>
                 <NavItem eventKey={1} href="/dataset-list">Dataset List</NavItem>
                 <NavItem eventKey={2} href="/upload">Upload</NavItem>
-                <NavItem eventKey={3} href="/user-manual">User Manual</NavItem>
-                <NavItem eventKey={4} href="/about">About</NavItem>
+                <NavItem eventKey={3} href="https://github.com/zipengliu/visphy">User Manual</NavItem>
+                {/*<NavItem eventKey={4} href="/about">About</NavItem>*/}
             </Nav>
             <Nav pullRight>
                 {title && <NavItem eventKey={1}>Dataset: {title}</NavItem>}
