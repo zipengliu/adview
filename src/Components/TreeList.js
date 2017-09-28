@@ -24,7 +24,10 @@ let TreeList = (props) => (
         <div className="view-body panel-body">
                 {props.trees.map((t, i) =>
                     <div className="list-item" key={t.tid}>
-                        <span className={cn('tree-name', {selected: props.selectedTrees.hasOwnProperty(t.tid)})}>
+                        {props.selectedTrees.hasOwnProperty(t.tid) &&
+                        <div className="selected-tree-indicator-box" style={{background: props.selectedTreeColor}} />
+                        }
+                        <span className={cn('tree-name', {hovered: props.hoveredTrees.hasOwnProperty(t.tid)})}>
                             {t.name}
                             </span>
                     </div>)}
@@ -63,6 +66,8 @@ let getTrees = createSelector(
 let mapStateToProps = state => ({
     trees: getTrees(state),
     selectedTrees: state.selectedTrees,
+    hoveredTrees: state.hoveredTrees,
+    selectedTreeColor: state.selectedTreeColor,
     ...state.treeList
 });
 
