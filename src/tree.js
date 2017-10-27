@@ -443,6 +443,94 @@ export class Tree {
         }
         return false;
     }
+
+    getHash(layout, param) {
+        let {branches, rootBranch} = this;
+        let {blocks, rootBlockId} = layout;
+
+        // let childrenSortFunc = makeCompareFunc(blocks, 'no');
+        // Use a trailing '+' or '-' to differentiate exact/ inexact match
+        // let traverse = (bid) => {
+        //     let b = blocks[bid];
+        //     if (b.children && b.children.length > 0) {
+        //         // If it has children, it must be a matched (expanded) block
+        //         let sortedChildren = b.children.filter(c => !!blocks[c].no).sort(childrenSortFunc);
+        //         let sisterIndicator = '';
+        //         // sister-group relation check only works for 2 children case
+        //         if (param.checkForSister && sortedChildren.length === 2) {
+        //             let c1 = sortedChildren[0], c2 = sortedChildren[1];
+        //             // Use a trailing '|' or '/' to differentiate whether two children are sisters
+        //             sisterIndicator = tree.branches[c1].parent === tree.branches[c2].parent? '|': '/';
+        //         }
+        //         return '(' + sortedChildren.map(c => traverse(c)).join(',') + ')' + sisterIndicator + getBlockRep(b);
+        //     } else if (b.no) {
+        //         return getBlockRep(b);
+        //     }
+        // };
+        // return traverse(rootBlockId);
+
+        if (!blocks[rootBlockId].children.length) {
+            return '()';
+        }
+
+        let getBlockRep = b => param.checkForExact? (b.no + (b.matched? '+': '-')): b.no;
+
+        // TODO resolve left/right flip
+        // Traverse the tree structure bottom-up and construct the hash string
+        // traverse() returns a hash string and an array of sorting keys,
+        //      which is used for determine the order of left/right children
+        let traverse = (bid) => {
+            // console.log('traversing ' + bid);
+            let b = branches[bid];
+            let left = {hash: ''}, right = {hash: ''};
+            let leftString = '', rightString = '', r = '', sortingKeys = [];
+            if (b.left && !(blocks.hasOwnProperty(bid) && !blocks[bid].children.length)) {
+                left = traverse(b.left);
+                right = traverse(b.right);
+                sortingKeys = sortingKeys.concat(left.sortingKeys, right.sortingKeys);
+            }
+            if (blocks.hasOwnProperty(bid) && !!blocks[bid].no) {
+                r = getBlockRep(blocks[bid]);
+                sortingKeys.push(blocks[bid].no);
+            }
+            sortingKeys.sort();
+
+            // Test if left or right is empty to decide whether use () or not
+            if (!left.hash && !right.hash) {
+                return {hash: r, sortingKeys};
+            } else {
+                let sisterIndicator = '';
+                if (param.checkForSister) {
+                    sisterIndicator = '/';
+                    if (blocks.hasOwnProperty(b.left) && !!blocks[b.left].no &&
+                        blocks.hasOwnProperty(b.right) && !!blocks[b.right].no) {
+                        sisterIndicator = '|';
+                    }
+                }
+
+                if (left.hash && right.hash) {
+                    // Determine the order of left and right children if both have named clades
+                    if (left.sortingKeys.join('') < right.sortingKeys.join('')) {
+                        leftString = left.hash;
+                        rightString = right.hash;
+                    } else {
+                        leftString = right.hash;
+                        rightString = left.hash;
+                    }
+                    return {hash: `(${leftString},${rightString})${sisterIndicator}${r}`, sortingKeys};
+                } else {
+                    // Merge the two hashes without checking order because one of them is an empty string
+                    if (!!r) {
+                        return {hash: `(${left.hash + right.hash})${sisterIndicator}${r}`, sortingKeys};
+                    } else {
+                        return {hash: left.hash + right.hash, sortingKeys};
+                    }
+                }
+            }
+        };
+        return `(${traverse(rootBranch).hash})`;
+        // Alternative algorithm: Visit CB in depth order, find the nearest CB (which has lowest LCA)
+    }
 }
 
 

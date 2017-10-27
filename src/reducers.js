@@ -395,7 +395,8 @@ let addHighlightGroup = (state, action, updateGroupIdx=null, no=null) => {
 
 
 function visphyReducer(state = initialState, action) {
-    let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup, newReferenceTree;
+    let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup,
+        newReferenceTree, newActiveEB;
     let newDistData, newSets, sub, newHoveredTrees, newSelectedTrees, newState;
 
     switch (action.type) {
@@ -463,7 +464,7 @@ function visphyReducer(state = initialState, action) {
 
         case TYPE.SELECT_BRANCH:
             let newExpanded = {...state.referenceTree.expanded};
-            let newActiveEB = state.cbAttributeExplorer.activeExpandedBid;
+            newActiveEB = state.cbAttributeExplorer.activeExpandedBid;
             newHighlights = state.highlight;
             highlightIdx = findHighlight(state.highlight.bids, state.referenceTree.id, action.bid);
             newDistData = state.treeDistribution.data.slice();
@@ -534,6 +535,7 @@ function visphyReducer(state = initialState, action) {
             });
         case TYPE.EXPAND_USER_SPECIFIED_TAXA_GROUP:
             newExpanded = {...state.referenceTree.expanded};
+            newActiveEB = state.cbAttributeExplorer.activeExpandedBid;
             let virtualBid = getVirtualBid(action.group);
             highlightIdx = findHighlightByVirtualBid(state.highlight.bids, state.referenceTree.id, virtualBid);
             newDistData = state.treeDistribution.data.slice();
@@ -554,6 +556,14 @@ function visphyReducer(state = initialState, action) {
                     }
                 };
                 delete newReferenceTree.branches[virtualBid];
+                if (newActiveEB === virtualBid) {
+                    // Pick a random one from the eb list
+                    if (Object.keys(newExpanded).length > 0) {
+                        newActiveEB = Object.keys(newExpanded)[0];
+                    } else {
+                        newActiveEB = null;
+                    }
+                }
             } else {
 
                 newExpanded[virtualBid] = action.group;
@@ -580,6 +590,8 @@ function visphyReducer(state = initialState, action) {
                 // In case the taxa group is previously highlighted but now it got changed
                 newHighlights = addHighlightGroup(state, {tid: state.referenceTree.id, bids, targetEntities: entities, virtualBid},
                     highlightIdx, action.group);
+
+                newActiveEB = virtualBid;
             }
 
             return {
@@ -599,6 +611,12 @@ function visphyReducer(state = initialState, action) {
                 treeDistribution: {
                     ...state.treeDistribution,
                     data: newDistData
+                },
+                cbAttributeExplorer: {
+                    ...state.cbAttributeExplorer,
+                    activeExpandedBid: newActiveEB,
+                    activeSelectionId: newActiveEB === state.cbAttributeExplorer.activeExpandedBid?
+                        state.cbAttributeExplorer.activeSelectionId: null
                 }
             };
         case TYPE.TOGGLE_LEGENDS:

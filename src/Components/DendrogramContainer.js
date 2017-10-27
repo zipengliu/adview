@@ -115,6 +115,10 @@ class DendrogramContainer extends Component {
                             <input type="checkbox" checked={clusterParameter.checkForExact}
                                    onChange={this.props.onChangeClusterParam.bind(null, 'checkForExact', !clusterParameter.checkForExact)}
                                    style={{marginRight: '5px'}} />
+                            <span className="param-label" style={{marginLeft: '5px', marginRight: '2px'}}>differentiate sister-group relationships:</span>
+                            <input type="checkbox" checked={clusterParameter.checkForSister}
+                                   onChange={this.props.onChangeClusterParam.bind(null, 'checkForSister', !clusterParameter.checkForSister)}
+                                   style={{marginRight: '5px'}} />
 
                             {showCluster &&
                             <span>(caveat: trees in a cluster agree only on relations among named blocks (A, B, C, ...),
@@ -306,27 +310,10 @@ let filterLayouts = createSelector(
 //      Each block in the blockArr is stuffed with a mapping between the tree this cluster represents and the block id this block represents
 let clusterLayoutsByTopology = createSelector(
     [state => state.aggregatedDendrogram.clusterParameter,
-        (_, layouts) => layouts],
-    (param, layouts) => {
+        (_, layouts) => layouts,
+        state => state.inputGroupData.trees],
+    (param, layouts, trees) => {
         let numLayouts = Object.keys(layouts).length;
-
-        let getHash = (blocks, rootBlockId) => {
-            let childrenSortFunc = makeCompareFunc(blocks, 'no');
-            let getBlockRep = b => b.no? (param.checkForExact? (b.no + (b.matched? '+': '-')): b.no) : '';
-            let traverse = (bid) => {
-                let b = blocks[bid];
-                if (b.children && b.children.length > 0) {
-                    // If it has children, it must be a matched (expanded) block
-                    return '(' +
-                        b.children.filter(c => !!blocks[c].no).sort(childrenSortFunc)
-                            .map(c => traverse(c)).join(',') +
-                        ')' + getBlockRep(b);
-                } else if (b.no) {
-                    return getBlockRep(b);
-                }
-            };
-            return traverse(rootBlockId);
-        };
 
         let addTreeToCluster= (cluster, tree) => {
             cluster.trees.push(tree.tid);
@@ -385,7 +372,7 @@ let clusterLayoutsByTopology = createSelector(
         let clusters = {};
         for (let tid in layouts) if (layouts.hasOwnProperty(tid) && !layouts[tid].hopeless) {
             let t = layouts[tid];
-            let h = getHash(t.blocks, t.rootBlockId);
+            let h = trees[t.tid].getHash(t, param);
             if (!clusters.hasOwnProperty(h)) {
                 clusters[h] = createEmptyClusterFromTree(t);
             }

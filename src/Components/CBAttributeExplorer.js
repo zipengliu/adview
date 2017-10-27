@@ -70,7 +70,7 @@ class CBAttributeExplorer extends Component {
                                 <tr>
                                     <th>corr.br.</th>
                                     <th>exact?</th>
-                                    {activeTreeCBInfo[0].support >= 0 && <th>support</th>}
+                                    {activeTreeCBInfo[0].hasOwnProperty('support') && <th>support</th>}
                                     <th>similarity</th>
                                 </tr>
                                 </thead>
