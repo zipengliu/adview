@@ -185,7 +185,11 @@ function uploadOutgroupFailure(error) {
     return {type: TYPE.UPLOAD_OUTGROUP_FAILURE, error};
 }
 
-export function checkUploadStatus(url) {
+function getCheckUploadIntervalTime(times) {
+    return Math.min(30, Math.max(2, 1.5 * Math.log(times))) * 1000;
+}
+
+export function checkUploadStatus(url, tryTimes = 1) {
     return (dispatch, getState) => {
         // dispatch(checkUploadStatusRequest());
         let retry = getState().upload.checkStatusRetry;
@@ -200,8 +204,8 @@ export function checkUploadStatus(url) {
             if (status.state === 'PROGRESS' || status.state === 'PENDING') {
                 // Keep track of the progress
                 setTimeout(() => {
-                    dispatch(checkUploadStatus(url))
-                }, 2000);
+                    dispatch(checkUploadStatus(url, tryTimes + 1))
+                }, getCheckUploadIntervalTime(tryTimes));
             }
             dispatch(checkUploadStatusSuccess(status));     // reducer to act according to different state
             // setTimeout(() => {
@@ -211,8 +215,8 @@ export function checkUploadStatus(url) {
             dispatch(checkUploadStatusFailure(error));
             if (retry > 0) {
                 setTimeout(() => {
-                    dispatch(checkUploadStatus(url))
-                }, 2000);
+                    dispatch(checkUploadStatus(url, tryTimes + 1))
+                }, getCheckUploadIntervalTime(tryTimes));
             }
         })
     }

@@ -137,6 +137,8 @@ export function getCoordinates(ref, trees, cb, isGlobal, bid) {
 
     let order = [];
     let dist = [];
+    let isDummyData = false;
+
     if (!isGlobal) {
         // Local distance matrix
         let corr = ref.branches[bid][cb];
@@ -170,7 +172,13 @@ export function getCoordinates(ref, trees, cb, isGlobal, bid) {
                     // TODO: can make it faster by caching the entities first
                     cur.push(1.0 - getJaccardIndex(order[i].entities, order[j].entities));
                 } else {
-                    cur.push((order[i] === ref.tid? ref: trees[order[i]]).rfDistance[order[j]]);
+                    let t = order[i] === ref.tid? ref: trees[order[i]];
+                    if (t.rfDistance.hasOwnProperty(order[j])) {
+                        cur.push(t.rfDistance[order[j]]);
+                    } else {
+                        cur.push(Math.random());
+                        isDummyData = true;
+                    }
                 }
             } else if (j < i) {
                 // The distance matrix is symmetric
@@ -180,6 +188,11 @@ export function getCoordinates(ref, trees, cb, isGlobal, bid) {
             }
         }
         dist.push(cur);
+    }
+
+    if (isDummyData) {
+        // Don't run tSNE
+        return order.map(o => ({tid: !isGlobal? o.tid: o, x: 0.5, y: 0.5}))
     }
 
     // Second run t-SNE and normalize

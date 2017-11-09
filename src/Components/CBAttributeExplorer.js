@@ -78,8 +78,8 @@ class CBAttributeExplorer extends Component {
                                 {activeTreeCBInfo.map((v, i) => <tr key={i}>
                                     <td>{v.no}</td>
                                     <td><Glyphicon glyph={v.isExact? 'ok': 'remove'} /></td>
-                                    <td>{v.similarity.toFixed(1)}</td>
                                     {v.support >= 0 && <td>{v.support.toFixed(1)}</td>}
+                                    <td>{v.similarity.toFixed(1)}</td>
                                 </tr>)}
                                 </tbody>
                             </Table>
