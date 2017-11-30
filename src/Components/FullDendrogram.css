@@ -72,11 +72,11 @@ rect.reference-tree-indicator {
     background-color: black;
     padding: 5px;
     margin-left: 5px;
-    -webkit-transform: translateY(-100%);
-    -moz-transform: translateY(-100%);
-    -ms-transform: translateY(-100%);
-    -o-transform: translateY(-100%);
-    transform: translateY(-100%);
+    /*-webkit-transform: translateY(-100%);*/
+    /*-moz-transform: translateY(-100%);*/
+    /*-ms-transform: translateY(-100%);*/
+    /*-o-transform: translateY(-100%);*/
+    /*transform: translateY(-100%);*/
 }
 .checking-branch-tooltip div {
     font-size: 10px;

@@ -108,7 +108,8 @@ let initialState = {
         },
         tooltip: [             // for showing a tooltip of branch attributes of the current focal branch
             {attribute: 'support', accessor: b => b.hasOwnProperty('support')? Math.floor(b.support * 100): 'NA' },
-            {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' }
+            {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' },
+            {attribute: 'label', accessor: b => b.label || 'NA'}
         ],
     },
     highlight: {

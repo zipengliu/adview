@@ -26,7 +26,15 @@ class ReferenceTreeContainer extends Component {
             (isExtSpecified && expandedBranches.hasOwnProperty(getVirtualBid(userSpecified[extendedMenu.bid])));
         let groups = Object.keys(userSpecifiedByGroup);
         let {branches} = tree;
-        let viewBodyPos = this.viewBody? this.viewBody.getBoundingClientRect(): {bottom: 0, left: 0};
+        let viewBodyPos = {top: 100, right: 300};
+        if (this.viewBody) {
+            viewBodyPos = {top: this.viewBody.getBoundingClientRect().top,
+                right: this.viewBody.getBoundingClientRect().right};
+            if (this.leftPane) {
+                viewBodyPos.top += this.leftPane.scrollTop;
+            }
+        }
+
 
         let isContained = (bid, gid) => {
             let g = userSpecifiedByGroup[gid];
@@ -46,7 +54,7 @@ class ReferenceTreeContainer extends Component {
 
         return (
             <div className="view panel panel-default"  id="reference-tree">
-                <div className="view-body panel-body" >
+                <div className="view-body panel-body" ref={v => {this.leftPane = v}}>
                     {props.charts.show && !props.charts.float && <ReferenceTreeAttributeExplorer/>}
 
                     <div className="reference-tree-name">
