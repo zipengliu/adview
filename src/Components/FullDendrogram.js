@@ -279,7 +279,8 @@ let getDendrogramSpecs = createSelector(
         let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
         let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
 
-        let getBranchLength = l => ignoreBranchLen? spec.uniformBranchLength: Math.max(l * spec.unitBranchLength, spec.minBranchLength);
+        let getBranchLength = l => ignoreBranchLen? spec.uniformBranchLength:
+            Math.max(l * spec.unitBranchLength, spec.minBranchLength);
         let getTreeWidth = function() {
             let topologyWidth = 0;
             let maxTopoAndLabelWidth = 0;

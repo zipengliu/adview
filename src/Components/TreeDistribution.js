@@ -59,10 +59,9 @@ class TreeDistribution extends Component {
                     {d.bins.map((b, i) => {
                         let leftPos = x(curN);
                         curN += b.length;
-                        let isAllSelected = d.selectCnt === b.length;
                         return (
                             <div key={i} style={{ borderRight: i !== d.bins.length - 1?
-                                (d.selectCnt[i] === b.length? '1px solid ' + selectedTreeColor: '1px solid #ccc'): 'none',
+                                (d.selectCnt[i] === b.length? '1px solid ' + selectedTreeColor: '1px solid #888'): 'none',
                                 position: 'absolute', top: 0, height: '100%', left: leftPos + '%', width: x(b.length) + '%'}}
                                  onMouseEnter={this.props.onHighlightSegment.bind(null, b, banMembershipViewer? []: d.entities[i],
                                      `This cluster (#trees=${b.length}) ${d.hasCompatibleTree && i === 0? 'agrees': 'disagrees'} with branch ${branchNo} in the reference tree.`)}
@@ -81,11 +80,11 @@ class TreeDistribution extends Component {
                                     <Glyphicon glyph="registration-mark" />
                                 </div>}
                                 {d.selectCnt && d.selectCnt[i] > 0 &&
-                                <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
+                                <div style={{position: 'absolute', top: '15%', left: 0, height: '70%',
                                     backgroundColor: selectedTreeColor, opacity: .6,
                                     width: d.selectCnt[i] / b.length * 100 + '%'}} />}
                                 {d.highlightCnt && d.highlightCnt[i] > 0 &&
-                                <div style={{position: 'absolute', top: 0, left: 0, height: '100%',
+                                <div style={{position: 'absolute', top: '15%', left: 0, height: '70%',
                                     border: '1px solid #000', zIndex: 50,
                                     width: d.highlightCnt[i] / b.length * 100 + '%'}} />}
                                 {numbering.hasOwnProperty(i) &&

@@ -153,7 +153,7 @@ let initialState = {
         // clusterAlg: 'none',
         clusterParameter: {
             checkForExact: true,
-            checkForSister: false,
+            checkForSister: true,
         },
         showLegends: true,
         spec: {
