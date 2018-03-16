@@ -6,12 +6,13 @@ import React, { Component} from 'react';
 import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {scaleLinear, hcl, extent} from 'd3';
-import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, DropdownButton, MenuItem, Glyphicon} from 'react-bootstrap';
+import {Tabs, Tab, Badge, OverlayTrigger, Tooltip, DropdownButton, MenuItem, Glyphicon, Button} from 'react-bootstrap';
 import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock,
-    toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter, toggleLegends} from '../actions';
-import {createMappingFromArray, getIntersection, makeCompareFunc} from '../utils';
+    toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter, toggleLegends,
+    toggleShowAllAD} from '../actions';
+import {createMappingFromArray, getIntersection, makeCompareFunc, transformLine, transformRect} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
 import './Dendrogram.css';
@@ -21,14 +22,16 @@ class DendrogramContainer extends Component {
     render() {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
             expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends, hoveredTrees,
-            selectedTreeColor} = this.props;
+            selectedTreeColor, showAllClusters, showAllIndividuals} = this.props;
         let expandedArr = Object.keys(expandedBranches);
         // Padding + border + proportion bar
         let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
         let boxHeight = spec.height + spec.margin.top + spec.margin.bottom + 4;
+        let clusterBoxWidth = spec.width * spec.clusterSizeRatio + spec.margin.left + spec.margin.right + 4;
+        let clusterBoxHeight = spec.height * spec.clusterSizeRatio + spec.margin.top + spec.margin.bottom + 4;
 
         let getDendroBox = (t, isCluster) => {
-            let w = boxWidth, h = boxHeight;
+            let w = isCluster? clusterBoxWidth: boxWidth, h = isCluster? clusterBoxHeight: boxHeight;
             let hoveredTreeCnt = hoveredTrees.hasOwnProperty(t.tid);
             if (isCluster) {
                 // Vertical space for the population bar of each cluster
@@ -127,7 +130,16 @@ class DendrogramContainer extends Component {
                         </div>
                         {showCluster &&
                         <div className="cluster-container">
-                            {clusters.map(c => getDendroBox(c, true))}
+                            {(showAllClusters? clusters: clusters.slice(0, spec.defaultShown))
+                                .map(x => getDendroBox(x, true))}
+                            {clusters.length <= spec.defaultShown?
+                                <div></div>:
+                                <div>
+                                    <Button bsSize="xsmall" style={{margin: `${spec.margin.top}px ${spec.margin.left}px`}}
+                                            onClick={this.props.onToggleShowAll.bind(null, true)}>
+                                        {showAllClusters? 'Less': 'More'}
+                                    </Button>
+                                </div>}
                         </div>
                         }
                     </div>
@@ -175,7 +187,14 @@ class DendrogramContainer extends Component {
                                 )}
                             </Tabs>
                             <div className="individual-container">
-                                {individuals.map(x => getDendroBox(x, false))}
+                                {(showAllIndividuals? individuals: individuals.slice(0, spec.defaultShown))
+                                    .map(x => getDendroBox(x, false))}
+                                {individuals.length <= spec.defaultShown?
+                                    <div></div>:
+                                    <Button bsSize="xsmall" style={{margin: `${spec.margin.top}px ${spec.margin.left}px`}}
+                                            onClick={this.props.onToggleShowAll.bind(null, false)}>
+                                        {showAllIndividuals? 'Less': 'More'}
+                                    </Button>}
                             </div>
                         </div>
                         }
@@ -311,8 +330,9 @@ let filterLayouts = createSelector(
 let clusterLayoutsByTopology = createSelector(
     [state => state.aggregatedDendrogram.clusterParameter,
         (_, layouts) => layouts,
-        state => state.inputGroupData.trees],
-    (param, layouts, trees) => {
+        state => state.inputGroupData.trees,
+        state => state.aggregatedDendrogram.spec.clusterSizeRatio],
+    (param, layouts, trees, enlargeRatio) => {
         let numLayouts = Object.keys(layouts).length;
 
         let addTreeToCluster= (cluster, tree) => {
@@ -365,6 +385,13 @@ let clusterLayoutsByTopology = createSelector(
                 }
             };
             traverse(t.rootBlockId);
+            // Enlarge the cluster AD so that it stands out a bit
+            for (let bid in c.blocks) if (c.blocks.hasOwnProperty(bid)) {
+                c.blocks[bid] = transformRect(c.blocks[bid], enlargeRatio);
+            }
+            for (let bid in c.branches) if (c.branches.hasOwnProperty(bid)) {
+                c.branches[bid] = transformLine(c.branches[bid], enlargeRatio);
+            }
             return c;
         };
 
@@ -584,6 +611,7 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSkeletonParameter: (a, v) => {dispatch(changeSkeletonLayoutParameter(a, v))},
     onChangeClusterParam: (a, v) => {dispatch(changeClusterParameter(a, v))},
     onToggleLegends: () => {dispatch(toggleLegends('aggregatedDendrogram'))},
+    onToggleShowAll: (isCluster) => {dispatch(toggleShowAllAD(isCluster))}
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

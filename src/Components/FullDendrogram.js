@@ -8,7 +8,7 @@ import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, toggleCheckingBranch,
     toggleHighlightDuplicate, toggleExtendedMenu} from '../actions';
-import {createMappingFromArray} from '../utils';
+import {createMappingFromArray, estimateTextWidth} from '../utils';
 import {getVirtualBid} from '../tree';
 
 import './FullDendrogram.css';
@@ -228,7 +228,7 @@ class FullDendrogram extends Component {
             )
         };
 
-        let svgWidth = (isComparing? dendrogram[0].treeBoundingBox.width + dendrogram[1].treeBoundingBox.width:
+        let svgWidth = (isComparing? dendrogram[0].treeBoundingBox.width + dendrogram[1].treeBoundingBox.width + spec.marginBetweenPair:
             dendrogram.treeBoundingBox.width) + spec.margin.left + spec.margin.right;
         let svgHeight = (isComparing? Math.max(dendrogram[0].treeBoundingBox.height, dendrogram[1].treeBoundingBox.height):
                 dendrogram.treeBoundingBox.height) + spec.margin.top + spec.margin.bottom;
@@ -241,7 +241,7 @@ class FullDendrogram extends Component {
                             <g>
                                 {renderDendrogram(tree, dendrogram[0], 'right', expanded)}
                             </g>
-                            <g transform={`translate(${dendrogram[0].treeBoundingBox.width}, 0)`}>
+                            <g transform={`translate(${dendrogram[0].treeBoundingBox.width + spec.marginBetweenPair}, 0)`}>
                                 {renderDendrogram(this.props.comparingTree, dendrogram[1], 'left', this.props.comparingTreeExpansion)}
                             </g>
                         </g>
@@ -287,15 +287,15 @@ let getDendrogramSpecs = createSelector(
             let longestEntity = 0;
             let traverse = function(bid, cur, dep) {
                 let b = branches[bid];
-                cur += getBranchLength(b.length);
+                cur += getBranchLength(b.normalizedLen);
                 topologyWidth = Math.max(cur, topologyWidth);
                 if ('left' in b) {
                     traverse(b.left, cur, dep + 1);
                     traverse(b.right, cur, dep + 1);
                 } else {
-                    maxTopoAndLabelWidth = Math.max(maxTopoAndLabelWidth, cur + entities[b.entity].name.length * spec.labelUnitCharWidth);
-                    // console.log(cur, entities[b.entity].name.length * spec.labelUnitCharWidth);
-                    longestEntity = Math.max(longestEntity, entities[b.entity].name.length * spec.labelUnitCharWidth);
+                    let textLen = estimateTextWidth(entities[b.entity].name);
+                    maxTopoAndLabelWidth = Math.max(maxTopoAndLabelWidth, cur + textLen);
+                    longestEntity = Math.max(longestEntity, textLen);
                 }
             };
             // longestEntity += 20;        // For the taxon pointer mark
@@ -316,8 +316,7 @@ let getDendrogramSpecs = createSelector(
         let boxHalfWidth = (spec.responsiveAreaSize - 1) / 2;
 
         let traverse = (bid, curX) => {
-            let bLength = branches[bid].length;
-            let t = getBranchLength(bLength);
+            let t = getBranchLength(branches[bid].normalizedLen);
             b[bid] = {x1: curX, x2: curX + t};
             curX += t;
             if ('left' in branches[bid]) {

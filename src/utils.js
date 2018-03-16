@@ -256,3 +256,42 @@ export function makeCompareFunc(d, field, isIncreasing=true) {
     }
 }
 
+export function transformRect(r, ratio) {
+    return {
+        ...r,
+        x: r.x * ratio,
+        y: r.y * ratio,
+        width: r.width * ratio,
+        height: r.height * ratio
+    }
+}
+
+
+export function transformLine(l, ratio) {
+    return {
+        ...l,
+        x1: l.x1 * ratio,
+        y1: l.y1 * ratio,
+        x2: l.x2 * ratio,
+        y2: l.y2 * ratio,
+    }
+}
+
+export function estimateTextWidth(text) {
+    let lowercaseCharLength = 4.5;
+    let uppercaseCharLengthExtra = 3.5;
+    let narrowCharLengthDecduction = 2.2;
+    let narrwoChars = {
+        f: 1, i: 1, j: 1, l: 1, r: 1, t: 1, 1: 1
+    };
+    let upperCount = 0;
+    let narrowCount = 0;
+    for (let c of text) {
+        let code = c.charCodeAt(0);
+        if (65 <= code && code <= 90) upperCount += 1;
+        if (c in narrwoChars) narrowCount += 1;
+    }
+    let l = text.length * lowercaseCharLength + uppercaseCharLengthExtra * upperCount - narrowCharLengthDecduction * narrowCount;
+
+    return l;
+}

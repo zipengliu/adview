@@ -65,9 +65,10 @@ let initialState = {
     },
     dendrogramSpec: {
         margin: {left: 5, right: 5, top: 15, bottom: 0},
+        marginBetweenPair: 10,
         marginOnEntity: 8,
         boundingBoxSideMargin: 5,
-        labelUnitCharWidth: 4.5,            // an estimate of the width of a character in the label
+        // labelUnitCharWidth: 4.5,            // an estimate of the width of a character in the label
         responsiveAreaSize: 7,              // height of a transparent box over a branch to trigger interaction
         unitBranchLength: 12,               // How long is a branch with normalized length 1
         minBranchLength: 5,
@@ -108,6 +109,7 @@ let initialState = {
         },
         tooltip: [             // for showing a tooltip of branch attributes of the current focal branch
             {attribute: 'support', accessor: b => b.hasOwnProperty('support')? Math.floor(b.support * 100): 'NA' },
+            {attribute: 'length', accessor: b => b.hasOwnProperty('length')? b.length: 'NA' },
             {attribute: '% exact match', accessor: b => b.hasOwnProperty('gsf')? Math.floor(b.gsf * 100) + '%': 'NA' },
             {attribute: 'label', accessor: b => b.label || 'NA'}
         ],
@@ -156,10 +158,14 @@ let initialState = {
             checkForSister: true,
         },
         showLegends: true,
+        showAllClusters: true,
+        showAllIndividuals: false,
+
         spec: {
             width: 80,
             height: 80,
             sizeRange: [30, 300],
+            clusterSizeRatio: 1.2,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 3,
             branchLen: 6,
@@ -170,6 +176,8 @@ let initialState = {
             missingCompressRatio: .6,
             showLabels: true,
             showColors: true,
+
+            defaultShown: 10,
 
             frondLayout: {
                 frondLeafGap: 5,
@@ -1328,7 +1336,9 @@ function visphyReducer(state = initialState, action) {
             let trees = {};
             for (let tid in action.data.trees) if (action.data.trees.hasOwnProperty(tid)) {
                 trees[tid] = new Tree(action.data.trees[tid]);
-                trees[tid].prepareBranches(action.data.supportRange).findMissing(action.data.entities);
+                trees[tid].prepareBranches(action.data.supportRange)
+                    .normalizeBranchLength()
+                    .findMissing(action.data.entities);
             }
             newReferenceTree = new Tree(action.data.referenceTree);
             newReferenceTree.prepareBranches(action.data.supportRange)
@@ -2054,6 +2064,25 @@ function visphyReducer(state = initialState, action) {
                     msg: null
                 }
             };
+
+        case TYPE.TOGGLE_SHOW_ALL_AD:
+            if (action.isCluster) {
+                return {
+                    ...state,
+                    aggregatedDendrogram: {
+                        ...state.aggregatedDendrogram,
+                        showAllClusters: !state.aggregatedDendrogram.showAllClusters
+                    }
+                }
+            } else {
+                return {
+                    ...state,
+                    aggregatedDendrogram: {
+                        ...state.aggregatedDendrogram,
+                        showAllIndividuals: !state.aggregatedDendrogram.showAllIndividuals
+                    }
+                }
+            }
 
         default:
             return state;

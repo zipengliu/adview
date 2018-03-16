@@ -450,6 +450,10 @@ export function changeClusterParameter(attr, val) {
     return {type: TYPE.CHANGE_CLUSTER_PARAMETER, attr, val};
 }
 
+export function toggleShowAllAD(isCluster) {
+    return {type: TYPE.TOGGLE_SHOW_ALL_AD, isCluster};
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}
