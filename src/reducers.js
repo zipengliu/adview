@@ -70,7 +70,8 @@ let initialState = {
         boundingBoxSideMargin: 5,
         // labelUnitCharWidth: 4.5,            // an estimate of the width of a character in the label
         responsiveAreaSize: 7,              // height of a transparent box over a branch to trigger interaction
-        unitBranchLength: 12,               // How long is a branch with normalized length 1
+        unitBranchLength: 15,               // How long is a branch with normalized length 1
+        topoRoughWidth: 300,
         minBranchLength: 5,
         uniformBranchLength: 10,            // How long is each branch when we do not encode branch length
         membershipViewerGap: 16,            // How wide for one column of membership indication marks
@@ -1373,6 +1374,10 @@ function visphyReducer(state = initialState, action) {
                     tooltip: !!action.data.supportRange? state.referenceTree.tooltip:
                         [{attribute: 'support', accessor: b => 'NA'}, ...state.referenceTree.tooltip.slice(1)]
                 },
+                dendrogramSpec: {
+                    ...state.dendrogramSpec,
+                    unitBranchLength: state.dendrogramSpec.topoRoughWidth / newReferenceTree.maxDepth
+                },
                 sets: [{
                     sid: guid(),
                     title: 'All Trees',
@@ -1714,7 +1719,9 @@ function visphyReducer(state = initialState, action) {
                     [consensusTid]: consensusTree.findEntities(getTreeByTid(state, h.src).getEntitiesByBid(h.virtualBid || h[h.src][0]))}
             ));
             newColors = state.highlight.colors;
-            consensusTree.prepareBranches([0, 1]).findMissing(state.inputGroupData.entities);
+            consensusTree.prepareBranches([0, 1])
+                .normalizeBranchLength()
+                .findMissing(state.inputGroupData.entities);
             consensusTree.consensusURL = window.URL.createObjectURL(new Blob([action.data.newickString], {type: 'text/plain'}));
 
             return {

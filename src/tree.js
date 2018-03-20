@@ -61,9 +61,13 @@ export class Tree {
         // console.log('extend=',extend);
         let normScale = scaleLinear().domain(extend).range([0.05, 1]);
         for (let bid in branches) if (branches.hasOwnProperty(bid)) {
-            // branches[bid].normalizedLen = normScale(branches[bid].length);
+            branches[bid].normalizedLen = normScale(branches[bid].length);
             // DO NOT NORMALIZE!!!
-            branches[bid].normalizedLen = branches[bid].length;
+            // branches[bid].normalizedLen = branches[bid].length;
+            // If the brangh length is 0, clip it to 5% of the max length (min must be 0)
+            // if (branches[bid].length < 1e-6) {
+            //     branches[bid].normalizedLen = extend[1] * 0.05;
+            // }
         }
         return this;
     }
