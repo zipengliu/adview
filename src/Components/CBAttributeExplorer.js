@@ -68,9 +68,9 @@ class CBAttributeExplorer extends Component {
                             <Table condensed>
                                 <thead>
                                 <tr>
-                                    <th>corr.br.</th>
+                                    <th>no.</th>
                                     <th>exact?</th>
-                                    {activeTreeCBInfo[0].hasOwnProperty('support') && <th>support</th>}
+                                    <th>support</th>
                                     <th>similarity</th>
                                 </tr>
                                 </thead>
@@ -78,7 +78,7 @@ class CBAttributeExplorer extends Component {
                                 {activeTreeCBInfo.map((v, i) => <tr key={i}>
                                     <td>{v.no}</td>
                                     <td><Glyphicon glyph={v.isExact? 'ok': 'remove'} /></td>
-                                    {v.support >= 0 && <td>{v.support.toFixed(1)}</td>}
+                                    <td>{v.hasOwnProperty('support')? v.support.toFixed(2): 'NA'}</td>
                                     <td>{v.similarity.toFixed(1)}</td>
                                 </tr>)}
                                 </tbody>
@@ -198,7 +198,7 @@ let mapStateToProps = state => {
             let corr = referenceTree.branches[rBid][cb];
             if (corr.hasOwnProperty(tid) && corr[tid].bid) {
                 activeTreeCBInfo.push({no: expanded[rBid], isExact: corr[tid].jac === 1.0, similarity: corr[tid].jac});
-                if (trees[tid].branches[corr[tid].bid].support) {
+                if (trees[tid].branches[corr[tid].bid].hasOwnProperty('support')) {
                     activeTreeCBInfo[activeTreeCBInfo.length - 1].support = trees[tid].branches[corr[tid].bid].support;
                 }
             }
