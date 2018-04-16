@@ -754,7 +754,8 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
             children: []
         };
         // Exit
-        return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
+        return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing),
+            width: spec.width, height: spec.height};
     }
 
     // console.log(tree.tid, expandedBidArray, spec);
@@ -1080,7 +1081,8 @@ let calcSkeletonLayout = (tree, expanded, spec) => {
 
     // console.log(blocks);
     // console.log(branches);
-    return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing)};
+    return {blocks, branches, tid: tree.tid, name: tree.name, rootBlockId, missing: createMappingFromArray(tree.missing),
+        width: spec.width, height: spec.height};
 };
 
 let layoutAlgorithms = {

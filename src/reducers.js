@@ -160,14 +160,18 @@ let initialState = {
             checkForSister: true,
         },
         showLegends: true,
-        showAllClusters: true,
+        showAllClusters: false,
         showAllIndividuals: false,
 
         spec: {
+            userSpecifiedSize: false,   // whether user want to adjust the size of individual AD.  If not, it would be automatically adjusted.
             width: 80,
             height: 80,
             sizeRange: [30, 300],
-            clusterSizeRatio: 1.2,
+            sizeFunction: (n) => Math.max(Math.min(-0.75 * n + 135, 150), 50),
+            // clusterSizeRatio: 1.2,   // deprecated
+            clusterWidth: 100,          // size of cluster is fixed
+            clusterHeight: 100,
             margin: {left: 6, top: 6, right: 6, bottom: 6},
             verticalGap: 3,
             branchLen: 6,
@@ -179,7 +183,7 @@ let initialState = {
             showLabels: true,
             showColors: true,
 
-            defaultShown: 10,
+            defaultShown: 20,           // Default number of individual ADs to show
 
             frondLayout: {
                 frondLeafGap: 5,

@@ -24,14 +24,29 @@ class DendrogramContainer extends Component {
             expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends, hoveredTrees,
             selectedTreeColor, showAllClusters, showAllIndividuals} = this.props;
         let expandedArr = Object.keys(expandedBranches);
+
+        let visibleClsuters = showAllClusters? clusters: clusters.filter(c => c.num >= 0.05 * this.props.totalTreeCnt);
+        let hasOutlierClusters = clusters[clusters.length - 1].num < 0.05 * this.props.totalTreeCnt;
+        let visibleIndividuals = showAllIndividuals? individuals: individuals.slice(0, spec.defaultShown);
+
         // Padding + border + proportion bar
-        let boxWidth = spec.width + spec.margin.left + spec.margin.right + 4;
-        let boxHeight = spec.height + spec.margin.top + spec.margin.bottom + 4;
-        let clusterBoxWidth = spec.width * spec.clusterSizeRatio + spec.margin.left + spec.margin.right + 4;
-        let clusterBoxHeight = spec.height * spec.clusterSizeRatio + spec.margin.top + spec.margin.bottom + 4;
+        let adWidth, adHeight;
+        if (spec.userSpecifiedSize) {
+            adWidth = spec.width;
+            adHeight = spec.height;
+        } else {
+            adWidth = spec.sizeFunction(visibleIndividuals.length);
+            adHeight = adWidth;
+        }
+        let boxWidth = adWidth + spec.margin.left + spec.margin.right + 4;
+        let boxHeight = adHeight + spec.margin.top + spec.margin.bottom + 4;
+        let clusterBoxWidth = spec.clusterWidth + spec.margin.left + spec.margin.right + 4;
+        let clusterBoxHeight = spec.clusterHeight + spec.margin.top + spec.margin.bottom + 4;
+
 
         let getDendroBox = (t, isCluster) => {
-            let w = isCluster? clusterBoxWidth: boxWidth, h = isCluster? clusterBoxHeight: boxHeight;
+            let w = isCluster? clusterBoxWidth: boxWidth;
+            let h = isCluster? clusterBoxHeight: boxHeight;
             let hoveredTreeCnt = hoveredTrees.hasOwnProperty(t.tid);
             if (isCluster) {
                 // Vertical space for the population bar of each cluster
@@ -48,7 +63,7 @@ class DendrogramContainer extends Component {
                 >
                     {t.hopeless?
                         <Glyphicon glyph="exclamation-sign"/> :
-                        <AggregatedDendrogram data={t} spec={spec} isCluster={isCluster}
+                        <AggregatedDendrogram data={t} spec={Object.assign(spec, {width: adWidth, height: adHeight})} isCluster={isCluster}
                                               isSelected={isCluster? t.selectedCnt === t.num: selectedTrees.hasOwnProperty(t.tid)}
                                               selectedTreeColor={selectedTreeColor}
                                               isReferenceTree={t.tid === this.props.referenceTid}
@@ -74,19 +89,25 @@ class DendrogramContainer extends Component {
 
                 <div className="view-body panel-body" style={{display: 'flex', flexFlow: 'column nowrap'}}>
                     <div id="ad-params">
-                        <span className="param-label">width: {spec.width}
+                        <span className="param-label">manual size: </span>
+                        <input type="checkbox" checked={spec.userSpecifiedSize} onChange={this.props.onChangeSize.bind(null, 'userSpecifiedSize', !spec.userSpecifiedSize)} />
+
+                        <span className={cn('param-label', {'param-disabled': !spec.userSpecifiedSize})} style={{marginLeft: '10px'}}>
+                            width: {spec.width}
                             {hopelessWidth && <Glyphicon glyph="exclamation-sign"/>}
                         </span>
                         <div className="slider">
                                 <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.width} step={10}
+                                       disabled={!spec.userSpecifiedSize}
                                        onChange={(e) => {this.props.onChangeSize('width', parseInt(e.target.value))}}/>
                         </div>
 
-                        <span className="param-label">height: {spec.height}
+                        <span className={cn('param-label', {'param-disabled': !spec.userSpecifiedSize})}>height: {spec.height}
                             {hopelessHeight && <Glyphicon glyph="exclamation-sign"/>}
                         </span>
                         <div className="slider">
                             <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.height} step={10}
+                                   disabled={!spec.userSpecifiedSize}
                                    onChange={(e) => {this.props.onChangeSize('height', parseInt(e.target.value))}}/>
                         </div>
 
@@ -130,16 +151,16 @@ class DendrogramContainer extends Component {
                         </div>
                         {showCluster &&
                         <div className="cluster-container">
-                            {(showAllClusters? clusters: clusters.slice(0, spec.defaultShown))
-                                .map(x => getDendroBox(x, true))}
-                            {clusters.length <= spec.defaultShown?
-                                <div></div>:
+                            {visibleClsuters.map(x => getDendroBox(x, true))}
+                            {hasOutlierClusters?
                                 <div>
                                     <Button bsSize="xsmall" style={{margin: `${spec.margin.top}px ${spec.margin.left}px`}}
                                             onClick={this.props.onToggleShowAll.bind(null, true)}>
-                                        {showAllClusters? 'Less': 'More'}
+                                        {visibleClsuters.length === clusters.length? 'Less': 'More'}
                                     </Button>
-                                </div>}
+                                </div>:
+                                <div></div>
+                            }
                         </div>
                         }
                     </div>
@@ -268,9 +289,22 @@ let getLayouts = createSelector(
     state => state.cb,
     state => state.inputGroupData.trees,
     state => state.aggregatedDendrogram.layoutAlg,
+    state => {
+        if (state.aggregatedDendrogram.spec.userSpecifiedSize) return 0;
+        let activeTreeCnt = state.sets[state.aggregatedDendrogram.activeSetIndex].tids.length;
+        let visibles = state.aggregatedDendrogram.showAllIndividuals? activeTreeCnt:
+            Math.min(state.aggregatedDendrogram.spec.defaultShown, activeTreeCnt);
+        return visibles;
+    },
     state => state.aggregatedDendrogram.spec],
-    (referenceTree, expanded, cb, trees, layoutAlg, spec) => {
+    (referenceTree, expanded, cb, trees, layoutAlg, visibleTreeCnt, spec) => {
         let layoutFunc = layoutAlgorithms[layoutAlg];
+
+        // Determine the size
+        if (!spec.userSpecifiedSize) {
+            let autoSize = spec.sizeFunction(visibleTreeCnt);
+            spec = Object.assign(spec, {width: autoSize, height: autoSize});
+        }
 
         let layouts = {};
         // Order must be consistent to deal with double matching otherwise cluster algorithm (the getHash) might be compromised
@@ -331,8 +365,8 @@ let clusterLayoutsByTopology = createSelector(
     [state => state.aggregatedDendrogram.clusterParameter,
         (_, layouts) => layouts,
         state => state.inputGroupData.trees,
-        state => state.aggregatedDendrogram.spec.clusterSizeRatio],
-    (param, layouts, trees, enlargeRatio) => {
+        state => state.aggregatedDendrogram.spec.clusterWidth],
+    (param, layouts, trees, clusterSize) => {
         let numLayouts = Object.keys(layouts).length;
 
         let addTreeToCluster= (cluster, tree) => {
@@ -385,12 +419,15 @@ let clusterLayoutsByTopology = createSelector(
                 }
             };
             traverse(t.rootBlockId);
+
             // Enlarge the cluster AD so that it stands out a bit
+            let enlargeRatioWidth = clusterSize / t.width;
+            let enlargeRatioHeight = clusterSize / t.height;
             for (let bid in c.blocks) if (c.blocks.hasOwnProperty(bid)) {
-                c.blocks[bid] = transformRect(c.blocks[bid], enlargeRatio);
+                c.blocks[bid] = transformRect(c.blocks[bid], enlargeRatioWidth, enlargeRatioHeight);
             }
             for (let bid in c.branches) if (c.branches.hasOwnProperty(bid)) {
-                c.branches[bid] = transformLine(c.branches[bid], enlargeRatio);
+                c.branches[bid] = transformLine(c.branches[bid], enlargeRatioWidth, enlargeRatioHeight);
             }
             return c;
         };
@@ -593,6 +630,7 @@ let mapStateToProps = (state) => {
         hoveredTrees: state.hoveredTrees,
         expandedBranches: state.referenceTree.expanded,
         selectedTreeColor: state.selectedTreeColor,
+        totalTreeCnt: state.sets[0].tids.length,
 
         clusters: filledClusters,
         individuals: filledIndividuals,

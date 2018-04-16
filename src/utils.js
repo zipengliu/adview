@@ -256,24 +256,24 @@ export function makeCompareFunc(d, field, isIncreasing=true) {
     }
 }
 
-export function transformRect(r, ratio) {
+export function transformRect(r, ratioW, ratioH) {
     return {
         ...r,
-        x: r.x * ratio,
-        y: r.y * ratio,
-        width: r.width * ratio,
-        height: r.height * ratio
+        x: r.x * ratioW,
+        y: r.y * ratioH,
+        width: r.width * ratioW,
+        height: r.height * ratioH
     }
 }
 
 
-export function transformLine(l, ratio) {
+export function transformLine(l, ratioW, ratioH) {
     return {
         ...l,
-        x1: l.x1 * ratio,
-        y1: l.y1 * ratio,
-        x2: l.x2 * ratio,
-        y2: l.y2 * ratio,
+        x1: l.x1 * ratioW,
+        y1: l.y1 * ratioH,
+        x2: l.x2 * ratioW,
+        y2: l.y2 * ratioH,
     }
 }
 

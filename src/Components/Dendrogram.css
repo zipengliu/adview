@@ -154,6 +154,10 @@ rect.selected-tree-indicator {
     vertical-align: middle;
 }
 
+#ad-params .param-label.param-disabled {
+    text-decoration: line-through;
+}
+
 #ad-params .slider {
     vertical-align: middle;
     display: inline-block;

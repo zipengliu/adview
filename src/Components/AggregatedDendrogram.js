@@ -14,8 +14,8 @@ class AggregatedDendrogram extends Component {
             isSelected, selectedTreeColor} = this.props;
         let {width, height, margin, proportionBarHeight, proportionTopMargin, showLabels} = spec;
         if (isCluster) {
-            width = width * spec.clusterSizeRatio;
-            height = height * spec.clusterSizeRatio;
+            width = spec.clusterWidth;
+            height = spec.clusterHeight;
         }
         let {trees, blocks, branches, num, total, selectedCnt} = data;
         let blockArr = createArrayFromMapping(blocks);
