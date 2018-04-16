@@ -194,10 +194,10 @@ class FullDendrogram extends Component {
                                          if (branches.hasOwnProperty(d.bid) && tree.tid === referenceTree.id)
                                              this.props.onOpenExtendedMenu(d.bid, e.clientX, e.clientY);
                                      } else if (isCtrl) {
+                                         this.props.toggleHighlightMonophyly(tree.tid, d.bid, e.shiftKey)
+                                     } else {
                                          if (branches.hasOwnProperty(d.bid) && tree.tid === referenceTree.id)
                                              this.props.onSelectBranch(d.bid);
-                                     } else {
-                                         this.props.toggleHighlightMonophyly(tree.tid, d.bid, e.shiftKey)
                                      }
                                  }}
                                  key={d.bid}>
