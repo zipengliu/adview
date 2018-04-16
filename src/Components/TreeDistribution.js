@@ -113,7 +113,7 @@ class TreeDistribution extends Component {
 
                 {expandedArr.length === 0 &&
                 <div className="panel-body">
-                    There is no branch of interest yet. Please select from the reference tree (Alt + click a branch).
+                    There is no branch of interest yet. Please select from the reference tree (click a branch).
                 </div>
                 }
 

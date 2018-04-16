@@ -343,9 +343,19 @@ export function startSelection(x, y, size) {
 }
 
 export function endSelection(tids) {
-    return {
-        type: TYPE.END_SELECTION, tids
+    return function (dispatch, getState) {
+        let state = getState();
+
+        // If in pairwise comparison mode and multiple trees are selected, trigger make consensus trees
+        if (state.pairwiseComparison.tid && tids.length > 1) {
+            dispatch(makeConsensus(state.inputGroupData.inputGroupId, tids));
+        }
+        dispatch(endSelectionVisual(tids));
     }
+}
+
+function endSelectionVisual(tids) {
+    return {type: TYPE.END_SELECTION, tids};
 }
 
 export function changeSelection(x, y) {
@@ -657,6 +667,19 @@ export function toggleHighlightTrees(tids, msg, isMsgForBip=false) {
 
 
 export function toggleSelectTrees(tids, isAdd) {
+    return function (dispatch, getState) {
+        let state = getState();
+
+        // If in pairwise comparison mode and multiple trees are selected, trigger make consensus trees
+        if (state.pairwiseComparison.tid && (tids.length > 1 || (isAdd && !Object.keys(state.selectedTrees).length))) {
+            let consensusTids = isAdd? Object.keys(state.selectedTrees).concat(tids): tids;
+            dispatch(makeConsensus(state.inputGroupData.inputGroupId, consensusTids));
+        }
+        dispatch(toggleSelecTreesVisual(tids, isAdd));
+    }
+}
+
+function toggleSelecTreesVisual(tids, isAdd) {
     return {type: TYPE.TOGGLE_SELECT_TREES, tids, isAdd};
 }
 
