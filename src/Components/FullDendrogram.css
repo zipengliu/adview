@@ -66,19 +66,20 @@ rect.reference-tree-indicator {
     fill-opacity: .15;
 }
 
-.checking-branch-tooltip {
+.checking-branch-tooltip, .taxon-label-tooltip {
     position: fixed;
     z-index: 1000;
     background-color: black;
     padding: 5px;
     margin-left: 5px;
+    top: 80px;
+    left: 20px;
+
     /*-webkit-transform: translateY(-100%);*/
     /*-moz-transform: translateY(-100%);*/
     /*-ms-transform: translateY(-100%);*/
     /*-o-transform: translateY(-100%);*/
     /*transform: translateY(-100%);*/
-}
-.checking-branch-tooltip div {
     font-size: 10px;
     color: #fff;
 }

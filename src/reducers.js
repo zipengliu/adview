@@ -85,6 +85,7 @@ let initialState = {
         userSpecifiedByGroup: {},       // reverse mapping of the above, maintain this for performance
         isFetching: false,
         highlightEntities: [],          // highlighted by the blocks in the aggregated dendrograms
+        taxonToShowLabel: null,
         highlightUncertainEntities: [],
         universalBranchLen: false,
         extendedMenu: {
@@ -683,6 +684,7 @@ function visphyReducer(state = initialState, action) {
                 ...state,
                 referenceTree: {
                     ...state.referenceTree,
+                    taxonToShowLabel: action.e? action.e: null,
                     highlightEntities: action.e? [action.e]: []
                 }
             };

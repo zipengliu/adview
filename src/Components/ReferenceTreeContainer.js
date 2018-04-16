@@ -19,7 +19,7 @@ class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
         let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup,
-            expandedBranches, colorScheme, showLegends, inputGroupId, entityNames} = props;
+            expandedBranches, colorScheme, showLegends, inputGroupId, entityNames, taxonToShowLabel} = props;
         let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
         let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
         let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
@@ -171,7 +171,7 @@ class ReferenceTreeContainer extends Component {
                     </ul>}
 
                     {props.checkingBranch &&
-                    <div className="checking-branch-tooltip" style={{top: viewBodyPos.top + 10 + 'px', left: viewBodyPos.right - 120 + 'px'}}>
+                    <div className="checking-branch-tooltip">
                         {props.tooltip.map((a, i) =>
                             <div key={i}>
                                 {a.attribute}: {a.accessor(props.checkingBranchTid === tree.tid?
@@ -179,6 +179,11 @@ class ReferenceTreeContainer extends Component {
                             </div>)}
                     </div>
                     }
+
+                    {taxonToShowLabel && entityNames[taxonToShowLabel].label &&
+                    <div className="taxon-label-tooltip">
+                        {entityNames[taxonToShowLabel].label}
+                    </div>}
                 </div>
                 <div className={cn("panel-footer", {'hidden-legend': !showLegends})}>
                     <div className="toggle-legend-btn">
@@ -255,6 +260,7 @@ let mapStateToProps = state => ({
     userSpecified: state.referenceTree.userSpecified,
     extendedMenu: state.referenceTree.extendedMenu,
     checkingBranch: state.referenceTree.checkingBranch,
+    taxonToShowLabel: state.referenceTree.taxonToShowLabel,
     checkingBranchTid: state.referenceTree.checkingBranchTid,
     tooltip: state.referenceTree.tooltip,
     charts: state.referenceTree.charts,

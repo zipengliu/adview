@@ -17,7 +17,7 @@ class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
              entities, rangeSelection, distributions} = this.props;
-        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer} = referenceTree;
+        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer, taxonToShowLabel} = referenceTree;
         let isComparing = comparingTree !== null;
         let taxaMembership = membershipViewer.map(m => {
             let d = distributions[0][m.bid];
@@ -181,10 +181,10 @@ class FullDendrogram extends Component {
                        {responsiveBoxes.map(d =>
                            <rect className={cn("box")}
                                  x={d.x} y={d.y} width={d.width} height={d.height}
-                                 onMouseEnter={branches.hasOwnProperty(d.bid) && !branches[d.bid].isLeaf?
+                                 onMouseEnter={branches.hasOwnProperty(d.bid)?
                                      this.props.onToggleCheckingBranch.bind(null, d.bid, tree.tid): null}
                                  onMouseLeave={tree.tid === referenceTree.checkingBranchTid
-                                 && branches.hasOwnProperty(d.bid) && !branches[d.bid].isLeaf? this.props.onToggleCheckingBranch.bind(null, null, null): null}
+                                 && branches.hasOwnProperty(d.bid)? this.props.onToggleCheckingBranch.bind(null, null, null): null}
                                  onClick={(e) => {
                                      console.log('clicking on :', d.bid, 'ctrl: ', e.ctrlKey, ' alt: ', e.altKey, 'meta: ', e.metaKey);
                                      e.stopPropagation();
