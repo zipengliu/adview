@@ -89,7 +89,6 @@ let HistogramSlider = props => {
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
                         <path d="M0,0L-4,8L4,8Z" className="control" transform={`translate(${controlPos[1]}, 0)`}
                               style={{fill: selectionColor}}
-                              onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'left'): null}/>
                               onMouseDown={hasData? props.toggleMoveHandle.bind(null, 'right'): null}/>
                         <rect className="selected-area" x={controlPos[0]} y={-spec.chartHeight - 3}
                               style={{fill: selectionColor}}
