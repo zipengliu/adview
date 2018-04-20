@@ -2,6 +2,7 @@ VisPhy: Visual Comparison of Phylogenetic Trees
 ====
 
 Documentation Author: [Zipeng Liu](http://www.cs.ubc.ca/~zipeng/)
+
 Website: [vipshy.cs.ubc.ca](http://visphy.cs.ubc.ca)
 
 ## 1 Overview
@@ -148,10 +149,10 @@ Figure 4
 
 In the reference dendrogram, you can hit `alt+click` on a branch to bring up a menu (see Fig. 4):
 
-* Highlight (does NOT create a named clade) (shortcut: `click`):
+* Highlight (does NOT create a named clade) (shortcut: `command+click` on Mac, `ctrl+click` on Windows):
   - color the descendants in the reference tree and pairwise comparing tree (if any); 
   - color the taxa in the blocks of aggregated dendrograms.  
-* Match (create a new named clade) (shortcut: `command+click` on Mac, `ctrl+click` on Windows): 
+* Match (create a new named clade) (shortcut: `click`): 
   - find the corresponding branch in each tree of the tree collection; 
   - put trees into bins by the taxa membership under their corresponding branches and add a row in the tree distribution (\[TC-TD\] in Fig. 1);
   - change the layout of ADs to reflect the new named clade;
