@@ -168,7 +168,7 @@ let initialState = {
             width: 80,
             height: 80,
             sizeRange: [30, 300],
-            sizeFunction: (n) => Math.max(Math.min(-0.75 * n + 135, 150), 50),
+            sizeFunction: (n) => Math.max(Math.min(-0.75 * n + 115, 120), 50),
             // clusterSizeRatio: 1.2,   // deprecated
             clusterWidth: 100,          // size of cluster is fixed
             clusterHeight: 100,
@@ -184,6 +184,7 @@ let initialState = {
             showColors: true,
 
             defaultShown: 20,           // Default number of individual ADs to show
+            defaultClusterShown: 8,
 
             frondLayout: {
                 frondLeafGap: 5,

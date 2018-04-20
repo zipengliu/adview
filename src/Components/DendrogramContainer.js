@@ -25,7 +25,8 @@ class DendrogramContainer extends Component {
             selectedTreeColor, showAllClusters, showAllIndividuals} = this.props;
         let expandedArr = Object.keys(expandedBranches);
 
-        let visibleClsuters = showAllClusters? clusters: clusters.filter(c => c.num >= 0.05 * this.props.totalTreeCnt);
+        let visibleClsuters = showAllClusters || clusters.length <= spec.defaultClusterShown? clusters:
+            clusters.filter(c => c.num >= 0.05 * this.props.totalTreeCnt);
         let hasOutlierClusters = clusters[clusters.length - 1].num < 0.05 * this.props.totalTreeCnt;
         let visibleIndividuals = showAllIndividuals? individuals: individuals.slice(0, spec.defaultShown);
 
@@ -152,7 +153,7 @@ class DendrogramContainer extends Component {
                         {showCluster &&
                         <div className="cluster-container">
                             {visibleClsuters.map(x => getDendroBox(x, true))}
-                            {hasOutlierClusters?
+                            {hasOutlierClusters && clusters.length > spec.defaultClusterShown?
                                 <div>
                                     <Button bsSize="xsmall" style={{margin: `${spec.margin.top}px ${spec.margin.left}px`}}
                                             onClick={this.props.onToggleShowAll.bind(null, true)}>
