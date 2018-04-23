@@ -5,7 +5,7 @@
 import 'whatwg-fetch';
 import {browserHistory} from 'react-router';
 import * as TYPE from './actionTypes';
-import {getCoordinates} from './utils';
+import {createMappingFromArray, getCoordinates} from './utils';
 // import {reroot} from './tree';
 
 // Fetch data actions
@@ -464,6 +464,10 @@ export function toggleShowAllAD(isCluster) {
     return {type: TYPE.TOGGLE_SHOW_ALL_AD, isCluster};
 }
 
+export function toggleShowTreeNames() {
+    return {type: TYPE.TOGGLE_SHOW_TREE_NAMES}
+}
+
 
 export function toggleInspector() {
     return {type: TYPE.TOGGLE_INSPECTOR}
@@ -666,21 +670,38 @@ export function toggleHighlightTrees(tids, msg, isMsgForBip=false) {
 }
 
 
-export function toggleSelectTrees(tids, isAdd) {
+export function toggleSelectTrees(tids, isAdd, isRemove=false) {
     return function (dispatch, getState) {
         let state = getState();
+        let consensusTids = [];
+        if (isRemove) {
+            let removingTids = createMappingFromArray(tids);
+            for (let tid in state.selectedTrees)
+                if (state.selectedTrees.hasOwnProperty(tid) && !removingTids.hasOwnProperty(tid)) {
+                    consensusTids.push(tid);
+                }
+        } else if (isAdd) {
+            consensusTids = Object.keys(state.selectedTrees).concat(tids);
+        } else {
+            consensusTids = tids;
+        }
 
         // If in pairwise comparison mode and multiple trees are selected, trigger make consensus trees
-        if (state.pairwiseComparison.tid && (tids.length > 1 || (isAdd && !Object.keys(state.selectedTrees).length))) {
-            let consensusTids = isAdd? Object.keys(state.selectedTrees).concat(tids): tids;
+        if (state.pairwiseComparison.tid && consensusTids.length > 1) {
             dispatch(makeConsensus(state.inputGroupData.inputGroupId, consensusTids));
         }
-        dispatch(toggleSelecTreesVisual(tids, isAdd));
+
+        if (isRemove) {
+            // This is a quick hack since we have calculated the newSelectedTrees already
+            dispatch(toggleSelecTreesVisual(consensusTids, false));
+        } else {
+            dispatch(toggleSelecTreesVisual(tids, isAdd));
+        }
     }
 }
 
-function toggleSelecTreesVisual(tids, isAdd) {
-    return {type: TYPE.TOGGLE_SELECT_TREES, tids, isAdd};
+function toggleSelecTreesVisual(tids, isAdd, isRemove) {
+    return {type: TYPE.TOGGLE_SELECT_TREES, tids, isAdd, isRemove};
 }
 
 

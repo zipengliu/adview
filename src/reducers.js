@@ -163,6 +163,8 @@ let initialState = {
         showAllClusters: false,
         showAllIndividuals: false,
 
+        showTreeNames: false,
+
         spec: {
             userSpecifiedSize: false,   // whether user want to adjust the size of individual AD.  If not, it would be automatically adjusted.
             width: 80,
@@ -1586,7 +1588,13 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.TOGGLE_SELECT_TREES:
-            newSelectedTrees = action.isAdd? {...mergeArrayToMapping(state.selectedTrees, action.tids)}: createMappingFromArray(action.tids);
+            if (action.isAdd) {
+                newSelectedTrees = {...mergeArrayToMapping(state.selectedTrees, action.tids)};
+            } else if (action.isRemove) {
+
+            } else {
+                newSelectedTrees = createMappingFromArray(action.tids);
+            }
             // If select a different tree for pairwise comparison
             if (state.pairwiseComparison.tid && state.pairwiseComparison.tid !== action.tids[0]
                 && (!action.isAdd || (action.isAdd && !Object.keys(state.selectedTrees).length))) {
@@ -2095,6 +2103,15 @@ function visphyReducer(state = initialState, action) {
                         ...state.aggregatedDendrogram,
                         showAllIndividuals: !state.aggregatedDendrogram.showAllIndividuals
                     }
+                }
+            }
+
+        case TYPE.TOGGLE_SHOW_TREE_NAMES:
+            return {
+                ...state,
+                aggregatedDendrogram: {
+                    ...state.aggregatedDendrogram,
+                    showTreeNames: !state.aggregatedDendrogram.showTreeNames
                 }
             }
 

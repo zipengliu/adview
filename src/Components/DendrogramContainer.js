@@ -11,7 +11,7 @@ import cn from 'classnames';
 import AggregatedDendrogram from './AggregatedDendrogram';
 import {selectSet, changeSorting, toggleSelectTrees, toggleHighlightADBlock,
     toggleShowAD, changeADSize, changeSkeletonLayoutParameter, changeClusterParameter, toggleLegends,
-    toggleShowAllAD} from '../actions';
+    toggleShowAllAD, toggleShowTreeNames} from '../actions';
 import {createMappingFromArray, getIntersection, makeCompareFunc, transformLine, transformRect} from '../utils';
 import {renderSubCollectionGlyph} from './Commons';
 import layoutAlgorithms from '../aggregatedDendrogramLayout';
@@ -22,7 +22,7 @@ class DendrogramContainer extends Component {
     render() {
         let {clusters, individuals, showCluster, showIndividual, spec, order, selectedTrees, rangeSelection,
             expandedBranches, hopelessWidth, hopelessHeight, clusterParameter, showLegends, hoveredTrees,
-            selectedTreeColor, showAllClusters, showAllIndividuals} = this.props;
+            selectedTreeColor, showAllClusters, showAllIndividuals, originalTrees, showTreeNames} = this.props;
         let expandedArr = Object.keys(expandedBranches);
 
         let visibleClsuters = showAllClusters || clusters.length <= spec.defaultClusterShown? clusters:
@@ -54,6 +54,9 @@ class DendrogramContainer extends Component {
                 h += spec.proportionBarHeight + spec.proportionTopMargin;
                 hoveredTreeCnt = t.trees.filter(tid => hoveredTrees.hasOwnProperty(tid)).length;
             }
+            if (!isCluster && showTreeNames) {
+                h += 20;
+            }
             t.selectedCnt = isCluster? t.trees.filter(tid => selectedTrees.hasOwnProperty(tid)).length:
                 selectedTrees.hasOwnProperty(t.tid);
             return (
@@ -62,6 +65,10 @@ class DendrogramContainer extends Component {
                      style={{width: w + 'px', height: h + 'px'}}
                      onClick={(e) => {this.props.onSelectTrees(isCluster? t.trees: [t.tid], e.shiftKey)}}
                 >
+                    {!isCluster && showTreeNames &&
+                    <div className="ad-tree-name">
+                        {originalTrees[t.tid].name}
+                    </div>}
                     {t.hopeless?
                         <Glyphicon glyph="exclamation-sign"/> :
                         <AggregatedDendrogram data={t} spec={Object.assign(spec, {width: adWidth, height: adHeight})} isCluster={isCluster}
@@ -185,7 +192,11 @@ class DendrogramContainer extends Component {
                                             </MenuItem>)}
                                     </DropdownButton>
                                 }
-                                <span style={{marginLeft: '2px'}}> to the reference tree)</span>
+                                <span style={{marginLeft: '2px'}}> to the reference tree).</span>
+
+                                <span className="param-label" style={{marginLeft: '8px', marginRight: '2px'}}>Show tree names:</span>
+                                <input type="checkbox" checked={showTreeNames} onChange={this.props.onToggleShowTreeNames}/>
+
                             </div>
                             }
                         </div>
@@ -632,6 +643,7 @@ let mapStateToProps = (state) => {
         expandedBranches: state.referenceTree.expanded,
         selectedTreeColor: state.selectedTreeColor,
         totalTreeCnt: state.sets[0].tids.length,
+        originalTrees: state.inputGroupData.trees,
 
         clusters: filledClusters,
         individuals: filledIndividuals,
@@ -650,7 +662,8 @@ let mapDispatchToProps = (dispatch) => ({
     onChangeSkeletonParameter: (a, v) => {dispatch(changeSkeletonLayoutParameter(a, v))},
     onChangeClusterParam: (a, v) => {dispatch(changeClusterParameter(a, v))},
     onToggleLegends: () => {dispatch(toggleLegends('aggregatedDendrogram'))},
-    onToggleShowAll: (isCluster) => {dispatch(toggleShowAllAD(isCluster))}
+    onToggleShowAll: (isCluster) => {dispatch(toggleShowAllAD(isCluster))},
+    onToggleShowTreeNames: () => {dispatch(toggleShowTreeNames())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(DendrogramContainer);

@@ -28,6 +28,13 @@
     border: 2px solid #000;
 }
 
+.agg-dendro-box .ad-tree-name {
+    width: 100%;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
 
 .block {
     fill: #fff;
