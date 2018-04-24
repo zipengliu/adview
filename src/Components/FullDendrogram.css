@@ -1,5 +1,5 @@
 .branch-line {
-    stroke-width: 1;
+    stroke-width: 1px;
     stroke: black;
 }
 .branch-line.range-selected {

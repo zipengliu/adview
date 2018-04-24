@@ -277,7 +277,9 @@ export function transformLine(l, ratioW, ratioH) {
     }
 }
 
-export function estimateTextWidth(text) {
+// This estimation is based on font size of 8pt
+//  For bigger font, need to use a scaling factor
+export function estimateTextWidth(text, scaling=1) {
     let lowercaseCharLength = 4.5;
     let uppercaseCharLengthExtra = 3.5;
     let narrowCharLengthDecduction = 2.2;
@@ -293,5 +295,5 @@ export function estimateTextWidth(text) {
     }
     let l = text.length * lowercaseCharLength + uppercaseCharLengthExtra * upperCount - narrowCharLengthDecduction * narrowCount;
 
-    return l;
+    return l * scaling;
 }

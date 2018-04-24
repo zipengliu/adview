@@ -6,6 +6,7 @@
     flex: 0 0 300px;
     margin: 0 10px;
     border-right: 1px solid grey;
+    font-size: 12px;
 }
 #outgroup-sel-dendrogram {
     flex: 1 0 auto;
@@ -72,4 +73,19 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+
+#outgroup-sel-dendrogram .names .entity-name {
+    font-size: 12px;
+}
+
+#outgroup-sel-dendrogram .topology .branch-line.selected {
+    stroke-width: 8px;
+}
+
+#outgroup-sel-dendrogram .highlight-box {
+    stroke-width: 0;
+    fill: steelblue;
+    fill-opacity: .5;
 }

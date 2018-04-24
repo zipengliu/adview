@@ -29,6 +29,7 @@
 }
 
 .agg-dendro-box .ad-tree-name {
+    font-size: 10px;
     width: 100%;
     text-overflow: ellipsis;
     overflow: hidden;

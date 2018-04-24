@@ -1,14 +1,15 @@
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
+import cn from 'classnames';
 import {Form, FormGroup, ControlLabel, FormControl, HelpBlock, Col, Button, Radio, Checkbox} from 'react-bootstrap';
-import {changeUploadDataset, uploadDataset, uploadOutgroup, selectOutgroupTaxa, changeOutgroupTaxaFile} from '../actions';
+import {changeUploadDataset, uploadDataset, uploadOutgroup, selectOutgroupTaxa, changeOutgroupTaxaFile, toggleOutgroupBranch} from '../actions';
 import {uploadProgressModal} from './Commons';
 import './UploadDataset.css';
 
 class UploadDataset extends Component {
     render() {
-        let {upload} = this.props;
-        let {entities, outgroupTaxa, uploadState, formData} = upload;
+        let {upload, selectingOutgroup, dendrogramSpec, fullDendrogram} = this.props;
+        let {entities, outgroupTaxa, uploadState, formData, outgroupBranches} = upload;
         let entArr;
         if (entities) {
             entArr = Object.keys(entities).sort((a ,b) => {
@@ -21,7 +22,53 @@ class UploadDataset extends Component {
         if (outgroupTaxa) {
             outgroupTaxaArr = Object.keys(outgroupTaxa);
         }
-        let selectingOutgroup = !upload.isProcessingEntities && upload.referenceTree;
+
+        let renderDendrogram = (dendrogram, spec) => {
+            let svgWidth = dendrogram.treeBoundingBox.width + spec.margin.left + spec.margin.right;
+            let svgHeight = dendrogram.treeBoundingBox.height + spec.margin.top + spec.margin.bottom;
+
+            let {branchSpecs, verticalLines, textSpecs, responsiveBoxes, hoverBoxes} = dendrogram;
+            // let {branches} = upload.referenceTree;
+
+            return (
+                <svg width={svgWidth} height={svgHeight}>
+                    <g transform={`translate(${spec.margin.left},${spec.margin.top})`}>
+                        <g>
+                            {Object.keys(outgroupBranches).map(bid =>
+                                <rect key={bid} className="highlight-box" {...hoverBoxes[bid]}/>)}
+                        </g>
+
+                        <g className="topology">
+                            {branchSpecs.map((d) =>
+                                <g key={d.bid}>
+                                    <line className={cn('branch-line', {selected: outgroupBranches.hasOwnProperty(d.bid)})}
+                                          x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}/>
+                                </g>
+                            )}
+                            {verticalLines.map((d, i) =>
+                                <line className="branch-line" key={i} x1={d.x1} y1={d.y1} x2={d.x2} y2={d.y2}  />
+                            )}
+                        </g>
+
+                        <g className="names">
+                            {textSpecs.map((d, i) =>
+                                <text key={i} className="entity-name" x={d.x} y={d.y} dx={8} dy={3} textAnchor='start'>
+                                    {entities[d.entity_id]}
+                                </text>)}
+                        </g>
+
+                        <g className="responding-boxes">
+                            {responsiveBoxes.map(d =>
+                                <rect key={d.bid} className={cn("box")}
+                                      x={d.x} y={d.y} width={d.width} height={d.height}
+                                      onClick={this.props.onToggleOutgroupBranch.bind(null, d.bid)}
+                                />
+                            )}
+                        </g>
+                    </g>
+                </svg>
+            )
+        };
 
         let labelCol = 4, formCol = 8;
         let handleChange = (e) => {this.props.onChangeDataset(e.target.name, e.target.value)};
@@ -159,7 +206,7 @@ class UploadDataset extends Component {
                     </div>
                     <div id="outgroup-sel-dendrogram">
                         <h3>Option 2: Click branch in the dendrogram</h3>
-                        <p>TODO</p>
+                        {renderDendrogram(fullDendrogram, dendrogramSpec)}
                     </div>
                     <div id="outgroup-sel-file">
                         <h3>Option 3: List taxa names</h3>
@@ -191,15 +238,43 @@ class UploadDataset extends Component {
     }
 }
 
-let mapStateToProps = state => ({
-    upload: state.upload
-});
+let mapStateToProps = state => {
+    let selectingOutgroup = !state.isProcessingEntities && state.upload.referenceTree;
+    let dendro = null;
+    if (selectingOutgroup) {
+        let t = state.upload.referenceTree;
+
+        // Change the format of state.upload.entities to match up with the one in state.inputGroupData.entities
+        // Don't want to change the server response because that will affect other components sigh
+        let entities = {};
+        for (let eid in state.upload.entities) if (state.upload.entities.hasOwnProperty(eid)) {
+            entities[eid] = {name: state.upload.entities[eid]}
+        }
+
+        let spec = {...state.dendrogramSpec};
+        // We want them to be a bit longer in the upload page
+        spec.unitBranchLength = 20;
+        spec.uniformBranchLength = 12;
+        // And more room to see the taxa
+        spec.marginOnEntity = 12;
+
+        // This can be potentially optimized with createSelector
+        dendro = t.renderFullDendrogram(entities, 'right', false, spec, []);
+    }
+    return {
+        upload: state.upload,
+        selectingOutgroup,
+        fullDendrogram: dendro,
+        dendrogramSpec: state.dendrogramSpec,
+    }
+};
 let mapDispatchToProps = dispatch => ({
     onChangeDataset: (n, v) => {dispatch(changeUploadDataset(n, v))},
     onUploadDataest: () => {dispatch(uploadDataset())},
     onSelectOutgroupTaxa: (eid) => {dispatch(selectOutgroupTaxa(eid))},
     onChangeOutgroupFile: (v) => {dispatch(changeOutgroupTaxaFile(v))},
     onUploadOutgroup: () => {dispatch(uploadOutgroup())},
+    onToggleOutgroupBranch: (bid) => {dispatch(toggleOutgroupBranch(bid))},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(UploadDataset);

@@ -34,7 +34,8 @@ let initialState = {
             isTCRooted: 'N',
             supportValues: 'NA'
         },
-        outgroupTaxa: {}
+        outgroupTaxa: {},
+        outgroupBranches: {}
     },
     isFetching: false,
     isFetchFailed: false,
@@ -416,6 +417,7 @@ function visphyReducer(state = initialState, action) {
     let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup,
         newReferenceTree, newActiveEB;
     let newDistData, newSets, sub, newHoveredTrees, newSelectedTrees, newState;
+    let newOutgroupTaxa;
 
     switch (action.type) {
         case TYPE.TOGGLE_HIGHLIGHT_MONOPHYLY:
@@ -1808,6 +1810,7 @@ function visphyReducer(state = initialState, action) {
                 upload: {
                     ...state.upload,
                     ...action.data,
+                    referenceTree: (new Tree(action.data.referenceTree)).prepareBranches().normalizeBranchLength(),
                     isProcessingEntities: false,
                     outgroupTaxa: {}
                 }
@@ -1823,7 +1826,7 @@ function visphyReducer(state = initialState, action) {
                 }
             };
         case TYPE.CHANGE_OUTGROUP_TAXA_FILE:
-            let newOutgroupTaxa = {};
+            newOutgroupTaxa = {};
             let lines = action.t.split('\n');
             for (let l of lines) {
                 for (let eid in state.upload.entities) if (state.upload.entities.hasOwnProperty(eid)) {
@@ -1839,6 +1842,41 @@ function visphyReducer(state = initialState, action) {
                     outgroupTaxa: newOutgroupTaxa
                 }
             };
+        case TYPE.TOGGLE_OUTGROUP_BRANCH:
+            let {outgroupBranches, outgroupTaxa} = state.upload;
+            newOutgroupTaxa = {...outgroupTaxa};
+            let affectingEntities = state.upload.referenceTree.branches[action.bid].entities;
+            if (outgroupBranches.hasOwnProperty(action.bid)) {
+                // Remove this branch
+                for (let eid of affectingEntities) {
+                    if (newOutgroupTaxa.hasOwnProperty(eid)) {
+                        delete newOutgroupTaxa[eid];
+                    }
+                }
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        outgroupBranches: (() => {let r = {...outgroupBranches}; delete r[action.bid]; return r})(),
+                        outgroupTaxa: newOutgroupTaxa
+                    }
+                }
+            } else {
+                // Add this branch
+                for (let eid of affectingEntities) {
+                    newOutgroupTaxa[eid] = true;
+                }
+                return {
+                    ...state,
+                    upload: {
+                        ...state.upload,
+                        outgroupBranches: {...outgroupBranches, [action.bid]: true},
+                        outgroupTaxa: newOutgroupTaxa
+                    }
+                }
+
+            }
+
 
         case TYPE.UPLOAD_OUTGROUP_REQUEST:
             return {

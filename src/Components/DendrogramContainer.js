@@ -107,7 +107,7 @@ class DendrogramContainer extends Component {
                         <div className="slider">
                                 <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.width} step={10}
                                        disabled={!spec.userSpecifiedSize}
-                                       onChange={(e) => {this.props.onChangeSize('width', parseInt(e.target.value))}}/>
+                                       onChange={(e) => {this.props.onChangeSize('width', parseInt(e.target.value, 10))}}/>
                         </div>
 
                         <span className={cn('param-label', {'param-disabled': !spec.userSpecifiedSize})}>height: {spec.height}
@@ -116,7 +116,7 @@ class DendrogramContainer extends Component {
                         <div className="slider">
                             <input type="range" min={spec.sizeRange[0]} max={spec.sizeRange[1]} value={spec.height} step={10}
                                    disabled={!spec.userSpecifiedSize}
-                                   onChange={(e) => {this.props.onChangeSize('height', parseInt(e.target.value))}}/>
+                                   onChange={(e) => {this.props.onChangeSize('height', parseInt(e.target.value, 10))}}/>
                         </div>
 
                         <span className="param-label">max #context levels: {spec.skeletonLayout.showDepth}
@@ -126,7 +126,7 @@ class DendrogramContainer extends Component {
                         <div className="slider" style={{width: '50px'}}>
                             <input type="range" min={spec.skeletonLayout.showDepthRange[0]} max={spec.skeletonLayout.showDepthRange[1]}
                                    value={spec.skeletonLayout.showDepth} step={1}
-                                   onChange={(e) => {this.props.onChangeSkeletonParameter('showDepth', parseInt(e.target.value))}}/>
+                                   onChange={(e) => {this.props.onChangeSkeletonParameter('showDepth', parseInt(e.target.value, 10))}}/>
                         </div>
 
                         <span className="param-label">show labels: </span>

@@ -149,6 +149,10 @@ export function changeOutgroupTaxaFile(t) {
     return {type: TYPE.CHANGE_OUTGROUP_TAXA_FILE, t};
 }
 
+export function toggleOutgroupBranch(bid) {
+    return {type: TYPE.TOGGLE_OUTGROUP_BRANCH, bid};
+}
+
 export function uploadOutgroup(inputGroupId=null, outgroupTaxa=null, isUpdating=false) {
     return (dispatch, getState) => {
         dispatch(uploadOutgroupRequest());
@@ -222,7 +226,7 @@ export function checkUploadStatus(url, tryTimes = 1) {
     }
 }
 
-function checkUploadStatusRequest() {}
+// function checkUploadStatusRequest() {}
 
 function checkUploadStatusSuccess(data) {
     return {type: TYPE.CHECK_UPLOAD_STATUS_SUCCESS, data}

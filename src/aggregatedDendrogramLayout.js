@@ -4,7 +4,6 @@
 
 import {scaleLog} from 'd3';
 import {createMappingFromArray, subtractMapping, isMonophyly} from './utils';
-import {fetchInputGroup} from "./actions";
 
 // Get the "pivot" branch for rendering an AD
 // If there is branch matched to outgroup, use the lowest one

@@ -8,8 +8,7 @@ import {createSelector} from 'reselect';
 import cn from 'classnames';
 import {toggleHighlightMonophyly, selectBranchOnFullDendrogram, toggleCheckingBranch,
     toggleHighlightDuplicate, toggleExtendedMenu} from '../actions';
-import {createMappingFromArray, estimateTextWidth} from '../utils';
-import {getVirtualBid} from '../tree';
+import {createMappingFromArray} from '../utils';
 
 import './FullDendrogram.css';
 
@@ -17,7 +16,7 @@ class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
              entities, rangeSelection, distributions} = this.props;
-        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer, taxonToShowLabel} = referenceTree;
+        let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer} = referenceTree;
         let isComparing = comparingTree !== null;
         let taxaMembership = membershipViewer.map(m => {
             let d = distributions[0][m.bid];
@@ -36,36 +35,6 @@ class FullDendrogram extends Component {
             let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf
             && branches.hasOwnProperty(d.bid) && branches[d.bid].hasOwnProperty(attribute)
             && range[0] <= branches[d.bid][attribute] && branches[d.bid][attribute] <= range[1];
-
-            // let cbInRange = false;
-            // if (rangeSelection && rangeSelection.cb && tree.tid !== referenceTree.id) {
-            //     let corr = this.props.tree.branches[selected[0]][cb][tree.tid];
-            //     if (corr) {
-            //         let v = attribute === 'similarity'? corr.jac: tree.branches[corr.bid][attribute];
-            //         cbInRange = range[0] <= v && v <= range[1];
-            //     }
-            // }
-
-            // Check if anything has nesting relationship
-            // let nestingStatus = {};
-            // for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
-            //     for (let bid of h[tree.tid]) {
-            //         nestingStatus[bid] = false;
-            //     }
-            // }
-            // for (let bid1 in nestingStatus) if (nestingStatus.hasOwnProperty(bid1)) {
-            //     for (let bid2 in nestingStatus) if (nestingStatus.hasOwnProperty(bid2) && bid1 !== bid2) {
-            //         if (tree.branches[bid1].depth < tree.branches[bid2].depth) {
-            //             if (tree.isAncestor(bid1, bid2)) {
-            //                 nestingStatus[bid1] = true;
-            //             }
-            //         } else {
-            //             if (tree.isAncestor(bid2, bid1)) {
-            //                 nestingStatus[bid2] = true;
-            //             }
-            //         }
-            //     }
-            // }
 
             let order = [];
             for (let h of highlight.bids) if (h.hasOwnProperty(tree.tid)) {
@@ -111,13 +80,7 @@ class FullDendrogram extends Component {
                         width="16" height="16"/>
                    }
 
-                   {/*{tree.tid !== referenceTree.id && rangeSelection && rangeSelection.cb && cbInRange &&*/}
-                   {/*<rect className='range-selected-cb-indicator' x="0" y="-4"*/}
-                         {/*width={dendrogram.treeBoundingBox.width} height={dendrogram.treeBoundingBox.height} />*/}
-                   {/*}*/}
-                   <g>
-                       {highlightBoxes}
-                   </g>
+                   <g>{highlightBoxes}</g>
                    <g className="topology">
                        {branchSpecs.map((d, i) =>
                            (<g key={d.bid}>
@@ -274,139 +237,7 @@ let getDendrogramSpecs = createSelector(
         state => state.dendrogramSpec,
         state => state.referenceTree.membershipViewer],
     (tree, entities, side, ignoreBranchLen, spec, membershipViewer) => {
-
-        let {branches} = tree;
-        let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
-        let roomForMembership = membershipViewer.length * spec.membershipViewerGap;
-
-        let getBranchLength = l => ignoreBranchLen? spec.uniformBranchLength:
-            Math.max(l * spec.unitBranchLength, spec.minBranchLength);
-        let getTreeWidth = function() {
-            let topologyWidth = 0;
-            let maxTopoAndLabelWidth = 0;
-            let longestEntity = 0;
-            let traverse = function(bid, cur, dep) {
-                let b = branches[bid];
-                cur += getBranchLength(b.normalizedLen);
-                topologyWidth = Math.max(cur, topologyWidth);
-                if ('left' in b) {
-                    traverse(b.left, cur, dep + 1);
-                    traverse(b.right, cur, dep + 1);
-                } else {
-                    let textLen = estimateTextWidth(entities[b.entity].name);
-                    maxTopoAndLabelWidth = Math.max(maxTopoAndLabelWidth, cur + textLen);
-                    longestEntity = Math.max(longestEntity, textLen);
-                }
-            };
-            // longestEntity += 20;        // For the taxon pointer mark
-
-            traverse(tree.rootBranch, 0, 1);
-            let treeWidth = aligned? topologyWidth + longestEntity + roomForMembership: maxTopoAndLabelWidth + roomForMembership;
-            return {treeWidth, topologyWidth};
-        };
-        let {treeWidth, topologyWidth} = getTreeWidth();
-
-        let b = {};
-        let connectLines = [];
-        let curY = 0;
-        let text = [];
-
-        // THe bounding box for a subtree, keyed by the leading branch
-        let boundingBox = {};
-        let boxHalfWidth = (spec.responsiveAreaSize - 1) / 2;
-
-        let traverse = (bid, curX) => {
-            let t = getBranchLength(branches[bid].normalizedLen);
-            b[bid] = {x1: curX, x2: curX + t};
-            curX += t;
-            if ('left' in branches[bid]) {
-                let {left, right} = branches[bid];
-                traverse(left, curX);
-                traverse(right, curX);
-                b[bid].y1 = (b[left].y1 + b[right].y1) / 2;
-                b[bid].y2 = b[bid].y1;
-                connectLines.push({x1: curX, x2: curX, y1: b[left].y1, y2: b[right].y1});
-                // Merge the two children bounding box to for his bounding box
-                boundingBox[bid] = {x: b[bid].x1, y: boundingBox[left].y,
-                    width: treeWidth - b[bid].x1 - spec.boundingBoxSideMargin,
-                    height: boundingBox[right].y + boundingBox[right].height - boundingBox[left].y};
-            } else {
-                // Leaf branch
-                let ent_id = branches[bid].entities[0];
-                b[bid].y1 = curY;
-                b[bid].y2 = curY;
-                if (aligned) {
-                    b[bid].x2 = topologyWidth;
-                }
-                boundingBox[bid] = {x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
-                    width: treeWidth - b[bid].x1 - spec.boundingBoxSideMargin,
-                    height: spec.responsiveAreaSize};
-                text.push({entity_id: ent_id,  x: !aligned? curX: (side === 'right'? topologyWidth: treeWidth - topologyWidth), y: curY});
-                curY += spec.marginOnEntity;
-            }
-        };
-
-        traverse(tree.rootBranch, 0);
-
-        // Construct a tree for the missing taxa
-        let missing = tree.missing;
-        if (missing && missing.length) {
-            curY += 20;
-            // let missingTaxaBranchPos = (missing.length - 1) / 2 * spec.marginOnEntity + curY;
-            // b['missing_taxa'] = {bid: 'missing_taxa', x1: topologyWidth - 80, x2: topologyWidth - 30,
-            //     y1: missingTaxaBranchPos, y2: missingTaxaBranchPos,
-            //     isLeaf: false};
-            // boundingBox['missing_taxa'] = {x: topologyWidth - 80, y: curY - boxHalfWidth,
-            //     width: treeWidth - topologyWidth + 80 - spec.boundingBoxSideMargin,
-            //     height: missing.length * spec.marginOnEntity};
-            // connectLines.push({x1: topologyWidth - 30, x2: topologyWidth - 30, y1: curY, y2: curY + (missing.length - 1) * spec.marginOnEntity});
-            for (let i = 0; i < missing.length; i++) {
-                let bid = 'm-' + missing[i];
-                // b[bid] = {bid, x1: topologyWidth - 30, x2: topologyWidth, y1: curY, y2: curY, isLeaf: true};
-                boundingBox[bid] = {x: topologyWidth + roomForMembership, y: curY - boxHalfWidth,
-                    width: treeWidth - topologyWidth - roomForMembership - spec.boundingBoxSideMargin, height: spec.responsiveAreaSize};
-                text.push({entity_id: missing[i],  x: !aligned? topologyWidth: (side === 'right'? topologyWidth: treeWidth - topologyWidth), y: curY});
-                curY += spec.marginOnEntity;
-            }
-        }
-
-        let branchSpecs = [];
-        let responsiveBoxes = [];
-        for (let bid in b) if (b.hasOwnProperty(bid)) {
-            branchSpecs.push({...b[bid], bid, isLeaf: bid in branches? branches[bid].isLeaf: b[bid].isLeaf});
-            responsiveBoxes.push({x: b[bid].x1, y: b[bid].y1 - boxHalfWidth,
-                width: b[bid].x2 - b[bid].x1, height: spec.responsiveAreaSize, bid});
-        }
-
-        // Align the left, right side or none
-        if (side === 'left') {
-            for (let bid in boundingBox) if (boundingBox.hasOwnProperty(bid)) {
-                boundingBox[bid].x = treeWidth - boundingBox[bid].x - boundingBox[bid].width;
-            }
-            for (let i = 0; i < branchSpecs.length; i++) {
-                branchSpecs[i].x1 = treeWidth - branchSpecs[i].x1;
-                branchSpecs[i].x2 = treeWidth - branchSpecs[i].x2;
-            }
-            for (let i = 0; i < connectLines.length; i++) {
-                connectLines[i].x1 = treeWidth - connectLines[i].x1;
-                connectLines[i].x2 = treeWidth - connectLines[i].x2;
-            }
-            for (let i = 0; i < responsiveBoxes.length; i++) {
-                responsiveBoxes[i].x = treeWidth - responsiveBoxes[i].x - responsiveBoxes[i].width;
-            }
-        } else if (side === 'right') {
-
-        }
-
-        return {
-            treeBoundingBox: {width: treeWidth, height: curY + 10},
-            topologyWidth,
-            branchSpecs,
-            verticalLines: connectLines,
-            responsiveBoxes,
-            textSpecs: text,
-            hoverBoxes: boundingBox,
-        };
+        return tree.renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer);
     }
 );
 
