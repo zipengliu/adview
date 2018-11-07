@@ -4,6 +4,7 @@ VisPhy: Visual Comparison of Phylogenetic Trees
 Documentation Author: [Zipeng Liu](http://www.cs.ubc.ca/~zipeng/)
 
 Website: [vipshy.cs.ubc.ca](http://visphy.cs.ubc.ca)
+Demo account: name: guest; password: 12345
 
 ## 1 Overview
 
