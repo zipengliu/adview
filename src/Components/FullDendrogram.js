@@ -266,7 +266,6 @@ let getDendrogramSpecs = createSelector(
     }
 );
 
-
 function mapStateToProps(state, ownProps) {
     let ref = state.inputGroupData.referenceTree;
     let c = state.pairwiseComparison;
