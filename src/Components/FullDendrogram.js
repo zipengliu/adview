@@ -15,7 +15,7 @@ import './FullDendrogram.css';
 class FullDendrogram extends Component {
     render() {
         let {dendrogram, isStatic,  spec, tree, referenceTree, comparingTree, highlight,
-             entities, rangeSelection, distributions} = this.props;
+             entities, rangeSelection, distributions, taxaAttributes} = this.props;
         let {expanded, highlightEntities, highlightUncertainEntities, userSpecified, membershipViewer} = referenceTree;
         let isComparing = comparingTree !== null;
         let taxaMembership = membershipViewer.map(m => {
@@ -28,9 +28,10 @@ class FullDendrogram extends Component {
         let highlightUncertainEntitiesMapping = createMappingFromArray(highlightUncertainEntities || []);
         let {attribute, range} = rangeSelection || {};
 
-        let renderDendrogram = (tree, dendrogram, side='right', expandedBranches=[]) => {
-            let {branchSpecs, verticalLines, responsiveBoxes,hoverBoxes, textSpecs} = dendrogram;
+        let renderDendrogram = (tree, dendrogram, side='right', expandedBranches=[], showAttributes=false) => {
+            let {branchSpecs, verticalLines, responsiveBoxes,hoverBoxes, textSpecs, attrPos} = dendrogram;
             let {missing, branches} = tree;
+            const attrStartPos = dendrogram.treeBoundingBox.width - dendrogram.attributeWidth + spec.attributeGap;
 
             let inRange = d => rangeSelection && !rangeSelection.cb && !d.isLeaf
             && branches.hasOwnProperty(d.bid) && branches[d.bid].hasOwnProperty(attribute)
@@ -111,6 +112,26 @@ class FullDendrogram extends Component {
                             width={8} height={8} />
                    )}
 
+                   {showAttributes &&
+                   <g transform={`translate(${attrStartPos},0)`}>
+                       <g transform={`translate(0,-10)`} style={{fontSize: '8px'}}>
+                           {taxaAttributes.map((t, i) => <text key={i} x={attrPos[i]} y={0}>{t}</text>)}
+                       </g>
+                       <g>
+                           {textSpecs.filter(d => entities[d.entity_id].attributes.length).map((d, i) =>
+                               <g key={i}>
+                                   <line x1={-(attrStartPos - d.x - entities[d.entity_id].textWidth)+8} y1={d.y+1}
+                                         x2={attrPos[entities[d.entity_id].attributes[0]] - 10} y2={d.y+1}
+                                         style={{stroke: '#888', strokeWidth: '1px', strokeDasharray: '2'}} />
+                                   {entities[d.entity_id].attributes.map(a =>
+                                       <circle key={a} r="3" cx={attrPos[a]} cy={d.y} style={{stroke: 'none', fill: 'black'}} />
+                                   )}
+                               </g>
+                           )}
+                       </g>
+                   </g>
+                   }
+
                    {membershipViewer.length > 0 &&
                    <g transform={`translate(${side === 'left'? dendrogram.treeBoundingBox.width - dendrogram.topologyWidth - spec.membershipViewerGap * membershipViewer.length: dendrogram.topologyWidth + spec.membershipViewerGap},0)`}>
                        <circle r="7" cx={tree.tid === referenceTree.id? -spec.membershipViewerGap + 4: membershipViewer.length * spec.membershipViewerGap + 3}
@@ -181,7 +202,7 @@ class FullDendrogram extends Component {
                            </text>
                            {tree.tid === referenceTree.id &&
                            <text className="named-clade-taxa-num"
-                                 x={hoverBoxes[d.bid].x + hoverBoxes[d.bid].width} y={hoverBoxes[d.bid].y} dx="-4" dy="12">
+                                 x={hoverBoxes[d.bid].x + hoverBoxes[d.bid].width} y={hoverBoxes[d.bid].y} dx="-4" dy="8">
                                {branches[d.bid].entities.length}
                            </text>
                            }
@@ -190,6 +211,8 @@ class FullDendrogram extends Component {
                </g>
             )
         };
+
+        const showAttributes = spec.showAttributes && !isComparing && taxaAttributes.length > 0;
 
         let svgWidth = (isComparing? dendrogram[0].treeBoundingBox.width + dendrogram[1].treeBoundingBox.width + spec.marginBetweenPair:
             dendrogram.treeBoundingBox.width) + spec.margin.left + spec.margin.right;
@@ -209,7 +232,7 @@ class FullDendrogram extends Component {
                             </g>
                         </g>
                     }
-                    {!isComparing && renderDendrogram(tree, dendrogram, 'right', expanded)}
+                    {!isComparing && renderDendrogram(tree, dendrogram, 'right', expanded, showAttributes)}
                 </g>
 
                 <defs>
@@ -235,9 +258,11 @@ let getDendrogramSpecs = createSelector(
         (_, tid, alignToSide) => alignToSide,
         state => state.referenceTree.universalBranchLen,
         state => state.dendrogramSpec,
-        state => state.referenceTree.membershipViewer],
-    (tree, entities, side, ignoreBranchLen, spec, membershipViewer) => {
-        return tree.renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer);
+        state => state.referenceTree.membershipViewer,
+        (_, a, b, taxaAttributes) => taxaAttributes,
+    ],
+    (tree, entities, side, ignoreBranchLen, spec, membershipViewer, taxaAttributes) => {
+        return tree.renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer, taxaAttributes);
     }
 );
 
@@ -248,8 +273,8 @@ function mapStateToProps(state, ownProps) {
     let den, den1, den2;
     let compExp = {};
     if (c.tid) {
-        den1 = getDendrogramSpecs(state, null, 'right');
-        den2 = getDendrogramSpecs(state, c.tid, 'left');
+        den1 = getDendrogramSpecs(state, null, 'right', null);
+        den2 = getDendrogramSpecs(state, c.tid, 'left', null);
 
         // Get the corresponding branches in the comparing tree
         let refExp = state.referenceTree.expanded;
@@ -262,7 +287,8 @@ function mapStateToProps(state, ownProps) {
             }
         }
     } else {
-        den = getDendrogramSpecs(state, null, state.referenceTree.membershipViewer.length > 0? 'right': null);
+        den = getDendrogramSpecs(state, null, state.referenceTree.membershipViewer.length > 0? 'right': null,
+            state.dendrogramSpec.showAttributes? state.taxaAttributes: null);
     }
 
     let ae = state.referenceTree.charts;
@@ -275,6 +301,7 @@ function mapStateToProps(state, ownProps) {
         comparingTreeExpansion: c.tid? compExp: null,
         spec: state.dendrogramSpec,
         entities: state.inputGroupData.entities,
+        taxaAttributes: state.taxaAttributes,
         metricBranch: state.overview.metricMode === 'global'? null: state.overview.metricBranch,
         rangeSelection: ae.activeSelectionId >= 0? ae.selection[ae.activeSelectionId]: null,
         distributions: state.treeDistribution.data,

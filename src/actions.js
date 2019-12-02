@@ -861,3 +861,7 @@ function logoutSuccess() {
 function logoutFailure(error) {
     return {type: TYPE.LOGOUT_FAILURE, error};
 }
+
+export function toggleTaxaAttributes() {
+    return {type: TYPE.TOGGLE_TAXA_ATTRIBUTES};
+}

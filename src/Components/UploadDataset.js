@@ -91,7 +91,7 @@ class UploadDataset extends Component {
                     </FormGroup>
 
                     <FormGroup style={{marginBottom: '30px'}}>
-                        <Col componentClass={ControlLabel} sm={labelCol}></Col>
+                        <Col componentClass={ControlLabel} sm={labelCol} />
                         <Col sm={formCol}>
                             <Radio inline name="isPublic" value="Y" checked={formData.isPublic === 'Y'} onChange={handleChange}>Public</Radio>
                             <Radio inline name="isPublic" value="N" checked={formData.isPublic === 'N'} onChange={handleChange}>Private</Radio>
@@ -147,13 +147,13 @@ class UploadDataset extends Component {
                     </FormGroup>
 
                     <FormGroup>
-                        <Col componentClass={ControlLabel} sm={labelCol}>Tree Collection Names</Col>
+                        <Col componentClass={ControlLabel} sm={labelCol}>Tree Names</Col>
                         <Col sm={formCol}>
                             <FormControl type="file" name="treeCollectionNames" onChange={handleChangeFile} />
                         </Col>
                         <Col sm={formCol}><HelpBlock>
                             (Optional) A name of tree each line corresponding to tree collection file.
-                            If omitted, random names will be assigned.</HelpBlock></Col>
+                            If not, default names will be assigned.</HelpBlock></Col>
                     </FormGroup>
 
                     <FormGroup>
@@ -162,10 +162,25 @@ class UploadDataset extends Component {
                             <Radio inline name="supportValues" value="NA" checked={formData.supportValues === 'NA'}
                                    onChange={handleChange}>NA</Radio>
                             <Radio inline name="supportValues" value="1" checked={formData.supportValues === '1'}
-                                   onChange={handleChange}>range [0, 1]</Radio>
+                                   onChange={handleChange}>[0, 1]</Radio>
                             <Radio inline name="supportValues" value="100" checked={formData.supportValues === '100'}
-                                   onChange={handleChange}>range [0, 100]</Radio>
+                                   onChange={handleChange}>[0, 100]</Radio>
                         </Col>
+                        <Col sm={formCol} smOffset={labelCol}><HelpBlock>
+                            The range of the support values used in the tree files.
+                        </HelpBlock></Col>
+                    </FormGroup>
+
+                    <FormGroup>
+                        <Col componentClass={ControlLabel} sm={labelCol}>Taxa attributes</Col>
+                        <Col sm={formCol}>
+                            <FormControl type="file" name="taxaAttributes" onChange={handleChangeFile} />
+                        </Col>
+                        <Col sm={formCol}><HelpBlock>
+                            (Optional) A CSV file to specify the attributes of each taxon.  Each row corresponds to
+                            a taxon, and each coloumn represents an attribute.  The value in the cell can be 1 or 0
+                            or simply nothing.
+                        </HelpBlock></Col>
                     </FormGroup>
 
                     <FormGroup>

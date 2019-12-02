@@ -65,7 +65,7 @@ let initialState = {
         tids: [],
     },
     dendrogramSpec: {
-        margin: {left: 5, right: 5, top: 15, bottom: 0},
+        margin: {left: 5, right: 5, top: 20, bottom: 0},
         marginBetweenPair: 10,
         marginOnEntity: 8,
         boundingBoxSideMargin: 5,
@@ -76,6 +76,8 @@ let initialState = {
         minBranchLength: 5,
         uniformBranchLength: 10,            // How long is each branch when we do not encode branch length
         membershipViewerGap: 16,            // How wide for one column of membership indication marks
+        showAttributes: true,
+        attributeGap: 10,
     },
     referenceTree: {
         id: null,
@@ -130,6 +132,7 @@ let initialState = {
     },
     selectedTreeColor: "#8a6c66",
     branchRangeSelectionColor: "#e377c2",
+    taxaAttributes: [],
     pairwiseComparison: {
         tid: null,
     },
@@ -412,6 +415,22 @@ let addHighlightGroup = (state, action, updateGroupIdx=null, no=null) => {
     }
 };
 
+let assignTaxaAttributeIdx = (entities) => {
+    let m = {}, idx = 0, arr = [];
+    for (let eid in entities) if (entities.hasOwnProperty(eid)) {
+        const e = entities[eid];
+        if (e.hasOwnProperty('attributes') && e.attributes.length > 0) {
+            for (let a of e.attributes) {
+                if (!m.hasOwnProperty(a)) {
+                    m[a] = idx++;
+                    arr.push(a);
+                }
+            }
+            e.attributes = e.attributes.map(a => m[a]);
+        }
+    }
+    return arr;
+};
 
 function visphyReducer(state = initialState, action) {
     let newBids, newColors, curAE, updatedSelection, highlightIdx, newHighlights, newUS, newUSGroup, newUSByGroup,
@@ -1369,6 +1388,7 @@ function visphyReducer(state = initialState, action) {
                     trees,
                     referenceTree: newReferenceTree
                 },
+                taxaAttributes: assignTaxaAttributeIdx(action.data.entities),
                 // bipartitions: new BipartitionList(action.data.referenceTree, action.data.trees, action.data.entities),
                 toast: {
                     ...state.toast,
@@ -2152,6 +2172,15 @@ function visphyReducer(state = initialState, action) {
                     showTreeNames: !state.aggregatedDendrogram.showTreeNames
                 }
             }
+
+        case TYPE.TOGGLE_TAXA_ATTRIBUTES:
+            return {
+                ...state,
+                dendrogramSpec: {
+                    ...state.dendrogramSpec,
+                    showAttributes: !state.dendrogramSpec.showAttributes,
+                }
+            };
 
         default:
             return state;

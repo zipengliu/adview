@@ -11,7 +11,7 @@ import ReferenceTreeAttributeExplorer from './ReferenceTreeAttributeExplorer';
 import {compareWithReference, toggleUniversalBranchLength, toggleExtendedMenu, changeDistanceMetric,
     selectBranchOnFullDendrogram, toggleHighlightMonophyly, uploadOutgroup,
     createUserSpecifiedTaxaGroup, addToUserSpecifiedTaxaGroup, removeFromUserSpecifiedTaxaGroup,
-    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleLegends} from '../actions';
+    removeUserSpecifiedTaxaGroup, expandUserSpecifiedTxaGroup, toggleLegends, toggleTaxaAttributes} from '../actions';
 import {createMappingFromArray} from '../utils';
 import {getVirtualBid} from '../tree';
 
@@ -19,7 +19,8 @@ class ReferenceTreeContainer extends Component {
     render() {
         let props = this.props;
         let {tree, comparingTree, extendedMenu, universalBranchLen, userSpecified, userSpecifiedByGroup,
-            expandedBranches, colorScheme, showLegends, inputGroupId, entityNames, taxonToShowLabel} = props;
+            expandedBranches, colorScheme, showLegends, inputGroupId, entityNames, taxonToShowLabel,
+            taxaAttributes, showAttributes} = props;
         let isExtLeaf = extendedMenu.bid && tree.branches[extendedMenu.bid].isLeaf;
         let isExtSpecified = userSpecified.hasOwnProperty(extendedMenu.bid);
         let isExtExpanded = expandedBranches.hasOwnProperty(extendedMenu.bid) ||
@@ -72,6 +73,18 @@ class ReferenceTreeContainer extends Component {
                             </Button>
                         </ButtonGroup>
                         <div style={{display: 'inline-block', marginLeft: '5px', marginRight: '10px'}}> branch length.</div>
+
+                        <ButtonGroup bsSize="xsmall">
+                            <Button active={showAttributes} disabled={!!props.comparingTree || taxaAttributes.length === 0}
+                                    onClick={!showAttributes? props.toggleAttributes: Function.prototype}>
+                                Show
+                            </Button>
+                            <Button active={!showAttributes} disabled={!!props.comparingTree || taxaAttributes.lenght === 0}
+                                    onClick={showAttributes? props.toggleAttributes: Function.prototype}>
+                                Hide
+                            </Button>
+                        </ButtonGroup>
+                        <div style={{display: 'inline-block', marginLeft: '5px', marginRight: '10px'}}> attributes.</div>
 
                         {groups.length > 0 &&
                         <DropdownButton bsSize="xsmall" title="Match user specified taxa group" id="exp-user-specified-taxa-group"
@@ -270,7 +283,10 @@ let mapStateToProps = state => ({
     consensusURL: state.pairwiseComparison.tid && state.pairwiseComparison.tid.indexOf('consensus') !== -1?
         state.inputGroupData.trees[state.pairwiseComparison.tid].consensusURL: null,
 
-    colorScheme: state.highlight.colorScheme
+    colorScheme: state.highlight.colorScheme,
+
+    taxaAttributes: state.taxaAttributes,
+    showAttributes: state.dendrogramSpec.showAttributes,
 });
 
 let mapDispatchToProps = dispatch => ({
@@ -289,6 +305,7 @@ let mapDispatchToProps = dispatch => ({
     removeUSTG: group => {dispatch(removeUserSpecifiedTaxaGroup(group))},
     expandUSTG: (group, collapse=false) => {dispatch(expandUserSpecifiedTxaGroup(group, collapse))},
     toggleLegends: () => {dispatch(toggleLegends('referenceTree'))},
+    toggleAttributes: () => {dispatch(toggleTaxaAttributes())},
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ReferenceTreeContainer);

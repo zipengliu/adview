@@ -539,7 +539,7 @@ export class Tree {
         // Alternative algorithm: Visit CB in depth order, find the nearest CB (which has lowest LCA)
     }
 
-    renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer) {
+    renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer, taxaAttributes) {
         let {branches, rootBranch} = this;
 
         let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;
@@ -561,6 +561,7 @@ export class Tree {
                 } else {
                     // marginOnEntity should be the same as label font size
                     let textLen = estimateTextWidth(entities[b.entity].name, spec.marginOnEntity / 8);
+                    entities[b.entity].textWidth = textLen;         // HOT FIX
                     maxTopoAndLabelWidth = Math.max(maxTopoAndLabelWidth, cur + textLen);
                     longestEntity = Math.max(longestEntity, textLen);
                 }
@@ -569,9 +570,21 @@ export class Tree {
 
             traverse(rootBranch, 0, 1);
             let treeWidth = aligned? topologyWidth + longestEntity + roomForMembership: maxTopoAndLabelWidth + roomForMembership;
-            return {treeWidth, topologyWidth};
+            // treeWidth += 20;
+            return {treeWidth, topologyWidth, longestEntity};
         };
-        let {treeWidth, topologyWidth} = getTreeWidth();
+        let {treeWidth, topologyWidth, longestEntity} = getTreeWidth();
+
+        let attributeWidth = 0, attrPos = [];
+        if (taxaAttributes !== null && taxaAttributes.length > 0) {
+            treeWidth += spec.attributeGap;
+            for (let a of taxaAttributes) {
+                attrPos.push(attributeWidth);
+                attributeWidth += estimateTextWidth(a, spec.marginOnEntity / 8);
+                attributeWidth += spec.attributeGap;
+            }
+        }
+        treeWidth += attributeWidth;
 
         let b = {};
         let connectLines = [];
@@ -667,7 +680,10 @@ export class Tree {
 
         return {
             treeBoundingBox: {width: treeWidth, height: curY + 10},
+            attributeWidth,
+            attrPos,
             topologyWidth,
+            longestEntity,
             branchSpecs,
             verticalLines: connectLines,
             responsiveBoxes,
