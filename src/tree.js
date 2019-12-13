@@ -539,7 +539,7 @@ export class Tree {
         // Alternative algorithm: Visit CB in depth order, find the nearest CB (which has lowest LCA)
     }
 
-    renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer, taxaAttributes) {
+    renderFullDendrogram(entities, side, ignoreBranchLen, spec, membershipViewer, taxaAttributes = null) {
         let {branches, rootBranch} = this;
 
         let aligned = side === 'left' || side === 'right' || membershipViewer.length > 0;

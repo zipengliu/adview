@@ -426,10 +426,24 @@ let assignTaxaAttributeIdx = (entities) => {
                     arr.push(a);
                 }
             }
+        }
+    }
+    // Move the "NA" attribute (if any) to the last if it is not the last
+    if (m.hasOwnProperty('NA') && m['NA'] !== idx - 1) {
+        for (let a in m) if (m.hasOwnProperty(a) && a !== 'NA') {
+            if (m[a] > m['NA']) {
+                m[a]--
+            }
+        }
+        m['NA'] = idx - 1;
+    }
+    for (let eid in entities) if (entities.hasOwnProperty(eid)) {
+        const e = entities[eid];
+        if (e.hasOwnProperty('attributes') && e.attributes.length > 0) {
             e.attributes = e.attributes.map(a => m[a]);
         }
     }
-    return arr;
+    return arr.sort((x, y) => m[x]-m[y]);
 };
 
 function visphyReducer(state = initialState, action) {
