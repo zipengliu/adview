@@ -1,14 +1,14 @@
-VisPhy: Visual Comparison of Phylogenetic Trees
+ADView: Visual Comparison of Phylogenetic Trees
 ====
 
-Documentation Author: [Zipeng Liu](http://www.cs.ubc.ca/~zipeng/)
+Documentation Author: [Zipeng Liu](https://zipengliu.github.io/)
 
-Website: [vipshy.cs.ubc.ca](http://visphy.cs.ubc.ca)
+Website: [http://phylo-adview.site/](http://phylo-adview.site/)
 Demo account: name: guest; password: 12345
 
 ## 1 Overview
 
-### 1.1 What is VisPhy
+### 1.1 What is ADView
 
 Visually compare a reference phylogenetic tree against some other phylogenetic trees with roughly the same set of taxa to check support and conflict of reference.  
 
@@ -19,13 +19,13 @@ Potential comparisons:
 * A gene tree vs. other gene trees
 
 
-### 1.2 What VisPhy is NOT for
+### 1.2 What ADView is NOT for
 
 * Visual presentation of one phylogenetic tree 
 * Statistical analysis of phylogenetic hypotheses
 * Rigorous analysis of branch lengths in trees (we focus on topology and taxon memberships)
 
-### 1.3 What VisPhy cannot deal with currently but might be able to in the future?
+### 1.3 What ADView cannot deal with currently but might be able to in the future?
 
 * We cannot deal with paralogs.  If a tree contains duplicate copies of a taxon, which are identified by the same label, the pre-processor will fail.
 If they have different labels such as "A_1" and "A_2", you need to be alert that we treat them as they were orthologs: "A_1" in a tree
@@ -40,7 +40,7 @@ Figure 1
 
 ![visphy-introduction](assets/images/overview.png)
 
-We demonstrate VisPhy with a sampled dataset from [the 1KP pilot study](https://gigascience.biomedcentral.com/articles/10.1186/2047-217X-3-17).
+We demonstrate ADView with a sampled dataset from [the 1KP pilot study](https://gigascience.biomedcentral.com/articles/10.1186/2047-217X-3-17).
 We compare a species trees inferred using [ASTRAL](https://github.com/smirarab/ASTRAL) with 100 sampled gene trees.
 We do not assume phylogenetic plausibility of this dataset, but only use it for demonstration.
 
